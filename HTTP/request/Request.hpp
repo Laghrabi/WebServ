@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/05/12 14:59:04 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/05/14 18:08:16 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 # include <vector>
 # include <map>
 # include <string>
+# include <sstream>
+# include <algorithm>
 
 
 /**
@@ -32,31 +34,36 @@ enum ParseState {
     READING_BODY,
     READING_CHUNK_SIZE,
     READING_CHUNK_DATA,
-    FINISHED
+    FINISHED,
+	ERROR
 };
 
 class HttpRequest {
     private:
-        ParseState _currentState;
+        ParseState	_currentState;
 
         // The permanent storage and its bookmark
-        std::vector<char> _savedData;
-        size_t _bufferIndex;          
+        std::vector<char>	_savedData;
+        size_t				_bufferIndex;          
 
         // Storage for the parsed data
-        std::string _method;
-        std::string _uri;
-        std::string _version;
-        std::map<std::string, std::string> _headers;
-        std::vector<char> _body;
+        std::string							_method;
+        std::string							_uri;
+        std::string							_version;
+        std::map<std::string, std::string>	_headers;
+        std::vector<char>					_body;
 
+        void	parseRequestLine();
+		void	parseHeaders();
+		void	parseBody();
+		
     public:
         HttpRequest();
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
         ~HttpRequest();
     
-        void parse(const std::vector<char>& rawBuffer); 
+        void	parse(const std::vector<char>& rawBuffer);
 };
 
 #endif

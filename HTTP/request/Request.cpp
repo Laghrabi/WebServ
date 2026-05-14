@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/05/12 14:58:04 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/05/14 18:13:57 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,3 +61,52 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& other) {
   */
 HttpRequest::~HttpRequest() {}
 
+void HttpRequest::parse(const std::vector<char>& rawBuffer)
+{
+	if (rawBuffer.empty())
+		return ;
+	
+	_savedData.insert(_savedData.end(), rawBuffer.begin(), rawBuffer.end());
+	
+	while (_bufferIndex < _savedData.size())
+	{
+		switch (_currentState)
+		{
+			case READING_REQUEST_LINE:
+				parseRequestLine();
+				break ;
+			case READING_HEADERS:
+				//TODO
+				break ;
+			case READING_BODY:
+				//TODO
+				break ;
+			case FINISHED:
+			case ERROR:
+				return ;
+		}
+	}
+}
+
+void	HttpRequest::parseRequestLine()
+{
+	const std::string	crlf = "\r\n";
+
+	auto it = std::search(
+		_savedData.begin() + _bufferIndex, _savedData.end(),
+		crlf.begin(), crlf.end());
+		
+	if (it == _savedData.end())
+		return ;
+
+	std::string	requestLine(_savedData.begin() + _bufferIndex, it);
+	std::istringstream iss(requestLine);
+	
+	if (iss >> _method >> _uri >> _version)
+	{
+		_bufferIndex += requestLine.size() + 2;
+		_currentState = READING_HEADERS;
+	}
+	else
+		_currentState = ERROR;
+}

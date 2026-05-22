@@ -32,7 +32,7 @@ class lexer
         int line;
     
     public:
-        lexer(std::string& content): input(content), pos(0), line(1) {};
+        lexer(const std::string& content): input(content), pos(0), line(1) {};
         std::vector<token> tokenization();
 };
 

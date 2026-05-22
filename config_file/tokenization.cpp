@@ -119,9 +119,9 @@ int tokenization(const std::string& file_name)
     
     try
     {
-        lexer lexer(content);
+        lexer lex(content);
 
-        std::vector<token> tokens = lexer.tokenization();
+        std::vector<token> tokens = lex.tokenization();
 
         /*just for testing*/ 
         // for (size_t i = 0; i < tokens.size(); i++)

@@ -6,6 +6,7 @@
 #include <exception>
 #include <vector>
 #include <sstream>
+#include <string>
 
 enum TokenType
 {

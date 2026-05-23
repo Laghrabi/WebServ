@@ -8,5 +8,6 @@
 #include <sstream>
 #include <string>
 #include "tokenization.hpp"
+#include "ParseConfig.hpp"
 
 #endif

@@ -1,6 +1,6 @@
 CPP = c++
 
-CPP_FLAGS = -std=c++98 -Wall -Wextra -Werror
+# CPP_FLAGS =  -Wall -Wextra -Werror
 
 SRCS := $(wildcard ./srcs/parser/*.cpp) \
 			 ./srcs/main.cpp
@@ -24,7 +24,7 @@ $(NAME): $(OBJS)
 clean:
 	$(RM) $(RM_OPTIONS) $(OBJS)
 
-flcean: clean
+fclean: clean
 	$(RM) $(RM_OPTIONS) $(NAME)
 
 re: fclean $(TARGET)

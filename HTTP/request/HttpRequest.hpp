@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/05/17 18:26:39 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/05/22 17:56:45 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@
 # include <sstream>
 # include <fstream>
 # include <algorithm>
+# include <ctime>
+# include <cstdio>
 
 
 /**
@@ -70,6 +72,16 @@ class HttpRequest {
         ~HttpRequest();
     
         void	parse(const std::vector<char>& rawBuffer);
+        void    cleanupTempFile();
+
+        std::vector<char> getLeftoverData() const;
+        const std::string& getMethod() const;
+        const std::string& getUri() const;
+        const std::string& getVersion() const;
+        const std::map<std::string, std::string>& getHeaders() const;
+        std::string getHeader(const std::string& key) const;
+        const std::string& getBodyFilePath() const;
+        ParseState getCurrentState() const;
 };
 
 #endif

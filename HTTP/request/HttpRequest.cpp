@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/05/17 18:28:26 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/05/22 18:36:16 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,12 @@ HttpRequest::HttpRequest() : _currentState(READING_REQUEST_LINE), _bufferIndex(0
 /**
   * @brief Destructor.
   */
-HttpRequest::~HttpRequest() {}
+HttpRequest::~HttpRequest() {
+	if (_bodyStream.is_open())
+		_bodyStream.close();
+	if (_currentState != FINISHED)
+		cleanupTempFile();
+}
 
 /**
  * @brief Appends incoming data to the internal buffer and drives the parsing state machine.
@@ -73,6 +78,7 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
 bool	HttpRequest::parseRequestLine()
 {
 	const std::string	crlf = "\r\n";
+	std::string			trailingGarbage;
 
 	std::vector<char>::iterator it = std::search(
 		_savedData.begin() + _bufferIndex, _savedData.end(),
@@ -86,6 +92,10 @@ bool	HttpRequest::parseRequestLine()
 	
 	if (iss >> _method >> _uri >> _version)
 	{
+		if (iss >> trailingGarbage) {
+    		_currentState = ERROR;
+    		return (false);
+		}
 		_bufferIndex += requestLine.size() + 2;
 		_currentState = READING_HEADERS;
 		return (true);
@@ -116,7 +126,7 @@ bool	HttpRequest::parseHeaders()
 	std::string headerLine(_savedData.begin() + _bufferIndex, it);
 	if (headerLine.empty())
 	{
-		std::map<std::string, std::string>::iterator it = _headers.find("Content-Length");
+		std::map<std::string, std::string>::iterator it = _headers.find("content-length");
     	if (it != _headers.end()) {
         	std::istringstream iss(it->second);
         	iss >> _contentLength;
@@ -137,6 +147,7 @@ bool	HttpRequest::parseHeaders()
 		std::string	key = headerLine.substr(0, colonPos);
 		std::string	value = headerLine.substr(colonPos + 1);
 
+		std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 		_headers[key] = trimLeadingSpaces(value);
 		_bufferIndex += headerLine.size() + 2;
 
@@ -157,8 +168,9 @@ bool	HttpRequest::parseBody()
 	} else {
 		if (!_bodyStream.is_open()) {
 			_fileCounter++;
+			std::time_t timestamp = std::time(NULL);
 			std::ostringstream oss;
-            oss << "/tmp/upload_" << _fileCounter << ".bin";
+            oss << "/tmp/upload_" << timestamp << "_" << _fileCounter << ".bin";
             _bodyFilePath = oss.str();
 			_bodyStream.open(_bodyFilePath.c_str(), std::ios::binary);
 			
@@ -167,10 +179,13 @@ bool	HttpRequest::parseBody()
 				return (false);
 			}
 		}
-		size_t bytesToWrite = _savedData.size() - _bufferIndex;
+		size_t	avaiBytes = _savedData.size() - _bufferIndex;
+		size_t	bytesNeeded = _contentLength - _bodyBytesWritten;
+		size_t bytesToWrite = std::min(avaiBytes, bytesNeeded);
 		_bodyStream.write(_savedData.data() + _bufferIndex, bytesToWrite);
 		_bodyBytesWritten += bytesToWrite;
-		_savedData.clear();
+		size_t	totalConsumedBytes = _bufferIndex + bytesToWrite;
+		_savedData.erase(_savedData.begin(), _savedData.begin() + totalConsumedBytes);
 		_bufferIndex = 0;
 		if (_bodyBytesWritten == _contentLength) {
 			_bodyStream.close();
@@ -179,4 +194,9 @@ bool	HttpRequest::parseBody()
 		} else
 			return (false);
 	}
+}
+
+void	HttpRequest::cleanupTempFile() {
+	if (!_bodyFilePath.empty())
+		std::remove(_bodyFilePath.c_str());
 }

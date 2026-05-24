@@ -1,14 +1,9 @@
 #ifndef TOKENIZATION_HPP
 #define TOKENIZATION_HPP
 
-#include <iostream>
-#include <fstream>
-#include <exception>
+#include <cstddef>
 #include <vector>
-#include <sstream>
 #include <string>
-#include <cctype>
-#include <stdexcept>
 
 enum TokenType
 {

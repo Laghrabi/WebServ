@@ -7,6 +7,8 @@
 #include <vector>
 #include <sstream>
 #include <string>
+#include <cctype>
+#include <stdexcept>
 
 enum TokenType
 {
@@ -34,6 +36,9 @@ class lexer
     public:
         lexer(const std::string& content): input(content), pos(0), line(1) {};
         std::vector<token> tokenization();
+        static std::vector<token> tokenizeFile(const std::string& file_name);
+        static token createToken(TokenType type, const std::string& value, int line);
+        static std::string tokenTypeToString(TokenType type);
 };
 
 #endif 

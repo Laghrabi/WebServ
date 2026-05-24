@@ -1,8 +1,9 @@
 CPP = c++
 
-# CPP_FLAGS =  -Wall -Wextra -Werror
+# CPP_FLAGS =  -Wall -Wextra -Werror -g
 
 SRCS := $(wildcard ./srcs/parser/*.cpp) \
+				$(wildcard ./srcs/Server/*.cpp) \
 			 ./srcs/main.cpp
 
 INCLUDE_DIR = ./include/

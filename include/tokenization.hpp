@@ -30,4 +30,6 @@ class lexer
         std::vector<token> tokenization();
 };
 
+std::ostream& operator<<(std::ostream& out, const token& token_);
+
 #endif 

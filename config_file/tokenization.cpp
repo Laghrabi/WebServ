@@ -1,5 +1,16 @@
 #include "tokenization.hpp"
 
+token createToken(TokenType type, const std::string& value, int line)
+{
+    token tok;
+
+    tok.type = type;
+    tok.value = value;
+    tok.line = line;
+
+    return (tok);
+}
+
 std::vector<token> lexer::tokenization()
 {
     std::vector<token> tokenz;
@@ -21,17 +32,17 @@ std::vector<token> lexer::tokenization()
         }
         if (c == '{')
         {
-            tokenz.push_back({OPEN_BRACE, "{", line});
+            tokenz.push_back(createToken(OPEN_BRACE, "{", line));
             continue;
         }
         if (c == '}')
         {
-            tokenz.push_back({CLOSE_BRACE, "}", line});
+            tokenz.push_back(createToken(CLOSE_BRACE, "}", line));
             continue;
         }
         if (c == ';')
         {
-            tokenz.push_back({SEMICOLON, ";", line});
+            tokenz.push_back(createToken(SEMICOLON, ";", line));
             continue;
         }
         if (c == '"')
@@ -48,9 +59,11 @@ std::vector<token> lexer::tokenization()
             }
             if (pos >= input.size())
             {
-                throw std::runtime_error("Unclosed quote at line " + std::to_string(startLine));
+                std::stringstream ss;
+                ss << "Unclosed quote at line " << startLine;
+                throw std::runtime_error(ss.str());
             }
-            tokenz.push_back({WORD, buffer, startLine});
+            tokenz.push_back(createToken(WORD, buffer, startLine));
             continue;
         }
         std::string buffer;
@@ -72,9 +85,9 @@ std::vector<token> lexer::tokenization()
             pos++;
         }
         pos--;
-        tokenz.push_back({WORD, buffer, line});
+        tokenz.push_back(createToken(WORD, buffer, line));
     }
-    tokenz.push_back({END_OF_FILE, "", line});
+    tokenz.push_back(createToken(END_OF_FILE, "", line));
 
     return tokenz;
 }
@@ -87,55 +100,69 @@ std::string tokenTypeToString(TokenType type)
         case WORD:
             return "WORD";
 
-        case TokenType::OPEN_BRACE:
+        case OPEN_BRACE:
             return "OPEN_BRACE";
 
-        case TokenType::CLOSE_BRACE:
+        case CLOSE_BRACE:
             return "CLOSE_BRACE";
 
-        case TokenType::SEMICOLON:
+        case SEMICOLON:
             return "SEMICOLON";
 
-        case TokenType::END_OF_FILE:
+        case END_OF_FILE:
             return "EOF";
     }
 
     return "UNKNOWN";
 }
 
-int tokenization(const std::string& file_name)
+std::vector<token> tokenization(const std::string& file_name)
 {
-    std::ifstream file(file_name);
+    std::ifstream file(file_name.c_str());
 
     if (!file)
-    {
-        std::cerr << "failed to open file\n";
-        return (1);
-    }
+        throw std::runtime_error("failed to open file");
+
     std::stringstream buffer;
-    std::string content;
     buffer << file.rdbuf();
-    content = buffer.str();
-    
+
+    std::string content = buffer.str();
+
+    lexer lex(content);
+
+    return lex.tokenization();
+}
+
+
+
+int main(int argc, char **argv)
+{
+    if (argc != 2)
+    {
+        std::cerr << "Usage: ./program <file>\n";
+        return 1;
+    }
     try
     {
-        lexer lex(content);
 
-        std::vector<token> tokens = lex.tokenization();
+        std::vector<token> tokens = tokenization(argv[1]);
 
-        /*just for testing*/ 
-        // for (size_t i = 0; i < tokens.size(); i++)
-        // {
-        //     std::cout << tokenTypeToString(tokens[i].type);
-        //     if (!tokens[i].value.empty())
-        //         std::cout << " -> \"" << tokens[i].value << "\"";
-        //     std::cout << std::endl;
-        // }
+        /* just for testing */
+        for (size_t i = 0; i < tokens.size(); i++)
+        {
+            std::cout << tokenTypeToString(tokens[i].type);
+
+            if (!tokens[i].value.empty())
+                std::cout << " -> \"" << tokens[i].value << "\"";
+
+            std::cout << std::endl;
+        }
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Lexer error: " << e.what() << '\n';
-        return (1);
+        std::cerr << "Fatal error: " << e.what() << std::endl;
+        return 1;
     }
-    return (0);
+
+    return 0;
 }

@@ -28,7 +28,7 @@ class lexer
 {
     private:
         std::string input;
-        int pos;
+        size_t pos;
         int line;
     
     public:

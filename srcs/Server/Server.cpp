@@ -1,6 +1,8 @@
 #include "webserver.hpp"
 #include "Server.hpp"
 #include <exception>
+#include <arpa/inet.h>
+#include <string.h>
 
 
 Server::IPort Server::ParseServer::parseIPort(std::string iport_str) {
@@ -29,7 +31,7 @@ void Server::IPort::setIp(const std::string& ip) throw(std::exception) {
 	struct in_addr addr;
 	int sucess;
 
-	sucess = inet_pton(AF_INET, ip, &addr) == 1;
+	sucess = inet_pton(AF_INET, ip, &addr);
 	if (sucess == 1){
 		m_addr_ip = addr.s_addr;	
 	}

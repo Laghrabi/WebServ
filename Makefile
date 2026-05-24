@@ -1,6 +1,6 @@
 CPP = c++
 
-# CPP_FLAGS =  -Wall -Wextra -Werror -g
+CPP_FLAGS =  -Wall -Wextra -Werror -g
 
 SRCS := $(wildcard ./srcs/parser/*.cpp) \
 				$(wildcard ./srcs/Server/*.cpp) \

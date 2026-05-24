@@ -1,5 +1,13 @@
 #include "tokenization.hpp"
 
+/**
+ * @brief Creates a token object from its components.
+ *
+ * @param type Token category to assign.
+ * @param value Token text payload.
+ * @param line Source line where the token was recognized.
+ * @return A populated token instance.
+ */
 token lexer::createToken(TokenType type, const std::string& value, int line)
 {
     token tok;
@@ -11,6 +19,16 @@ token lexer::createToken(TokenType type, const std::string& value, int line)
     return (tok);
 }
 
+/**
+ * @brief Scans the input buffer and produces a token stream.
+ *
+ * The lexer skips whitespace, ignores shell-style comments beginning with
+ * '#', handles quoted strings as single tokens, and emits structural tokens
+ * for braces and semicolons.
+ *
+ * @return Token sequence terminated by an EOF token.
+ * @throws std::runtime_error If a quoted string reaches EOF without closing.
+ */
 std::vector<token> lexer::tokenization()
 {
     std::vector<token> tokenz;
@@ -92,6 +110,12 @@ std::vector<token> lexer::tokenization()
     return tokenz;
 }
 
+/**
+ * @brief Converts a token type to a readable name.
+ *
+ * @param type Token category to convert.
+ * @return String name for the supplied token type.
+ */
 std::string lexer::tokenTypeToString(TokenType type)
 {
     switch (type)
@@ -115,6 +139,13 @@ std::string lexer::tokenTypeToString(TokenType type)
     return "UNKNOWN";
 }
 
+/**
+ * @brief Opens a file, reads its contents, and tokenizes the result.
+ *
+ * @param file_name Path to the file to tokenize.
+ * @return Token sequence generated from the file contents.
+ * @throws std::runtime_error If the file cannot be opened.
+ */
 std::vector<token> lexer::tokenizeFile(const std::string& file_name)
 {
     std::ifstream file(file_name.c_str());

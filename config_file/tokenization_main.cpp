@@ -1,5 +1,15 @@
 #include "tokenization.hpp"
 
+/**
+ * @brief Demonstration entry point that tokenizes a configuration file.
+ *
+ * The program expects a single file path argument, prints each token to
+ * standard output, and returns a non-zero exit code on error.
+ *
+ * @param argc Number of command-line arguments.
+ * @param argv Command-line argument vector.
+ * @return 0 on success, 1 on invalid usage or runtime failure.
+ */
 int main(int argc, char **argv)
 {
     if (argc != 2)

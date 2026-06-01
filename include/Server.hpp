@@ -11,7 +11,7 @@ class Server {
 
 	public:
 		struct IPort {
-			IPort(in_addr_t addr, in_addr_t port): m_addr_ip(addr),
+			IPort(in_addr_t addr, in_port_t port): m_addr_ip(addr),
 			m_port(port){
 			}
 			IPort(){}
@@ -20,6 +20,7 @@ class Server {
 
 			void setIp(in_addr_t addr);
 			void setPort(in_port_t port);
+
 			private:
 			in_addr_t m_addr_ip;	
 			in_port_t m_port;
@@ -27,7 +28,10 @@ class Server {
 		Server();
 
 		struct ParseServer {
-			static IPort parseIPort(std::string iport);
+      static void parseAccessLog(Server &server, std::vector<token>::iterator &it);
+      static void parseServerName(Server &server, std::vector<token>::iterator &it);
+      static void parseIPort(Server &server, std::vector<token>::iterator &it);
+      static void parseIndex(Server &server, std::vector<token>::iterator &it);
 		};
 
 
@@ -42,14 +46,17 @@ class Server {
 				std::string m_upload_dir;
 		};
 
-		std::list<IPort> m_addr;
+    std::string m_access_location;
+    std::string m_root;
 		std::set<std::string> m_host;
-		std::string m_root;
-		std::list<std::string> m_indexes;
 		std::string m_upload_dir;
 
-	
+		std::list<IPort> m_addr;
 
+		std::list<std::string> m_indexes;
+
+    static in_port_t default_port;
+    static in_port_t default_ip;
 };
 
 Server::IPort parseIPort(std::string iport);

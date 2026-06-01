@@ -7,13 +7,14 @@
 typedef std::string dir_t;
 // namespace 
 
-class Server {
+template <typename Container> class Server {
 
 	public:
+		typedef typename Container::iterator contIter;
+
 		struct IPort {
 			IPort(in_addr_t addr, in_port_t port): m_addr_ip(addr),
-			m_port(port){
-			}
+			m_port(port) {}
 			IPort(){}
 			void setIp(const std::string& ip_str) throw(std::exception);
 			void setPort(const std::string& port_str) throw(std::exception);
@@ -25,18 +26,53 @@ class Server {
 			in_addr_t m_addr_ip;	
 			in_port_t m_port;
 		};
-		Server();
+		Server(){}
 
-		struct ParseServer {
-      static void parseAccessLog(Server &server, std::vector<token>::iterator &it);
-      static void parseServerName(Server &server, std::vector<token>::iterator &it);
-      static void parseIPort(Server &server, std::vector<token>::iterator &it);
-      static void parseIndex(Server &server, std::vector<token>::iterator &it);
-		};
+		void parseIPort(contIter &begin, const contIter& end);
+
+
+
+		void parseAccessLog(contIter &begin, const contIter& end) {
+			(void)begin;(void)end;
+			// if ((*it).type != WORD)
+			// {
+			//   throw std::exception();
+			// }
+			// check if it is valid
+			// server.m_access_location = (*it).value;
+		}
+
+
+		void parseServerName(contIter &begin, const contIter& end) {
+			while (begin != end && (*begin).type == WORD) {
+				m_host.insert((*begin).value);
+				std::cout << (*begin).value << " hell o\n";
+				begin++;
+			}
+		}
+
+		// void Server::parseIPort(std::vector<token>::iterator &it) {
+		// }
+
+
+
+		void parseIndex(contIter &begin, const contIter& end) {
+			(void)begin;
+			(void)end;
+		}
+
+		// void check(Server &server, std::vector<token>::iterator &it, void (*func)(std::string& str)) {
+		//   while ((*it).type != WORD) {
+		//     // check if it is valid
+		//     // (server.m_indexes).push_back((*it).value);
+		//     func((*it).value);
+		//     it++;
+		//   }
+		// }
 
 
 	private:
-		
+
 
 		class Location {
 			public:
@@ -46,8 +82,8 @@ class Server {
 				std::string m_upload_dir;
 		};
 
-    std::string m_access_location;
-    std::string m_root;
+		std::string m_access_location;
+		std::string m_root;
 		std::set<std::string> m_host;
 		std::string m_upload_dir;
 
@@ -55,9 +91,9 @@ class Server {
 
 		std::list<std::string> m_indexes;
 
-    static in_port_t default_port;
-    static in_port_t default_ip;
+		static in_port_t default_port;
+		static in_port_t default_ip;
 };
 
-Server::IPort parseIPort(std::string iport);
+// Server::IPort parseIPort(std::string iport);
 #endif

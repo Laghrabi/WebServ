@@ -5,7 +5,7 @@
 #include "Server.hpp"
 
 class Config {
-	std::list<Server> m_servers;
+	std::list<Server<std::vector<token> > > m_servers;
 };
 
 #endif

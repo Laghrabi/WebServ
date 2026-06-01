@@ -16,15 +16,12 @@ int main(int argc, char **argv){
 		std::cerr << "failed to open file\n";
 		return (1);
 	}
+	std::vector<token> tokens = lexer::tokenizeFile(argv[1]);
+	// print(tokens);
 
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	lexer lex(buffer.str());
-	std::vector<token> tokens = lex.tokenization();
-	print(tokens);
+	ParseConfig<std::vector<token> > parser(tokens);
+	parser.parse();
 
-	ParseConfig parser(tokens);
-
-	Server::ParseServer::parseIPort("1.1.1.1:80");
+	// Server::parseIPort("1.1.1.1:80");
 	return (0);
 }

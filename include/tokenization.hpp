@@ -14,7 +14,7 @@ enum TokenType
     OPEN_BRACE,
     CLOSE_BRACE,
     SEMICOLON,
-    // END_OF_FILE
+    END_OF_FILE
 };
 
 struct token
@@ -22,6 +22,22 @@ struct token
     TokenType        type;
     std::string value;
     int     line;
+		bool operator==(TokenType t) {
+			return (type == t);
+		}
+		bool operator==(std::string str) {
+			return (value == str);
+		}
+
+		bool is(TokenType t) const {
+			return (type == t);
+		}
+		bool is(std::string str) const {
+			return (value == str);
+		}
+		bool is_eof() {
+			return (type == END_OF_FILE);
+		}
 };
 
 class lexer

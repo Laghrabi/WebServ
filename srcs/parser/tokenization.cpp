@@ -105,7 +105,7 @@ std::vector<token> lexer::tokenization()
         pos--;
         tokenz.push_back(createToken(WORD, buffer, line));
     }
-    // tokenz.push_back(createToken(END_OF_FILE, "", line));
+    tokenz.push_back(createToken(END_OF_FILE, "", line));
 
     return tokenz;
 }
@@ -132,8 +132,8 @@ std::string lexer::tokenTypeToString(TokenType type)
         case SEMICOLON:
             return "SEMICOLON";
 
-        // case END_OF_FILE:
-        //     return "EOF";
+        case END_OF_FILE:
+            return "EOF";
     }
 
     return "UNKNOWN";

@@ -10,17 +10,50 @@ typedef std::string dir_t;
 template <typename Container> class Server {
 
 	public:
+
+		static in_port_t default_port;
+		static in_port_t default_ip;
+
 		typedef typename Container::iterator contIter;
 
 		struct IPort {
 			IPort(in_addr_t addr, in_port_t port): m_addr_ip(addr),
 			m_port(port) {}
 			IPort(){}
-			void setIp(const std::string& ip_str) throw(std::exception);
-			void setPort(const std::string& port_str) throw(std::exception);
+			void setIp(const std::string& ip) throw(std::exception) {
+				struct in_addr addr;
+				int sucess;
 
-			void setIp(in_addr_t addr);
-			void setPort(in_port_t port);
+				sucess = inet_pton(AF_INET, ip.c_str(), &addr);
+				if (sucess == 1) {
+					m_addr_ip = addr.s_addr;	
+				}
+				else {
+					if (sucess == 0)	
+					{
+						throw (std::exception());
+					}
+					else {
+						perror("error inet_pton");
+						throw (std::exception());
+					}
+				}
+			}
+
+
+
+			void setPort(const std::string& port) throw(std::exception) {
+				std::stringstream ss(port);
+				ss >> m_port;
+				if (ss.fail())
+					throw (std::exception());
+			}
+
+
+			void setIp(in_addr_t ip) {
+				m_addr_ip = ip;
+			}
+
 
 			private:
 			in_addr_t m_addr_ip;	
@@ -28,36 +61,60 @@ template <typename Container> class Server {
 		};
 		Server(){}
 
-		void parseIPort(contIter &begin, const contIter& end);
+
 
 
 
 		void parseAccessLog(contIter &begin, const contIter& end) {
 			(void)begin;(void)end;
-			// if ((*it).type != WORD)
-			// {
-			//   throw std::exception();
-			// }
 			// check if it is valid
-			// server.m_access_location = (*it).value;
+			m_access_location = (*begin).value;
+			std::cout << "access location = " << m_access_location << "\n";
+			++begin;
 		}
 
 
 		void parseServerName(contIter &begin, const contIter& end) {
 			while (begin != end && (*begin).type == WORD) {
 				m_host.insert((*begin).value);
-				std::cout << (*begin).value << " hell o\n";
+				std::cout << "server name = " << (*begin).value << "\n";
 				begin++;
 			}
 		}
 
-		// void Server::parseIPort(std::vector<token>::iterator &it) {
-		// }
-
-
-
 		void parseIndex(contIter &begin, const contIter& end) {
 			(void)begin;
+			(void)end;
+		}
+
+		void parseIPort(contIter &begin, const contIter& end) {
+			std::string iport_str = (*begin).value;
+			size_t pos;
+			IPort iport(0, 80);
+
+			std::string ip;
+			std::string port;
+
+			if ((pos = iport_str.find(":")) != std::string::npos) {
+				ip = iport_str.substr(0, pos);
+				port = iport_str.substr(pos + 1);
+
+				iport.setPort(ip);
+				iport.setPort(port);
+
+				std::cout << ip << "\n";
+				std::cout << "\n";
+				std::cout << port << "\n";
+
+			}
+			else if (iport_str.find(".") != std::string::npos) {
+				iport.setIp(iport_str);
+			}
+			else {
+				iport.setPort(iport_str);
+			}
+			m_addr.push_back(iport);
+			++begin;
 			(void)end;
 		}
 
@@ -91,8 +148,7 @@ template <typename Container> class Server {
 
 		std::list<std::string> m_indexes;
 
-		static in_port_t default_port;
-		static in_port_t default_ip;
+
 };
 
 // Server::IPort parseIPort(std::string iport);

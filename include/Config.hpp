@@ -4,7 +4,7 @@
 #include "webserver.hpp"
 #include "Server.hpp"
 
-class Config {
+struct Config {
 	std::list<Server<std::vector<token> > > m_servers;
 };
 

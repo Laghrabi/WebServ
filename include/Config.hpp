@@ -2,7 +2,8 @@
 #define _CONFIG_H
 
 #include "webserver.hpp"
-#include "Server.hpp"
+
+template <typename Container> class Server;
 
 struct Config {
 	std::list<Server<std::vector<token> > > m_servers;

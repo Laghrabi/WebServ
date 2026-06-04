@@ -4,7 +4,9 @@
 #include "tokenization.hpp"
 #include "webserver.hpp"
 #include "Config.hpp"
-#include "Server.hpp"
+
+
+template <typename Container> class Server;
 
 template <typename Container> class ParseConfig {
 	protected:
@@ -53,16 +55,11 @@ template <typename Container> class ParseConfig {
 							//  here if we have server ant then nothing
 							throw (ConfigExcept("got server directive witout body", (*m_it).line));
 						}
-						try {
-							if (!(*m_it).is(OPEN_BRACE)) {
-								throw (ConfigExcept("expected OPEN PRACE '{' after server directive and got "
-											+ (*m_it).value, (*m_it).line));
-							parseServer(server);
-							}
+						if (!(*m_it).is(OPEN_BRACE)) {
+							throw (ConfigExcept("expected OPEN PRACE '{' after server directive and got "
+										+ (*m_it).value, (*m_it).line));
 						}
-						catch(const ParseConfig<Container>::ConfigExcept& e) {
-							std::cerr << e.what()	 << "\n";
-						}
+						parseServer(server);
 						m_config.m_servers.push_back(server);
 					}
 					else {
@@ -147,5 +144,8 @@ template <typename Container> class ParseConfig {
 
 	};
 };
+
+
+typedef ParseConfig<TokenCont> ParseConfigVec ;
 
 #endif

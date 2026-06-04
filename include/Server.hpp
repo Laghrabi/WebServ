@@ -3,6 +3,9 @@
 
 #include "webserver.hpp"
 #include <exception>
+#include "ParseConfig.hpp"
+
+
 
 typedef std::string dir_t;
 // namespace 
@@ -20,6 +23,9 @@ template <typename Container> class Server {
 			IPort(in_addr_t addr, in_port_t port): m_addr_ip(addr),
 			m_port(port) {}
 			IPort(){}
+			bool operator==(const IPort& other) {
+				return (m_addr_ip == other.m_addr_ip && m_port == other.m_port);
+			}
 			void setIp(const std::string& ip) throw(std::exception) {
 				struct in_addr addr;
 				int sucess;
@@ -113,6 +119,14 @@ template <typename Container> class Server {
 			else {
 				iport.setPort(iport_str);
 			}
+			if (std::find(m_addr.begin(), m_addr.end(), iport) != m_addr.end())
+			{
+				std::cout << "hey found duplacate";
+				throw (ParseConfig<TokenCont>::ConfigExcept("duplcate iport", (*begin).line));
+			}
+			else {
+				std::cout << (std::find(m_addr.begin(), m_addr.end(), iport) == m_addr.end()) << "\n";
+			}
 			m_addr.push_back(iport);
 			++begin;
 			(void)end;
@@ -144,7 +158,7 @@ template <typename Container> class Server {
 		std::set<std::string> m_host;
 		std::string m_upload_dir;
 
-		std::list<IPort> m_addr;
+		std::vector<IPort> m_addr;
 
 		std::list<std::string> m_indexes;
 

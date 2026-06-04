@@ -9,6 +9,8 @@
 #include <set>
 #include <deque>
 
+#include <algorithm>
+
 #include <iostream>
 #include <fstream>
 
@@ -25,8 +27,10 @@
 #include <iterator>
 #include "tokenization.hpp"
 
+
 typedef std::vector<token> TokenCont;
 
 #include "utils.tpp"
+
 
 #endif

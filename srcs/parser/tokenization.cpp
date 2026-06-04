@@ -63,12 +63,13 @@ std::vector<token> lexer::tokenization()
             tokenz.push_back(createToken(SEMICOLON, ";", line));
             continue;
         }
-        if (c == '"')
+        if (c == '"' || c == '\'')
         {
+            char quote = c;
             int startLine = line;
             pos++;
             std::string buffer;
-            while (pos < input.size() && input[pos] != '"')
+            while (pos < input.size() && input[pos] != quote)
             {
                 if (input[pos] == '\n')
                     line++;

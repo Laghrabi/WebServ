@@ -1,5 +1,6 @@
-#include "ParseConfig.hpp"
+
 #include "Server.hpp"
+#include "ParseConfig.hpp"
 #include "webserver.hpp"
 
 int main(int argc, char **argv){

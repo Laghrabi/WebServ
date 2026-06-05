@@ -6,18 +6,69 @@
 #include "ParseConfig.hpp"
 
 
+template <typename Container> class Location {
+
+	public:
+	typedef typename Container::iterator ContIter;
+
+	typedef void (Location::*HandlerFunc)(ContIter&, const ContIter&);
+	typedef std::map<std::string, HandlerFunc> MapHandler ;
+	static MapHandler s_handlers;
+	void init(void) {
+		s_handlers["index"] = &parseIndex;
+		s_handlers["root"] = &parseRoot;
+		s_handlers["upload_dir"] = &parseUploadDir;
+
+	}
+		std::string m_location;
+		std::string m_root;
+		std::string m_upload_dir;
+		std::list<std::string> m_indexes;
+
+	public:
+		void parseIndex(ContIter &begin, const ContIter& end) {
+			(void)begin;
+			(void)end;
+		}
+		void parseRoot(ContIter &begin, const ContIter& end) {
+			(void)begin;
+			(void)end;
+		}
+		void parseLocation(ContIter &begin, const ContIter& end) {
+			std::string location = (*begin).value;
+			// check location
+			begin++;
+			m_location = location;
+
+			(void)begin;
+			(void)end;
+		}
+		void parseUploadDir(ContIter &begin, const ContIter& end) {
+			// check if upload dir is valid
+			m_upload_dir = (*begin).value;	
+
+			(void)begin;
+			(void)end;
+		}
+};
+
+template<typename T> typename Location<T>::MapHandler Location<T>::s_handlers;
 
 typedef std::string dir_t;
 // namespace 
 
-template <typename Container> class Server {
+template <typename Container> class Server : public Location<Container> {
 
 	public:
+
+		typedef typename Container::iterator ContIter;
+		typedef void (Server::*HandlerFunc)(ContIter&, const ContIter&);
+		typedef std::map<std::string, HandlerFunc> MapHandler ;
+		static MapHandler s_handlers;
 
 		static in_port_t default_port;
 		static in_port_t default_ip;
 
-		typedef typename Container::iterator contIter;
 
 		struct IPort {
 			IPort(in_addr_t addr, in_port_t port): m_addr_ip(addr),
@@ -71,7 +122,7 @@ template <typename Container> class Server {
 
 
 
-		void parseAccessLog(contIter &begin, const contIter& end) {
+		void parseAccessLog(ContIter &begin, const ContIter& end) {
 			(void)begin;(void)end;
 			// check if it is valid
 			m_access_location = (*begin).value;
@@ -80,7 +131,7 @@ template <typename Container> class Server {
 		}
 
 
-		void parseServerName(contIter &begin, const contIter& end) {
+		void parseServerName(ContIter &begin, const ContIter& end) {
 			if ((*begin).type != WORD)
 				throw (std::runtime_error("eror no value"));
 			while (begin != end && (*begin).type == WORD) {
@@ -90,12 +141,8 @@ template <typename Container> class Server {
 			}
 		}
 
-		void parseIndex(contIter &begin, const contIter& end) {
-			(void)begin;
-			(void)end;
-		}
 
-		void parseAutoIndex(contIter &begin, const contIter& end) {
+		void parseAutoIndex(ContIter &begin, const ContIter& end) {
 			(void)end;
 			if (!(*begin).is("on") && !(*begin).is("off")) {
 				throw (ParseConfig<TokenCont>::ConfigExcept("autoindex simple directive expect on or off, unexpected '" + (*begin).value + "'", (*begin).line));
@@ -104,11 +151,13 @@ template <typename Container> class Server {
 			++begin;
 		}
 
-		void parseUploadDir(contIter &begin, const contIter& end) {
+		void parseUploadDir(ContIter &begin, const ContIter& end) {
+			(void)end;
+			(void)begin;
 
 		}
 
-		void parseIPort(contIter &begin, const contIter& end) {
+		void parseIPort(ContIter &begin, const ContIter& end) {
 			std::string iport_str = (*begin).value;
 			size_t pos;
 			IPort iport(0, 80);
@@ -160,14 +209,6 @@ template <typename Container> class Server {
 	private:
 
 
-		class Location {
-			public:
-				std::string m_location;
-				std::list<std::string> m_indexes;
-				std::string m_root;
-				std::string m_upload_dir;
-		};
-
 		std::string m_access_location;
 		std::string m_root;
 		std::set<std::string> m_host;
@@ -177,12 +218,15 @@ template <typename Container> class Server {
 
 		std::list<std::string> m_indexes;
 
-		std::vector<Location> m_locations;
+		std::vector<Location<Container> > m_locations;
 
 		bool m_autoindex;
 
 
 };
+
+ // Server<std::vector<token> >::MapHandler Server<std::vector<token> >::s_handlers;
+template<typename T> typename Server<T>::MapHandler Server<T>::s_handlers;
 
 // Server::IPort parseIPort(std::string iport);
 #endif

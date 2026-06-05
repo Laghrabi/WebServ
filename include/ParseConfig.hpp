@@ -7,21 +7,27 @@
 
 
 template <typename Container> class Server;
+template <typename Container> class Location;
+
 
 template <typename Container> class ParseConfig {
 	protected:
 
 		typedef Server<Container> ServerType;
+		typedef Location<Container> LocationType;
 		typedef typename Container::iterator ContIter;
 
 
 	public:
 
 		typedef void (ServerType::*serverDirHandler)(ContIter&, const ContIter&);
+		typedef void (LocationType::*LocationDirHandler)(ContIter&, const ContIter&);
 
 		std::vector<token>::iterator m_it;
 		std::vector<token>::iterator m_end;
 		std::map<std::string, serverDirHandler> m_dir_handler;
+		std::map<std::string, LocationDirHandler> m_location_handler;
+		
 
 		ParseConfig(Container& tokens) :
 			m_it(tokens.begin()),
@@ -31,12 +37,19 @@ template <typename Container> class ParseConfig {
 		m_dir_handler["server_name"] = &ServerType::parseServerName;
 		m_dir_handler["listen"] = &ServerType::parseIPort;
 		m_dir_handler["autoindex"] = &ServerType::parseAutoIndex;
+
+		m_location_handler["index"] = &LocationType::parseIndex;
+		m_location_handler["root"] = &LocationType::parseRoot;
+		m_location_handler["upload_dir"] = &LocationType::parseUploadDir;
+
 	}
 
-		serverDirHandler getServerDirhandler(std::string &directive_name) {
-			if (m_dir_handler.find(directive_name) == m_dir_handler.end())
+		template <typename T> typename T::HandlerFunc getServerDirHandler(std::string &directive_name) {
+			// const typename T::MapHandler& map_handler = T::s_handlers;
+			std::map<std::string, typename T::HandlerFunc> map_handler = T::s_handlers;
+			if (map_handler.find(directive_name) == map_handler.end())
 				return (NULL);
-			return (m_dir_handler[directive_name]);
+			return (map_handler[directive_name]);
 		}
 
 
@@ -92,37 +105,64 @@ template <typename Container> class ParseConfig {
 			++m_it;
 		}
 
+		void parseServerLocation(LocationType& location) {
+(void)location;
+			++m_it;
+			if ((*m_it).is(END_OF_FILE)) {
+				//  here if we have server ant then nothing
+				throw (ConfigExcept("got location directive witout body", (*m_it).line));
+			}
+			if (!(*m_it).is(OPEN_BRACE)) {
+				throw (ConfigExcept("expected OPEN PRACE '{' after location directive and got "
+							+ (*m_it).value, (*m_it).line));
+			}
+			// parseServer(server);
+			// m_config.m_servers.push_back(server);
+			;
+		}
+
 		void parseServerDir(ServerType& server) {
+
+			std::string		directive_name;
+			LocationType location;
+
 			while (true) {
 				if (!(*m_it).is_eof() && (*m_it).is(WORD)) {
 					std::cout << "there is a simple server directive \n";
-					parseServerSimpleDir(server);
+					directive_name = (*m_it).value;
+					if (directive_name == "location") {
+						parseServerLocation(location);
+					}
+					else {
+						parseServerSimpleDir<ServerType>(server, "server");
+					}
 				}
 				else {
-					std::cout << "break\n";
-					std::cout << "hey[" << (*m_it).value << "]\n";
 					break ;
 				}
 			}
 		}
 
-		void parseServerSimpleDir(ServerType& server) {
+		template <typename T> void parseServerSimpleDir(T& context, std::string name) {
 			std::string		directive_name = (*m_it).value;
-			serverDirHandler handler = getServerDirhandler(directive_name);
+			// else {
+
+			typename T::HandlerFunc handler = getServerDirHandler<ServerType>(directive_name);
 
 			if (handler == NULL) {
-				throw (ParseConfig<TokenCont>::ConfigExcept("unsopported server directive name", (*m_it).line));
+				throw (ParseConfig<TokenCont>::ConfigExcept("unsopported " + name + "directive name", (*m_it).line));
 			}
 			++m_it;
 			if ((*m_it).is_eof()) {
-				throw (ParseConfig<TokenCont>::ConfigExcept("expected server simple directive value", (*m_it).line));
+				throw (ParseConfig<TokenCont>::ConfigExcept("expected " + name + " simple directive value", (*m_it).line));
 			}
 
-			(server.*handler)(m_it, m_end);
+			(context.*handler)(m_it, m_end);
 			if (!(*m_it).is(SEMICOLON)) {
 				throw (ParseConfig<TokenCont>::ConfigExcept("server simple directive needs SEMICOLON ';' in the end. got " + (*m_it).value, (*m_it).line));
 			}
 			++m_it;
+			// }
 		}
 
 		Config m_config;

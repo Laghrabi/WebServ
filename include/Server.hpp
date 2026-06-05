@@ -93,6 +93,19 @@ template <typename Container> class Server {
 			(void)end;
 		}
 
+		void parseAutoIndex(contIter &begin, const contIter& end) {
+			(void)end;
+			if (!(*begin).is("on") && !(*begin).is("off")) {
+				throw (ParseConfig<TokenCont>::ConfigExcept("autoindex simple directive expect on or off, unexpected '" + (*begin).value + "'", (*begin).line));
+			}
+			m_autoindex = (*begin).value == "on" ? true : false;
+			++begin;
+		}
+
+		void parseUploadDir(contIter &begin, const contIter& end) {
+
+		}
+
 		void parseIPort(contIter &begin, const contIter& end) {
 			std::string iport_str = (*begin).value;
 			size_t pos;
@@ -161,6 +174,10 @@ template <typename Container> class Server {
 		std::vector<IPort> m_addr;
 
 		std::list<std::string> m_indexes;
+
+		std::vector<Location> m_locations;
+
+		bool m_autoindex;
 
 
 };

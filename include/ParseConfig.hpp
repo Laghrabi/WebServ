@@ -30,6 +30,7 @@ template <typename Container> class ParseConfig {
 		m_dir_handler["access_log"] = &ServerType::parseAccessLog;
 		m_dir_handler["server_name"] = &ServerType::parseServerName;
 		m_dir_handler["listen"] = &ServerType::parseIPort;
+		m_dir_handler["autoindex"] = &ServerType::parseAutoIndex;
 	}
 
 		serverDirHandler getServerDirhandler(std::string &directive_name) {
@@ -83,10 +84,10 @@ template <typename Container> class ParseConfig {
 			parseServerDir(server);
 			// }
 			if ((*m_it).is_eof()) {
-				throw (std::runtime_error("expect CLOSE BRACE '}' after server directive"));
+				throw (ParseConfig<TokenCont>::ConfigExcept("expect CLOSE BRACE '}' after server directive", (*m_it).line));
 			}
 			else if (!(*m_it).is(CLOSE_BRACE)) {
-				throw (std::runtime_error("expect CLOSE BRACE '}' after server directive got " + (*m_it).value), (*m_it).line);
+				throw (ParseConfig<TokenCont>::ConfigExcept("expect CLOSE BRACE '}' after server directive got " + (*m_it).value, (*m_it).line));
 			}
 			++m_it;
 		}
@@ -110,16 +111,16 @@ template <typename Container> class ParseConfig {
 			serverDirHandler handler = getServerDirhandler(directive_name);
 
 			if (handler == NULL) {
-				throw (std::runtime_error("unsopported server directive name"));
+				throw (ParseConfig<TokenCont>::ConfigExcept("unsopported server directive name", (*m_it).line));
 			}
 			++m_it;
 			if ((*m_it).is_eof()) {
-				throw (std::runtime_error("expected server simple directive value"));
+				throw (ParseConfig<TokenCont>::ConfigExcept("expected server simple directive value", (*m_it).line));
 			}
 
 			(server.*handler)(m_it, m_end);
 			if (!(*m_it).is(SEMICOLON)) {
-				throw (std::runtime_error("server simple directive needs SEMICOLON ';' in the end. got " + (*m_it).value));
+				throw (ParseConfig<TokenCont>::ConfigExcept("server simple directive needs SEMICOLON ';' in the end. got " + (*m_it).value, (*m_it).line));
 			}
 			++m_it;
 		}

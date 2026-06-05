@@ -81,6 +81,8 @@ template <typename Container> class Server {
 
 
 		void parseServerName(contIter &begin, const contIter& end) {
+			if ((*begin).type != WORD)
+				throw (std::runtime_error("eror no value"));
 			while (begin != end && (*begin).type == WORD) {
 				m_host.insert((*begin).value);
 				std::cout << "server name = " << (*begin).value << "\n";

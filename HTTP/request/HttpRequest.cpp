@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/05/22 18:36:16 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/04 14:53:48 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,8 +145,11 @@ bool	HttpRequest::parseHeaders()
 	else
 	{
 		std::string	key = headerLine.substr(0, colonPos);
+		if (key.empty() || key.find_first_of(" \t") != std::string::npos) {
+			_currentState = ERROR;
+			return (false);
+		}
 		std::string	value = headerLine.substr(colonPos + 1);
-
 		std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 		_headers[key] = trimLeadingSpaces(value);
 		_bufferIndex += headerLine.size() + 2;

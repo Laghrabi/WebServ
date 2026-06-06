@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/04 14:53:48 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/06 17:51:01 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 #include "../../Utils/StringUtils.hpp"
 
 
-int HttpRequest::_fileCounter = 0;
 
 /**
   * @brief Default constructor.
@@ -28,12 +27,7 @@ HttpRequest::HttpRequest() : _currentState(READING_REQUEST_LINE), _bufferIndex(0
 /**
   * @brief Destructor.
   */
-HttpRequest::~HttpRequest() {
-	if (_bodyStream.is_open())
-		_bodyStream.close();
-	if (_currentState != FINISHED)
-		cleanupTempFile();
-}
+HttpRequest::~HttpRequest() {}
 
 /**
  * @brief Appends incoming data to the internal buffer and drives the parsing state machine.
@@ -128,8 +122,17 @@ bool	HttpRequest::parseHeaders()
 	{
 		std::map<std::string, std::string>::iterator it = _headers.find("content-length");
     	if (it != _headers.end()) {
-        	std::istringstream iss(it->second);
+			std::string	clValue = it->second;
+			if (clValue.empty() || clValue.find_first_not_of("0123456789") != std::string::npos) {
+				_currentState = ERROR;
+				return (false);
+			}
+        	std::istringstream iss(clValue);
         	iss >> _contentLength;
+			if (_contentLength > _MAX_BODY_SIZE) {
+        	_currentState = ERROR;
+        	return (false);
+    }
     	}
 		_currentState = READING_BODY;
 		_bufferIndex += 2;
@@ -150,7 +153,7 @@ bool	HttpRequest::parseHeaders()
 			return (false);
 		}
 		std::string	value = headerLine.substr(colonPos + 1);
-		std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+		std::transform(key.begin(), key.end(), key.begin(), safeToLower);
 		_headers[key] = trimLeadingSpaces(value);
 		_bufferIndex += headerLine.size() + 2;
 
@@ -169,37 +172,18 @@ bool	HttpRequest::parseBody()
 		_currentState = FINISHED;
 		return (true);
 	} else {
-		if (!_bodyStream.is_open()) {
-			_fileCounter++;
-			std::time_t timestamp = std::time(NULL);
-			std::ostringstream oss;
-            oss << "/tmp/upload_" << timestamp << "_" << _fileCounter << ".bin";
-            _bodyFilePath = oss.str();
-			_bodyStream.open(_bodyFilePath.c_str(), std::ios::binary);
-			
-			if (!_bodyStream.is_open()) {
-				_currentState = ERROR;
-				return (false);
-			}
-		}
 		size_t	avaiBytes = _savedData.size() - _bufferIndex;
 		size_t	bytesNeeded = _contentLength - _bodyBytesWritten;
 		size_t bytesToWrite = std::min(avaiBytes, bytesNeeded);
-		_bodyStream.write(_savedData.data() + _bufferIndex, bytesToWrite);
+		_body.insert(_body.end(), _savedData.begin() + _bufferIndex, _savedData.begin() + _bufferIndex + bytesToWrite);
 		_bodyBytesWritten += bytesToWrite;
 		size_t	totalConsumedBytes = _bufferIndex + bytesToWrite;
 		_savedData.erase(_savedData.begin(), _savedData.begin() + totalConsumedBytes);
 		_bufferIndex = 0;
 		if (_bodyBytesWritten == _contentLength) {
-			_bodyStream.close();
 			_currentState = FINISHED;
 			return (true);
 		} else
 			return (false);
 	}
-}
-
-void	HttpRequest::cleanupTempFile() {
-	if (!_bodyFilePath.empty())
-		std::remove(_bodyFilePath.c_str());
 }

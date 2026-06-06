@@ -6,12 +6,12 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/05/22 17:56:45 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/06 17:51:03 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef REQUEST_HPP
-# define REQUEST_HPP
+#ifndef HTTP_REQUEST_HPP
+# define HTTP_REQUEST_HPP
 
 # include <iostream>
 # include <vector>
@@ -22,6 +22,7 @@
 # include <algorithm>
 # include <ctime>
 # include <cstdio>
+#include <cctype>
 
 
 /**
@@ -55,16 +56,15 @@ class HttpRequest {
         std::string							_version;
         std::map<std::string, std::string>	_headers;
         size_t                              _contentLength;
-        std::ofstream                        _bodyStream;
-        std::string                         _bodyFilePath;
-        static int                          _fileCounter;
+        std::vector<char>                    _body;
         size_t								_bodyBytesWritten;
+        static const size_t                 _MAX_BODY_SIZE = 10485760;
 
         bool	parseRequestLine();
 		bool	parseHeaders();
 		bool	parseBody();
 		
-        HttpRequest(const HttpRequest& other) ;
+        HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
         
     public:
@@ -72,7 +72,6 @@ class HttpRequest {
         ~HttpRequest();
     
         void	parse(const std::vector<char>& rawBuffer);
-        void    cleanupTempFile();
 
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;
@@ -83,5 +82,7 @@ class HttpRequest {
         const std::string& getBodyFilePath() const;
         ParseState getCurrentState() const;
 };
+
+char	safeToLower(char c);
 
 #endif

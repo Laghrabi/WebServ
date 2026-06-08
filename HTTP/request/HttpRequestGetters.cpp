@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/22 17:57:16 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/08 14:06:51 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/08 14:54:48 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ const std::map<std::string, std::string>& HttpRequest::getHeaders() const {
 std::string HttpRequest::getHeader(const std::string& key) const {
 	std::string normalized = key;
  	std::transform(normalized.begin(), normalized.end(), normalized.begin(), safeToLower);
-	std::map<std::string, std::string>::const_iterator it = _headers.find(key);
+	std::map<std::string, std::string>::const_iterator it = _headers.find(normalized);
 	if (it != _headers.end())
 		return (it->second);
 	return ("");

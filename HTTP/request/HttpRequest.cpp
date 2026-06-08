@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/08 14:21:09 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/08 16:43:42 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,20 +120,35 @@ bool	HttpRequest::parseHeaders()
 	std::string headerLine(_savedData.begin() + _bufferIndex, it);
 	if (headerLine.empty())
 	{
-		std::map<std::string, std::string>::iterator it = _headers.find("content-length");
-    	if (it != _headers.end()) {
-			std::string	clValue = it->second;
+		std::map<std::string, std::string>::iterator itContentLength = _headers.find("content-length");
+		std::map<std::string, std::string>::iterator itTransferEncoding = _headers.find("transfer-encoding");
+		if (itContentLength != _headers.end() && itTransferEncoding != _headers.end()) {
+			_currentState = ERROR;
+        	return (false);
+		}
+    	else if (itContentLength != _headers.end()) {
+			std::string	clValue = itContentLength->second;
 			if (clValue.empty() || clValue.find_first_not_of("0123456789") != std::string::npos) {
 				_currentState = ERROR;
 				return (false);
 			}
         	std::istringstream iss(clValue);
-        	iss >> _contentLength;
+        	if (!(iss >> _contentLength)) {
+				_currentState = ERROR;
+    			return (false);
+			}
 			if (_contentLength > _MAX_BODY_SIZE) {
-        	_currentState = ERROR;
-        	return (false);
-    }
-    	}
+        		_currentState = ERROR;
+        		return (false);
+    		}
+    	} 
+		else if (itTransferEncoding != _headers.end()) {
+			std::string	teValue = itTransferEncoding->second;
+			if (teValue != "chunked") {
+				_currentState = ERROR;
+        		return (false);
+			}
+		}
 		_currentState = READING_BODY;
 		_bufferIndex += 2;
 		return (true);
@@ -162,9 +177,9 @@ bool	HttpRequest::parseHeaders()
 }
 
 /**
- * @brief Streams body data into a temporary file to handle large payloads efficiently.
+ * @brief Appends available body bytes into the in-memory `_body` buffer.
  * 
- * @return true if the entire body has been saved; false if waiting for more data or on stream error.
+ * @return true if the entire body has been received; false if waiting for more data.
  */
 bool	HttpRequest::parseBody()
 {

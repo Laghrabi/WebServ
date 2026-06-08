@@ -11,9 +11,6 @@ INCLUDE_DIR = ./include/
 OBJS = $(SRCS:%.cpp=%.o)
 
 NAME = parser
-TARGET = $(NAME)
-
-$(TARGET): $(NAME)
 
 $(NAME): $(OBJS)
 	echo $(CRCS)
@@ -28,7 +25,9 @@ clean:
 fclean: clean
 	$(RM) $(RM_OPTIONS) $(NAME)
 
-re: fclean $(TARGET)
+re: fclean $(NAME)
 
 test: $(TARGET)
 	./$(TARGET) ./config/test_file.conf
+
+.PHONY: $(NAME)

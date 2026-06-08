@@ -35,7 +35,7 @@ struct token
 		bool is(std::string str) const {
 			return (value == str);
 		}
-		bool is_eof() {
+		bool is_eof() const {
 			return (type == END_OF_FILE);
 		}
 };

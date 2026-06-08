@@ -6,27 +6,31 @@
 #include "ParseConfig.hpp"
 
 
-template <typename Container> class Location {
-
+template <typename Container = std::vector<token> > class Location {
 	public:
-	typedef typename Container::iterator ContIter;
+		typedef typename Container::iterator ContIter;
 
-	typedef void (Location::*HandlerFunc)(ContIter&, const ContIter&);
-	typedef std::map<std::string, HandlerFunc> MapHandler ;
-	static MapHandler s_handlers;
-	void init(void) {
-		s_handlers["index"] = &parseIndex;
-		s_handlers["root"] = &parseRoot;
-		s_handlers["upload_dir"] = &parseUploadDir;
-
-	}
+		typedef void (Location::*HandlerFunc)(ContIter&, const ContIter&);
+		typedef std::map<std::string, HandlerFunc> MapHandler ;
+		static MapHandler s_handlers;
+		static void init(void) {
+			if (s_handlers.empty()) {
+				s_handlers["index"] = &Location::parseIndex;
+				s_handlers["root"] = &Location::parseRoot;
+				s_handlers["upload_dir"] = &Location::parseUploadDir;
+			}
+		}
 		std::string m_location;
 		std::string m_root;
 		std::string m_upload_dir;
 		std::list<std::string> m_indexes;
 
 	public:
+		Location() {
+			init();
+		}
 		void parseIndex(ContIter &begin, const ContIter& end) {
+			std::cout << "all work fine\n";
 			(void)begin;
 			(void)end;
 		}
@@ -47,6 +51,8 @@ template <typename Container> class Location {
 			// check if upload dir is valid
 			m_upload_dir = (*begin).value;	
 
+			++begin;
+
 			(void)begin;
 			(void)end;
 		}
@@ -57,7 +63,7 @@ template<typename T> typename Location<T>::MapHandler Location<T>::s_handlers;
 typedef std::string dir_t;
 // namespace 
 
-template <typename Container> class Server : public Location<Container> {
+template <typename Container = std::vector<token> > class Server : public Location<Container> {
 
 	public:
 
@@ -65,6 +71,14 @@ template <typename Container> class Server : public Location<Container> {
 		typedef void (Server::*HandlerFunc)(ContIter&, const ContIter&);
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
 		static MapHandler s_handlers;
+		static void init() {
+			if (s_handlers.empty()) {
+				s_handlers["access_log"] = &Server::parseAccessLog;
+				s_handlers["server_name"] = &Server::parseServerName;
+				s_handlers["listen"] = &Server::parseIPort;
+				s_handlers["autoindex"] = &Server::parseAutoIndex;	
+			}
+		}
 
 		static in_port_t default_port;
 		static in_port_t default_ip;
@@ -225,7 +239,6 @@ template <typename Container> class Server : public Location<Container> {
 
 };
 
- // Server<std::vector<token> >::MapHandler Server<std::vector<token> >::s_handlers;
 template<typename T> typename Server<T>::MapHandler Server<T>::s_handlers;
 
 // Server::IPort parseIPort(std::string iport);

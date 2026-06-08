@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/06 17:51:03 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/08 14:04:01 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ class HttpRequest {
         std::string							_version;
         std::map<std::string, std::string>	_headers;
         size_t                              _contentLength;
-        std::vector<char>                    _body;
+        std::vector<char>                   _body;
         size_t								_bodyBytesWritten;
         static const size_t                 _MAX_BODY_SIZE = 10485760;
 
@@ -79,7 +79,6 @@ class HttpRequest {
         const std::string& getVersion() const;
         const std::map<std::string, std::string>& getHeaders() const;
         std::string getHeader(const std::string& key) const;
-        const std::string& getBodyFilePath() const;
         ParseState getCurrentState() const;
 };
 

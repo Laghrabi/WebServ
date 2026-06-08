@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/06 17:51:01 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/08 14:21:09 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -154,7 +154,7 @@ bool	HttpRequest::parseHeaders()
 		}
 		std::string	value = headerLine.substr(colonPos + 1);
 		std::transform(key.begin(), key.end(), key.begin(), safeToLower);
-		_headers[key] = trimLeadingSpaces(value);
+		_headers[key] = trimSpaces(value);
 		_bufferIndex += headerLine.size() + 2;
 
 		return(true);
@@ -169,6 +169,8 @@ bool	HttpRequest::parseHeaders()
 bool	HttpRequest::parseBody()
 {
 	if (_contentLength == 0) {
+		_savedData.erase(_savedData.begin(), _savedData.begin() + _bufferIndex);
+ 		_bufferIndex = 0;
 		_currentState = FINISHED;
 		return (true);
 	} else {

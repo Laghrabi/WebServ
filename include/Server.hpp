@@ -5,56 +5,82 @@
 #include <exception>
 #include "ParseConfig.hpp"
 
-
 template <typename Container = std::vector<token> > class Location {
 	public:
 		typedef typename Container::iterator ContIter;
 
-		typedef void (Location::*HandlerFunc)(ContIter&, const ContIter&);
+		typedef void (Location::*HandlerFunc)(ContIter&);
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
 		static MapHandler s_handlers;
+
+		static HandlerFunc getDirectiveHandler(const std::string dir_name) {
+			if (s_handlers.find(dir_name) == s_handlers.end()) {
+				return (NULL);
+			}
+			return (s_handlers[dir_name]);
+		}
+
 		static void init(void) {
 			if (s_handlers.empty()) {
 				s_handlers["index"] = &Location::parseIndex;
 				s_handlers["root"] = &Location::parseRoot;
 				s_handlers["upload_dir"] = &Location::parseUploadDir;
+				s_handlers["access_log"] = &Location::parseAccessLog;
 			}
 		}
 		std::string m_location;
 		std::string m_root;
 		std::string m_upload_dir;
+		std::string m_access_log;
 		std::list<std::string> m_indexes;
+		bool m_autoindex;
 
 	public:
 		Location() {
 			init();
 		}
-		void parseIndex(ContIter &begin, const ContIter& end) {
-			std::cout << "all work fine\n";
-			(void)begin;
-			(void)end;
+
+
+		void parseAutoIndex(ContIter &begin) {
+			
+			if (!begin->is("on") && !begin->is("off")) {
+				throw (ParseConfig<TokenCont>::ConfigExcept("autoindex simple directive expect on or off, unexpected '" + begin->value + "'", begin->line));
+			}
+			m_autoindex = begin->value == "on" ? true : false;
+			++begin;
 		}
-		void parseRoot(ContIter &begin, const ContIter& end) {
-			(void)begin;
-			(void)end;
+
+		void parseIndex(ContIter &begin) {
+			while (begin->is(WORD)) {
+				m_indexes.push_back(begin->value);
+				++begin;
+			}
 		}
-		void parseLocation(ContIter &begin, const ContIter& end) {
-			std::string location = (*begin).value;
+
+		void parseRoot(ContIter &begin) {
+			m_root = begin->value;
+			++begin;
+		}
+
+		void parseLocation(ContIter &begin) {
+			std::string location = begin->value;
 			// check location
 			begin++;
 			m_location = location;
 
 			(void)begin;
-			(void)end;
+			
 		}
-		void parseUploadDir(ContIter &begin, const ContIter& end) {
+		void parseUploadDir(ContIter &begin) {
 			// check if upload dir is valid
-			m_upload_dir = (*begin).value;	
-
+			m_upload_dir = begin->value;	
 			++begin;
+		}
 
-			(void)begin;
-			(void)end;
+		void parseAccessLog(ContIter &begin) {
+			m_access_log = begin->value;
+			std::cout << "access location = " << m_access_log << "\n";
+			++begin;
 		}
 };
 
@@ -68,7 +94,7 @@ template <typename Container = std::vector<token> > class Server : public Locati
 	public:
 
 		typedef typename Container::iterator ContIter;
-		typedef void (Server::*HandlerFunc)(ContIter&, const ContIter&);
+		typedef void (Server::*HandlerFunc)(ContIter&);
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
 		static MapHandler s_handlers;
 		static void init() {
@@ -77,6 +103,9 @@ template <typename Container = std::vector<token> > class Server : public Locati
 				s_handlers["server_name"] = &Server::parseServerName;
 				s_handlers["listen"] = &Server::parseIPort;
 				s_handlers["autoindex"] = &Server::parseAutoIndex;	
+				s_handlers["index"] = &Server::parseIndex;
+				s_handlers["root"] = &Server::parseRoot;
+				s_handlers["upload_dir"] = &Server::parseUploadDir;
 			}
 		}
 
@@ -110,9 +139,6 @@ template <typename Container = std::vector<token> > class Server : public Locati
 					}
 				}
 			}
-
-
-
 			void setPort(const std::string& port) throw(std::exception) {
 				std::stringstream ss(port);
 				ss >> m_port;
@@ -136,43 +162,21 @@ template <typename Container = std::vector<token> > class Server : public Locati
 
 
 
-		void parseAccessLog(ContIter &begin, const ContIter& end) {
-			(void)begin;(void)end;
-			// check if it is valid
-			m_access_location = (*begin).value;
-			std::cout << "access location = " << m_access_location << "\n";
-			++begin;
-		}
 
 
-		void parseServerName(ContIter &begin, const ContIter& end) {
-			if ((*begin).type != WORD)
-				throw (std::runtime_error("eror no value"));
-			while (begin != end && (*begin).type == WORD) {
-				m_host.insert((*begin).value);
-				std::cout << "server name = " << (*begin).value << "\n";
+		void parseServerName(ContIter &begin) {
+			while (begin->is(WORD)) {
+				m_host.insert(begin->value);
+				std::cout << "server name = " << begin->value << "\n";
 				begin++;
 			}
 		}
 
 
-		void parseAutoIndex(ContIter &begin, const ContIter& end) {
-			(void)end;
-			if (!(*begin).is("on") && !(*begin).is("off")) {
-				throw (ParseConfig<TokenCont>::ConfigExcept("autoindex simple directive expect on or off, unexpected '" + (*begin).value + "'", (*begin).line));
-			}
-			m_autoindex = (*begin).value == "on" ? true : false;
-			++begin;
-		}
 
-		void parseUploadDir(ContIter &begin, const ContIter& end) {
-			(void)end;
-			(void)begin;
 
-		}
-
-		void parseIPort(ContIter &begin, const ContIter& end) {
-			std::string iport_str = (*begin).value;
+		void parseIPort(ContIter &begin) {
+			std::string iport_str = begin->value;
 			size_t pos;
 			IPort iport(0, 80);
 
@@ -200,30 +204,25 @@ template <typename Container = std::vector<token> > class Server : public Locati
 			if (std::find(m_addr.begin(), m_addr.end(), iport) != m_addr.end())
 			{
 				std::cout << "hey found duplacate";
-				throw (ParseConfig<TokenCont>::ConfigExcept("duplcate iport", (*begin).line));
+				throw (ParseConfig<TokenCont>::ConfigExcept("duplcate iport", begin->line));
 			}
 			else {
 				std::cout << (std::find(m_addr.begin(), m_addr.end(), iport) == m_addr.end()) << "\n";
 			}
 			m_addr.push_back(iport);
 			++begin;
-			(void)end;
 		}
 
-		// void check(Server &server, std::vector<token>::iterator &it, void (*func)(std::string& str)) {
-		//   while ((*it).type != WORD) {
-		//     // check if it is valid
-		//     // (server.m_indexes).push_back((*it).value);
-		//     func((*it).value);
-		//     it++;
-		//   }
-		// }
-
+		static HandlerFunc getDirectiveHandler(const std::string dir_name) {
+			if (s_handlers.find(dir_name) == s_handlers.end()) {
+				return (NULL);
+			}
+			return (s_handlers[dir_name]);
+		}
 
 	private:
 
 
-		std::string m_access_location;
 		std::string m_root;
 		std::set<std::string> m_host;
 		std::string m_upload_dir;
@@ -234,12 +233,10 @@ template <typename Container = std::vector<token> > class Server : public Locati
 
 		std::vector<Location<Container> > m_locations;
 
-		bool m_autoindex;
 
 
 };
 
 template<typename T> typename Server<T>::MapHandler Server<T>::s_handlers;
 
-// Server::IPort parseIPort(std::string iport);
 #endif

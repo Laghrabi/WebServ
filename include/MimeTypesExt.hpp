@@ -9,8 +9,6 @@
 // the extention
 
 struct MimeTypesExt : public std::map<std::string, std::string> {
-	protected:
-		std::string m_value;
 	public:
 		typedef std::map<std::string, std::string> MAP;
 		typedef std::vector<token>::iterator ContIter;

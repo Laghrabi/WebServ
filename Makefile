@@ -3,7 +3,7 @@ CPP = c++
 CPP_FLAGS =  -std=c++98 -Wall -Wextra -Werror -g
 
 SRCS := $(wildcard ./srcs/parser/*.cpp) \
-				$(wildcard ./srcs/Server/*.cpp) \
+				$(wildcard ./srcs/util/*.cpp) \
 			 ./srcs/main.cpp
 
 INCLUDE_DIR = ./include/
@@ -13,7 +13,6 @@ OBJS = $(SRCS:%.cpp=%.o)
 NAME = parser
 
 $(NAME): $(OBJS)
-	echo $(CRCS)
 	$(CPP) $(CPP_FLAGS) -o $@ $^
 
 %.o: %.cpp

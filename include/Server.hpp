@@ -220,7 +220,7 @@ template <typename Container = std::vector<token> > class Server : public Locati
 			return (s_handlers[dir_name]);
 		}
 
-	private:
+	public:
 
 
 		std::string m_root;

@@ -76,10 +76,9 @@ application/octet-stream, Raw binary data (unknown type)
 				}
 				++m_it;
 			}
-			// ++m_it;
 		}
 
-		template <typename T> void parseContext(T context, void (ParseConfig::*func)(T&), std::string context_name) {
+		template <typename T> void parseContext(T &context, void (ParseConfig::*func)(T&), std::string context_name) {
 			++m_it;
 			if (m_it->is(END_OF_FILE)) {
 				throw (ConfigExcept("got" + context_name + " context witout body", m_it->line));
@@ -90,7 +89,6 @@ application/octet-stream, Raw binary data (unknown type)
 			}
 			++m_it;
 			(this->*func)(context);
-			std::cout << m_it->value << "hey hey\n";
 			if (m_it->is_eof() || !m_it->is(CLOSE_BRACE)) {
 				std::string msg = "expect CLOSE BRACE '}' after " + context_name + " context";
 				if (!m_it->is_eof())
@@ -100,11 +98,7 @@ application/octet-stream, Raw binary data (unknown type)
 			++m_it;
 		}
 
-
-
 		Config parse(void) {
-			Config config;
-
 			std::cout << m_it->value << "hello\n";
 
 			// for (; m_it != m_end; ++m_it) {
@@ -117,14 +111,15 @@ application/octet-stream, Raw binary data (unknown type)
 					}
 					else if (m_it->is("types")) {
 						std::cout << "i find types";
-						parseContext(config.m_types, &ParseConfig::parseAllMimeTypes, "types")	;
+						parseContext(m_config.m_types, &ParseConfig::parseAllMimeTypes, "types")	;
 					}
 					else {
 						break ;
 					}
 				}
 			// }
-			return (config);
+			std::cout << "\nhello " << m_config.m_types.empty() << "\n";
+			return (m_config);
 		}
 
 		void parseServer(ServerType& server) {
@@ -140,6 +135,7 @@ application/octet-stream, Raw binary data (unknown type)
 					path = m_it->value;
 					std::cout << "path is " << path << "\n";
 					parseContext(location, &ParseConfig::parseServerLocation, "location");
+					server.m_locations.push_back(location);
 				}
 				else {
 					parseServerSimpleDir<ServerType>(server, "server");

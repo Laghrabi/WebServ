@@ -25,7 +25,8 @@ int main(int argc, char **argv){
 
 	ParseConfig<std::vector<token> > parser(tokens);
 	try {
-		parser.parse();
+		Config conf = parser.parse();
+		print(conf);
 	}
 	catch (const ParseConfig<TokenCont>::ConfigExcept& e) {
 		std::cerr << e.what() << "\n";

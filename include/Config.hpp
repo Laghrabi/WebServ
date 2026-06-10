@@ -8,7 +8,10 @@ template <typename Container> class Server;
 
 struct Config {
 	MimeTypesExt m_types;
-	std::list<Server<std::vector<token> > > m_servers;
+	std::vector<Server<std::vector<token> > > m_servers;
 };
+
+
+void print(const Config&conf);
 
 #endif

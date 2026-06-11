@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/08 16:43:42 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/10 18:24:49 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,14 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
 				break ;
 			case READING_BODY:
 				if (parseBody() == false)
+					return ;
+				break ;
+			case READING_CHUNK_SIZE:
+				if (parseChunkSize() == false)
+					return ;
+				break ;
+			case READING_CHUNK_DATA:
+				if (parseChunkData() == false)
 					return ;
 				break ;
 			case FINISHED:
@@ -141,6 +149,7 @@ bool	HttpRequest::parseHeaders()
         		_currentState = ERROR;
         		return (false);
     		}
+			_currentState = READING_BODY;
     	} 
 		else if (itTransferEncoding != _headers.end()) {
 			std::string	teValue = itTransferEncoding->second;
@@ -148,15 +157,14 @@ bool	HttpRequest::parseHeaders()
 				_currentState = ERROR;
         		return (false);
 			}
+			_currentState = READING_CHUNK_SIZE;
 		}
-		_currentState = READING_BODY;
 		_bufferIndex += 2;
 		return (true);
 	}
 	
 	size_t	colonPos = headerLine.find(':');
-	if (colonPos == std::string::npos)
-	{
+	if (colonPos == std::string::npos) {
 		_currentState = ERROR;
 		return (false);
 	}
@@ -202,5 +210,35 @@ bool	HttpRequest::parseBody()
 			return (true);
 		} else
 			return (false);
+	}
+}
+
+bool HttpRequest::parseChunkSize() {
+	const std::string	crlf = "\r\n";
+
+	std::vector<char>::iterator it = std::search(
+		_savedData.begin() + _bufferIndex, _savedData.end(),
+		crlf.begin(), crlf.end());
+		
+	if (it == _savedData.end())
+		return (false);
+	
+	std::string chunkedLine(_savedData.begin() + _bufferIndex, it);
+	if (chunkedLine.empty() || chunkedLine.find_first_not_of("0123456789ABCDEFabcdef") != std::string::npos) {
+		_currentState = ERROR;
+		return (false);
+	}
+	std::istringstream iss(chunkedLine);
+	if (!(iss >> std::hex >> _chunkedSize)) {
+		_currentState = ERROR;
+		return (false);
+	} else if (_chunkedSize != 0) {
+		_currentState = READING_CHUNK_DATA;
+		_bufferIndex += chunkedLine.size() + 2;
+		return (true);
+	} else {
+		_currentState = FINISHED;
+		_bufferIndex += chunkedLine.size() + 4;
+		return (true);
 	}
 }

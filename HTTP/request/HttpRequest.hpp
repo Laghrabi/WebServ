@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/08 14:04:01 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/10 18:15:22 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,8 +36,8 @@ enum ParseState {
     READING_REQUEST_LINE,
     READING_HEADERS,
     READING_BODY,
-    //READING_CHUNK_SIZE,
-    //READING_CHUNK_DATA,
+    READING_CHUNK_SIZE,
+    READING_CHUNK_DATA,
     FINISHED,
 	ERROR
 };
@@ -56,6 +56,7 @@ class HttpRequest {
         std::string							_version;
         std::map<std::string, std::string>	_headers;
         size_t                              _contentLength;
+        size_t                              _chunkedSize;
         std::vector<char>                   _body;
         size_t								_bodyBytesWritten;
         static const size_t                 _MAX_BODY_SIZE = 10485760;
@@ -63,6 +64,8 @@ class HttpRequest {
         bool	parseRequestLine();
 		bool	parseHeaders();
 		bool	parseBody();
+        bool    parseChunkSize();
+        bool    parseChunkData();
 		
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);

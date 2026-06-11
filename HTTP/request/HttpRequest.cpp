@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/11 16:18:32 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/11 17:01:14 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -196,6 +196,8 @@ bool	HttpRequest::validateHeaders() {
 		_currentState = READING_CHUNK_SIZE;
 	}
 	_bufferIndex += 2;
+	if (_currentState == READING_HEADERS)
+		_currentState = FINISHED;
 	return (true);
 }
 
@@ -263,8 +265,16 @@ bool HttpRequest::parseChunkSize() {
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);
 	} else {
+		size_t required = chunkedLine.size() + 4;
+ 		if ((_savedData.size() - _bufferIndex) < required)
+ 			return (false);
+ 		if (_savedData[_bufferIndex + chunkedLine.size() + 2] != '\r' ||
+ 			_savedData[_bufferIndex + chunkedLine.size() + 3] != '\n') {
+ 			_currentState = ERROR;
+ 			return (false);
+ 		}
 		_currentState = FINISHED;
-		_bufferIndex += chunkedLine.size() + 4;
+		_bufferIndex += required;
 		return (true);
 	}
 }
@@ -287,10 +297,17 @@ bool	HttpRequest::parseChunkData() {
 		_currentState = ERROR;
 		return (false);
 	}
+	if (_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
+		_currentState = ERROR;
+		return (false);
+	}
 	_body.insert(_body.end(),
 		_savedData.begin() + _bufferIndex,
 		_savedData.begin() + _bufferIndex + _chunkedSize);
-	_bufferIndex += _chunkedSize + 2;
+	size_t	totalConsumedBytes = _bufferIndex + _chunkedSize + 2;
+	_savedData.erase(_savedData.begin(),
+		_savedData.begin() + totalConsumedBytes);
+	_bufferIndex = 0;
 	_currentState = READING_CHUNK_SIZE;
 	return (true);
 }

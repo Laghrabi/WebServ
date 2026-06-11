@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/10 18:15:22 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/11 16:04:30 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,6 +63,7 @@ class HttpRequest {
 
         bool	parseRequestLine();
 		bool	parseHeaders();
+        bool    validateHeaders();
 		bool	parseBody();
         bool    parseChunkSize();
         bool    parseChunkData();

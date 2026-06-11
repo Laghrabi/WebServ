@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/11 17:01:14 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/11 18:02:34 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -196,8 +196,12 @@ bool	HttpRequest::validateHeaders() {
 		_currentState = READING_CHUNK_SIZE;
 	}
 	_bufferIndex += 2;
-	if (_currentState == READING_HEADERS)
+	if (_currentState == READING_HEADERS) {
 		_currentState = FINISHED;
+		_savedData.erase(_savedData.begin(),
+			_savedData.begin() + _bufferIndex);
+ 		_bufferIndex = 0;
+	}
 	return (true);
 }
 
@@ -251,12 +255,18 @@ bool HttpRequest::parseChunkSize() {
 	if (it == _savedData.end())
 		return (false);
 	
-	std::string chunkedLine(_savedData.begin() + _bufferIndex, it);
-	if (chunkedLine.empty() || chunkedLine.find_first_not_of("0123456789ABCDEFabcdef") != std::string::npos) {
+	std::string	 chunkedLine(_savedData.begin() + _bufferIndex, it);
+	const size_t semiPos = chunkedLine.find(';');
+	std::string sizePart;
+	if (semiPos != std::string::npos)
+		sizePart = chunkedLine.substr(0, semiPos);
+	else
+		sizePart = chunkedLine;
+	if (sizePart.empty() || sizePart.find_first_not_of("0123456789ABCDEFabcdef") != std::string::npos) {
 		_currentState = ERROR;
 		return (false);
 	}
-	std::istringstream iss(chunkedLine);
+	std::istringstream iss(sizePart);
 	if (!(iss >> std::hex >> _chunkedSize)) {
 		_currentState = ERROR;
 		return (false);

@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/11 17:24:19 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/12 13:52:43 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ enum ParseState {
     READING_BODY,
     READING_CHUNK_SIZE,
     READING_CHUNK_DATA,
+    READING_TRAILERS,
     FINISHED,
 	ERROR
 };

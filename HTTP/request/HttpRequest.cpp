@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/11 18:02:34 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/12 15:07:42 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,8 +129,13 @@ bool	HttpRequest::parseHeaders()
 		return (false);
 	
 	std::string headerLine(_savedData.begin() + _bufferIndex, it);
-	if (headerLine.empty())
+	if (headerLine.empty()) {
+		if (_currentState == READING_TRAILERS) {
+			_currentState = FINISHED;
+			return (true);
+		}	
 		return (validateHeaders());
+	}
 	
 	size_t	colonPos = headerLine.find(':');
 	if (colonPos == std::string::npos) {
@@ -275,16 +280,9 @@ bool HttpRequest::parseChunkSize() {
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);
 	} else {
-		size_t required = chunkedLine.size() + 4;
- 		if ((_savedData.size() - _bufferIndex) < required)
- 			return (false);
- 		if (_savedData[_bufferIndex + chunkedLine.size() + 2] != '\r' ||
- 			_savedData[_bufferIndex + chunkedLine.size() + 3] != '\n') {
- 			_currentState = ERROR;
- 			return (false);
- 		}
-		_currentState = FINISHED;
-		_bufferIndex += required;
+		
+		_currentState = READING_TRAILERS;
+		_bufferIndex += chunkedLine.size() + 2;
 		return (true);
 	}
 }

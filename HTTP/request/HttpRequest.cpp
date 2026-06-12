@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/12 15:07:42 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/12 15:49:28 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@
   * to READING_REQUEST_LINE and the buffer index to 0.
   */
 HttpRequest::HttpRequest() : _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-							_contentLength(0), _bodyBytesWritten(0) {}
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0) {}
 
 /**
   * @brief Destructor.
@@ -63,6 +63,10 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
 				break ;
 			case READING_CHUNK_DATA:
 				if (parseChunkData() == false)
+					return ;
+				break ;
+			case READING_TRAILERS:
+				if (parseHeaders() == false)
 					return ;
 				break ;
 			case FINISHED:
@@ -131,6 +135,10 @@ bool	HttpRequest::parseHeaders()
 	std::string headerLine(_savedData.begin() + _bufferIndex, it);
 	if (headerLine.empty()) {
 		if (_currentState == READING_TRAILERS) {
+			_bufferIndex += 2;
+ 			_savedData.erase(_savedData.begin(),
+				_savedData.begin() + _bufferIndex);
+ 			_bufferIndex = 0;
 			_currentState = FINISHED;
 			return (true);
 		}	
@@ -276,6 +284,10 @@ bool HttpRequest::parseChunkSize() {
 		_currentState = ERROR;
 		return (false);
 	} else if (_chunkedSize != 0) {
+		if (_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
+			_currentState = ERROR;
+			return (false);
+		}
 		_currentState = READING_CHUNK_DATA;
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);

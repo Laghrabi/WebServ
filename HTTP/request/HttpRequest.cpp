@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/12 15:49:28 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/12 16:16:49 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -284,6 +284,10 @@ bool HttpRequest::parseChunkSize() {
 		_currentState = ERROR;
 		return (false);
 	} else if (_chunkedSize != 0) {
+		if (_chunkedSize > _MAX_BODY_SIZE) {
+            _currentState = ERROR;
+            return (false);
+        }
 		if (_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
 			_currentState = ERROR;
 			return (false);

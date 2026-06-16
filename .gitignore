@@ -1,0 +1,4 @@
+**/*.o
+**/*.swp
+**/webserver
+**/EXE_FILE

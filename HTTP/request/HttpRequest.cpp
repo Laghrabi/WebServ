@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/21 16:37:52 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/21 16:56:42 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,11 +150,13 @@ bool	HttpRequest::parseHeaders()
 	
 	size_t	colonPos = headerLine.find(':');
 	if (colonPos == std::string::npos) {
+		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
 		return (false);
 	} else {
 		std::string	key = headerLine.substr(0, colonPos);
 		if (key.empty() || key.find_first_of(" \t") != std::string::npos) {
+			_statusCode = BAD_REQUEST;
 			_currentState = ERROR;
 			return (false);
 		}
@@ -183,21 +185,25 @@ bool	HttpRequest::validateHeaders() {
 	std::map<std::string, std::string>::iterator itContentLength = _headers.find("content-length");
 	std::map<std::string, std::string>::iterator itTransferEncoding = _headers.find("transfer-encoding");
 	if (itContentLength != _headers.end() && itTransferEncoding != _headers.end()) {
+		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
         return (false);
 	}
     else if (itContentLength != _headers.end()) {
 		std::string	clValue = itContentLength->second;
 		if (clValue.empty() || clValue.find_first_not_of("0123456789") != std::string::npos) {
+			_statusCode = BAD_REQUEST;
 			_currentState = ERROR;
 			return (false);
 		}
         std::istringstream iss(clValue);
         if (!(iss >> _contentLength)) {
+			_statusCode = BAD_REQUEST;
 			_currentState = ERROR;
     		return (false);
 		}
 		if (_contentLength > _MAX_BODY_SIZE) {
+			_statusCode = PAYLOAD_TOO_LARGE;
         	_currentState = ERROR;
         	return (false);
     	}
@@ -206,6 +212,7 @@ bool	HttpRequest::validateHeaders() {
 	else if (itTransferEncoding != _headers.end()) {
 		std::string	teValue = itTransferEncoding->second;
 		if (teValue != "chunked") {
+			_statusCode = NOT_IMPLEMENTED;
 			_currentState = ERROR;
         	return (false);
 		}
@@ -279,19 +286,23 @@ bool HttpRequest::parseChunkSize() {
 	else
 		sizePart = chunkedLine;
 	if (sizePart.empty() || sizePart.find_first_not_of("0123456789ABCDEFabcdef") != std::string::npos) {
+		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
 		return (false);
 	}
 	std::istringstream iss(sizePart);
 	if (!(iss >> std::hex >> _chunkedSize)) {
+		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
 		return (false);
 	} else if (_chunkedSize != 0) {
 		if (_chunkedSize > _MAX_BODY_SIZE) {
+			_statusCode = PAYLOAD_TOO_LARGE;
             _currentState = ERROR;
             return (false);
         }
 		if (_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
+			_statusCode = PAYLOAD_TOO_LARGE;
 			_currentState = ERROR;
 			return (false);
 		}
@@ -321,10 +332,12 @@ bool	HttpRequest::parseChunkData() {
 		return (false);
 	if (_savedData[_bufferIndex + _chunkedSize] != '\r' ||
 		_savedData[_bufferIndex + _chunkedSize + 1] != '\n') {
-		_currentState = ERROR;
-		return (false);
+			_statusCode = BAD_REQUEST;
+			_currentState = ERROR;
+			return (false);
 	}
 	if (_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
+		_statusCode = PAYLOAD_TOO_LARGE;
 		_currentState = ERROR;
 		return (false);
 	}

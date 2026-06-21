@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/21 16:15:41 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/21 16:31:25 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/21 16:39:00 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ bool HttpRequest::uriDecode() {
 		if (i + 2 >= _uri.length()|| 
             !std::isxdigit(static_cast<unsigned char>(_uri[i + 1])) || 
             !std::isxdigit(static_cast<unsigned char>(_uri[i + 2]))) {
-				_statusCode = 400;
+				_statusCode = BAD_REQUEST;
 				_currentState = ERROR;
 				return (false);
 		}
@@ -49,7 +49,7 @@ bool HttpRequest::uriDecode() {
  */
 bool HttpRequest::validateMethod() {
     if (_method != "GET" && _method != "POST" && _method != "DELETE") {
-        _statusCode = 501;
+        _statusCode = NOT_IMPLEMENTED;
         _currentState = ERROR;
         return (false); 
     }
@@ -64,7 +64,7 @@ bool HttpRequest::validateMethod() {
  */
 bool	HttpRequest::validateVersion() {
 	if (_version != "HTTP/1.1") {
-		_statusCode = 505;
+		_statusCode = HTTP_VERSION_NOT_SUPPORTED;
         _currentState = ERROR;
         return (false); 
 	}

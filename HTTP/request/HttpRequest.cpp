@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/21 16:31:32 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/21 16:37:52 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
   * Initializes a new HTTP request, setting the initial parsing state 
   * to READING_REQUEST_LINE and the buffer index to 0.
   */
-HttpRequest::HttpRequest() : _statusCode(200), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
 							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0) {}
 
 /**

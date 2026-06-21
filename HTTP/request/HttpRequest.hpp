@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/21 16:23:58 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/21 16:39:58 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,24 @@ enum ParseState {
     READING_TRAILERS,
     FINISHED,
 	ERROR
+};
+
+/**
+ * @brief Defines standard HTTP status codes used throughout the server.
+ * Maps specific error and success states encountered during request parsing 
+ * and response generation to their corresponding RFC 7231 integer codes. 
+ * This centralizes status management and prevents the use of magic numbers.
+ *
+enum HttpStatus {
+    OK = 200,
+    BAD_REQUEST = 400,
+    NOT_FOUND = 404,
+    METHOD_NOT_ALLOWED = 405,
+    PAYLOAD_TOO_LARGE = 413,
+    URI_TOO_LONG = 414,
+    INTERNAL_SERVER_ERROR = 500,
+    NOT_IMPLEMENTED = 501,
+    HTTP_VERSION_NOT_SUPPORTED = 505
 };
 
 class HttpRequest {

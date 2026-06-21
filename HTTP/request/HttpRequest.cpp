@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/21 16:56:42 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/21 17:05:09 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -182,8 +182,19 @@ bool	HttpRequest::parseHeaders()
  * which immediately transitions the FSM to the ERROR state.
  */
 bool	HttpRequest::validateHeaders() {
+	std::map<std::string, std::string>::iterator itHost = _headers.find("host");
 	std::map<std::string, std::string>::iterator itContentLength = _headers.find("content-length");
 	std::map<std::string, std::string>::iterator itTransferEncoding = _headers.find("transfer-encoding");
+	if (itHost == _headers.end()) {
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return false;
+    }
+	if (_method == "POST" && itContentLength == _headers.end() && itTransferEncoding == _headers.end()) {
+        _statusCode = BODY_LENGTH_REQUIRED;
+        _currentState = ERROR;
+        return false;
+    }
 	if (itContentLength != _headers.end() && itTransferEncoding != _headers.end()) {
 		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;

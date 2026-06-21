@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/21 16:39:58 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/21 16:44:27 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,7 @@ enum ParseState {
  * Maps specific error and success states encountered during request parsing 
  * and response generation to their corresponding RFC 7231 integer codes. 
  * This centralizes status management and prevents the use of magic numbers.
- *
+ */
 enum HttpStatus {
     OK = 200,
     BAD_REQUEST = 400,

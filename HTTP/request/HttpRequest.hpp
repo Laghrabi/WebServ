@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/12 13:52:43 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/19 15:43:42 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,7 @@ class HttpRequest {
 		bool	parseBody();
         bool    parseChunkSize();
         bool    parseChunkData();
+        bool	uriDecode();
 		
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);

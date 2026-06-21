@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/21 15:37:27 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/21 16:31:32 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
   * Initializes a new HTTP request, setting the initial parsing state 
   * to READING_REQUEST_LINE and the buffer index to 0.
   */
-HttpRequest::HttpRequest() : _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+HttpRequest::HttpRequest() : _statusCode(200), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
 							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0) {}
 
 /**
@@ -46,8 +46,11 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
 		switch (_currentState)
 		{
 			case READING_REQUEST_LINE:
-				if (parseRequestLine() == false)
-					return ;
+				if (parseRequestLine() == false ||
+					validateMethod() == false ||
+					validateVersion() == false ||
+					uriDecode() == false)
+						return ;
 				break ;
 			case READING_HEADERS:
 				if (parseHeaders() == false)
@@ -104,7 +107,7 @@ bool	HttpRequest::parseRequestLine()
 		}
 		_bufferIndex += requestLine.size() + 2;
 		_currentState = READING_HEADERS;
-		return (uriDecode());
+		return (true);
 	}
 	else
 	{
@@ -333,32 +336,5 @@ bool	HttpRequest::parseChunkData() {
 		_savedData.begin() + totalConsumedBytes);
 	_bufferIndex = 0;
 	_currentState = READING_CHUNK_SIZE;
-	return (true);
-}
-
-/**
- * @brief Decodes percent-encoded characters in the HTTP request URI.
- * * Iterates through the URI string and replaces valid percent-encoded 
- * hexadecimal sequences (e.g., "%20") with their corresponding ASCII 
- * characters. If an invalid or incomplete percent-encoding sequence 
- * is detected, it transitions the finite state machine to the ERROR state.
- * * @return true if the URI was successfully decoded; false if malformed 
- * percent-encoding was encountered.
- */
-bool HttpRequest::uriDecode() {
-	size_t	i = 0;
-	while ((i = _uri.find('%', i)) != std::string::npos) {
-		if (i + 2 >= _uri.length()|| 
-            !std::isxdigit(static_cast<unsigned char>(_uri[i + 1])) || 
-            !std::isxdigit(static_cast<unsigned char>(_uri[i + 2]))) {
-			_currentState = ERROR;
-			return (false);
-		}
-		std::string	hexStr = _uri.substr(i + 1, 2);
-		long	convertedHex = std::strtol(hexStr.c_str(), NULL, 16);
-		char	convertedChar = static_cast<char>(convertedHex);
-		_uri.replace(i, 3, 1, convertedChar);
-		i++;
-	}
 	return (true);
 }

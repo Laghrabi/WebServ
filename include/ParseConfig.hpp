@@ -30,8 +30,8 @@ template <typename Container = std::vector<token> > class ParseConfig {
 		ServerType::init();
 	}
 
-		template <typename T> void parseServerSimpleDir(T& context, std::string name) {
-			std::string		directive_name = m_it->value;
+		template <typename T> void parseServerSimpleDir(T& context, const std::string& name) {
+			const std::string&		directive_name = m_it->value;
 			std::string err_msg;
 
 			typename T::HandlerFunc handler = T::getDirectiveHandler(directive_name);
@@ -98,27 +98,35 @@ application/octet-stream, Raw binary data (unknown type)
 			++m_it;
 		}
 
-		Config parse(void) {
-			std::cout << m_it->value << "hello\n";
+		bool checkServerConflict(typename Config::ServerCont::const_iterator first, typename Config::ServerCont::const_iterator last,	const ServerType& value, std::string& server_name) {
+			for (; first != last ; first++) {
+				if (value.conflictsWith(*first, server_name))
+				{
+					return (true);
+				}
+			}
+			return (false);
+		}
 
-			// for (; m_it != m_end; ++m_it) {
+		Config parse(void) {
+				int server_begin_line;
 				while (true) {
 					ServerType server;
 					if (m_it->is("server")) {
-						std::cout << "i found a new server\n";
+						server_begin_line = m_it->line;
 						parseContext(server, &ParseConfig::parseServer, "server");
+						std::string server_name;
+						if (checkServerConflict(m_config.m_servers.begin(), m_config.m_servers.end(), server, server_name))
+							throw (ParseConfig<TokenCont>::ConfigExcept("conflict Server Name '" + server_name + "'", server_begin_line));
 						m_config.m_servers.push_back(server);
 					}
 					else if (m_it->is("types")) {
-						std::cout << "i find types";
 						parseContext(m_config.m_types, &ParseConfig::parseAllMimeTypes, "types")	;
 					}
 					else {
 						break ;
 					}
 				}
-			// }
-			std::cout << "\nhello " << m_config.m_types.empty() << "\n";
 			return (m_config);
 		}
 
@@ -133,7 +141,6 @@ application/octet-stream, Raw binary data (unknown type)
 						throw (ConfigExcept("no path after location context", m_it->line));
 					}
 					path = m_it->value;
-					std::cout << "path is " << path << "\n";
 					parseContext(location, &ParseConfig::parseServerLocation, "location");
 					server.m_locations.push_back(location);
 				}
@@ -149,7 +156,6 @@ application/octet-stream, Raw binary data (unknown type)
 				parseServerSimpleDir(location, "location");
 			}
 
-			std::cout << m_it->value << "but but\n";
 			// m_it++;
 		}
 

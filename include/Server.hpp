@@ -40,9 +40,8 @@ template <typename Container = std::vector<token> > class Location {
 			init();
 		}
 
-
 		void parseAutoIndex(ContIter &begin) {
-			
+
 			if (!begin->is("on") && !begin->is("off")) {
 				throw (ParseConfig<TokenCont>::ConfigExcept("autoindex simple directive expect on or off, unexpected '" + begin->value + "'", begin->line));
 			}
@@ -69,7 +68,7 @@ template <typename Container = std::vector<token> > class Location {
 			m_location = location;
 
 			(void)begin;
-			
+
 		}
 		void parseUploadDir(ContIter &begin) {
 			// check if upload dir is valid
@@ -79,7 +78,6 @@ template <typename Container = std::vector<token> > class Location {
 
 		void parseAccessLog(ContIter &begin) {
 			m_access_log = begin->value;
-			std::cout << "access location = " << m_access_log << "\n";
 			++begin;
 		}
 };
@@ -102,7 +100,7 @@ template <typename Container = std::vector<token> > class Server : public Locati
 				s_handlers["access_log"] = &Server::parseAccessLog;
 				s_handlers["server_name"] = &Server::parseServerName;
 				s_handlers["listen"] = &Server::parseIPort;
-				s_handlers["autoindex"] = &Server::parseAutoIndex;	
+				s_handlers["autoindex"] = &Server::parseAutoIndex;
 				s_handlers["index"] = &Server::parseIndex;
 				s_handlers["root"] = &Server::parseRoot;
 				s_handlers["upload_dir"] = &Server::parseUploadDir;
@@ -117,7 +115,7 @@ template <typename Container = std::vector<token> > class Server : public Locati
 			IPort(in_addr_t addr, in_port_t port): m_addr_ip(addr),
 			m_port(port) {}
 			IPort(){}
-			bool operator==(const IPort& other) {
+			bool operator==(const IPort& other) const {
 				return (m_addr_ip == other.m_addr_ip && m_port == other.m_port);
 			}
 			void setIp(const std::string& ip) throw(std::exception) {
@@ -139,6 +137,7 @@ template <typename Container = std::vector<token> > class Server : public Locati
 					}
 				}
 			}
+
 			void setPort(const std::string& port) throw(std::exception) {
 				std::stringstream ss(port);
 				ss >> m_port;
@@ -151,9 +150,25 @@ template <typename Container = std::vector<token> > class Server : public Locati
 				m_addr_ip = ip;
 			}
 
+			const in_port_t& getPort() const {
+				return (m_port);
+			}
+
+			const in_addr_t& getAddr() const {
+				return (m_addr_ip);
+			}
+
+			bool operator<(const IPort& other) const {
+				if (m_addr_ip < other.m_addr_ip)
+					return (true);
+				if (m_port < other.m_port)
+					return (true);
+				return (false);
+			}
+
 
 			private:
-			in_addr_t m_addr_ip;	
+			in_addr_t m_addr_ip;
 			in_port_t m_port;
 		};
 		Server(){}
@@ -166,8 +181,8 @@ template <typename Container = std::vector<token> > class Server : public Locati
 
 		void parseServerName(ContIter &begin) {
 			while (begin->is(WORD)) {
-				m_host.insert(begin->value);
-				std::cout << "server name = " << begin->value << "\n";
+				m_hosts.push_back(begin->value);
+				m_ordered_hosts.insert(begin->value);
 				begin++;
 			}
 		}
@@ -210,6 +225,7 @@ template <typename Container = std::vector<token> > class Server : public Locati
 				std::cout << (std::find(m_addr.begin(), m_addr.end(), iport) == m_addr.end()) << "\n";
 			}
 			m_addr.push_back(iport);
+			m_ordered_addr.insert(iport);
 			++begin;
 		}
 
@@ -222,15 +238,36 @@ template <typename Container = std::vector<token> > class Server : public Locati
 
 	public:
 
+		bool conflictsWith(const Server& other, std::string& server_name) const{
 
-		std::string m_root;
-		std::set<std::string> m_host;
-		std::string m_upload_dir;
+			bool same_host = false;
+			bool same_iport = false;
 
+			for (std::set<std::string>::const_iterator it = other.m_ordered_hosts.begin();it != other.m_ordered_hosts.end() && !same_host; ++it) {
+				if (m_ordered_hosts.find(*it) != m_ordered_hosts.end())	
+				{
+					same_host = true;
+					server_name = *it;
+				}
+			}
+			if (!same_host)
+				return (false);
+
+			for (std::set<Server<std::vector<token> >::IPort>::const_iterator it = other.m_ordered_addr.begin();
+					it != other.m_ordered_addr.end() && !same_iport; ++it) {
+				if (m_ordered_addr.find(*it) != m_ordered_addr.end())	
+					same_iport = true;
+			}
+			if (!same_iport)
+				return (false);
+
+			return (true);
+		}
+
+		std::vector<std::string> m_hosts;
+		std::set<std::string> m_ordered_hosts;
 		std::vector<IPort> m_addr;
-
-		std::list<std::string> m_indexes;
-
+		std::set<IPort> m_ordered_addr;
 		std::vector<Location<Container> > m_locations;
 
 
@@ -238,5 +275,7 @@ template <typename Container = std::vector<token> > class Server : public Locati
 };
 
 template<typename T> typename Server<T>::MapHandler Server<T>::s_handlers;
+
+std::ostream& operator<<(std::ostream& out, const Server<std::vector<token> >::IPort& iport);
 
 #endif

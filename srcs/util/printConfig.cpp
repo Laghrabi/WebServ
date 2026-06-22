@@ -53,33 +53,51 @@ void print_types(const MimeTypesExt &mime, int level) {
 	}
 }
 
-template <typename T> void print_dir(T& start, T& end, std::string directive) {
-	for (;start != end; start++) {
-		std::cout << " "BG_GREEN << *start << " ";
+template <typename T> T next(T it) {
+	return (++it);
+}
+
+template <typename T> void print_dir(const T& directive, const std::string& directive_name, const int level) {
+	if (directive.empty())
+		return ;
+	std::cout << std::string(level, '\t') << COLOR_BLUE << directive_name << COLOR_RESET << "\n";
+	for (typename T::const_iterator it = directive.begin();it != directive.end(); it++) {
+		std::cout << std::string(level + 1, '\t');
+		if (next(it) != directive.end()) {
+			std::cout << "├── '";
+		}
+		else {
+			std::cout << "└── '";
+		}
+		std::cout << COLOR_GREEN << *it << COLOR_RESET"'\n";
 	}
-	std::cout << "\n";
 };
 
-void print_dir(std::string directive, std::string str, int level) {
-	if (!str.empty())
-		std::cout << std::string('\t', level) << COLOR_BRIGHT_CYAN << directive << ": " << str;
+void print_dir(std::string directive, const std::string& str, int level) {
+	if (!directive.empty())
+		std::cout << std::string(level, '\t') << COLOR_BRIGHT_CYAN << str << ": " << directive << "\n";
 }
 
 void print_server(const Server<std::vector<token> >& server, int level) {
 	(void)level;
-	print_dir("root", server.m_root, 2);
-	print_dir("upload directory", server.m_root, 2);
-	print_dir<int>(server.m_indexes.begin(), server.m_indexes.end(), "index");
+	print_dir(server.m_root, "root", 2);
+	print_dir(server.m_root, "upload directory", level);
+	print_dir(server.m_autoindex ? std::string("on") : "off", "autoindex", level);
+
+	print_dir(server.m_indexes, "index", level);
+	print_dir(server.m_hosts, "server_names", level);
+	print_dir(server.m_addr, "addr/port", level);
 }
 
 void print(const Config& conf) {
-	if (!conf.m_types.empty())
-	{
-		std::cout << "hey\n";
-		std::cout << COLOR_GREEN"global types: ";
-		print_types(conf.m_types, 1);
-	}
+	// if (!conf.m_types.empty())
+	// {
+	// 	std::cout << "hey\n";
+	// 	std::cout << COLOR_GREEN"global types: ";
+	// 	print_types(conf.m_types, 1);
+	// }
 	for (std::vector<Server<std::vector<token> > >::const_iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
+		std::cout << COLOR_MAGENTA"new server\n"COLOR_RESET;
 		print_server(*it, 1);
 	}
 }

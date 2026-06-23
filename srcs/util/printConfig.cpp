@@ -78,7 +78,7 @@ void print_dir(std::string directive, const std::string& str, int level) {
 		std::cout << std::string(level, '\t') << COLOR_BRIGHT_CYAN << str << ": " << directive << "\n";
 }
 
-void print_server(const Server<std::vector<token> >& server, int level) {
+void print_server(const ServerType& server, int level) {
 	(void)level;
 	print_dir(server.m_root, "root", 2);
 	print_dir(server.m_root, "upload directory", level);
@@ -96,7 +96,7 @@ void print(const Config& conf) {
 	// 	std::cout << COLOR_GREEN"global types: ";
 	// 	print_types(conf.m_types, 1);
 	// }
-	for (std::vector<Server<std::vector<token> > >::const_iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
+	for (std::list<ServerType>::const_iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
 		std::cout << COLOR_MAGENTA"new server\n"COLOR_RESET;
 		print_server(*it, 1);
 	}

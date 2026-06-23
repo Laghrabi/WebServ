@@ -3,6 +3,7 @@
 #include "Server.hpp"
 #include "ParseConfig.hpp"
 #include "webserver.hpp"
+#include <unistd.h>
 
 int main(int argc, char **argv){
 	if (argc != 2)
@@ -18,19 +19,30 @@ int main(int argc, char **argv){
 		std::cerr << "failed to open file\n";
 		return (1);
 	}
-	std::vector<token> tokens = lexer::tokenizeFile(argv[1]);
-	// for (std::vector<token>::iterator it = tokens.begin(); it != tokens.end(); it++) {
-	// 	std::cout << "[" <<  (*it).value << "]\n";
-	// }
-
-	ParseConfig<std::vector<token> > parser(tokens);
 	try {
-		Config conf = parser.parse();
-		print(conf);
+		std::vector<token> tokens = lexer::tokenizeFile(argv[1]);
+
+		ParseConfig parser(tokens);
+		try {
+			const Config conf = parser.parse();
+			print(conf);
+			std::multimap<Server::IPort, const Server*> hey = conf.m_iport_server;
+
+			for (std::multimap<Server::IPort, const Server*>::const_iterator it = hey.begin(); it != hey.end();) {
+				const Server::IPort& iport =  it->first;
+				std::cout << iport.getPort() << "\n";
+				it = hey.upper_bound(iport);
+				sleep (1);
+			}
+		}
+		catch (const ParseConfig::ConfigExcept& e) {
+			std::cerr << e.what() << "\n";
+		}
 	}
-	catch (const ParseConfig<TokenCont>::ConfigExcept& e) {
-		std::cerr << e.what() << "\n";
+	catch (const std::exception& e){
+
 	}
+
 
 	return (0);
 }

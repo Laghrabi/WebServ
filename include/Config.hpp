@@ -3,13 +3,14 @@
 
 #include "webserver.hpp"
 #include "MimeTypesExt.hpp"
+#include "Server.hpp"
 
-template <typename Container> class Server;
 
 struct Config {
-	typedef std::vector<Server<std::vector<token> > > ServerCont;
+	typedef std::list<Server> ServerCont;
 	MimeTypesExt m_types;
-	std::vector<Server<std::vector<token> > > m_servers;
+	std::multimap<Server::IPort, const Server*> m_iport_server;
+	std::list<Server> m_servers;
 };
 
 

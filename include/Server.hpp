@@ -2,280 +2,65 @@
 #define _SERVER_H
 
 #include "webserver.hpp"
-#include <exception>
-#include "ParseConfig.hpp"
-
-template <typename Container = std::vector<token> > class Location {
-	public:
-		typedef typename Container::iterator ContIter;
-
-		typedef void (Location::*HandlerFunc)(ContIter&);
-		typedef std::map<std::string, HandlerFunc> MapHandler ;
-		static MapHandler s_handlers;
-
-		static HandlerFunc getDirectiveHandler(const std::string dir_name) {
-			if (s_handlers.find(dir_name) == s_handlers.end()) {
-				return (NULL);
-			}
-			return (s_handlers[dir_name]);
-		}
-
-		static void init(void) {
-			if (s_handlers.empty()) {
-				s_handlers["index"] = &Location::parseIndex;
-				s_handlers["root"] = &Location::parseRoot;
-				s_handlers["upload_dir"] = &Location::parseUploadDir;
-				s_handlers["access_log"] = &Location::parseAccessLog;
-			}
-		}
-		std::string m_location;
-		std::string m_root;
-		std::string m_upload_dir;
-		std::string m_access_log;
-		std::list<std::string> m_indexes;
-		bool m_autoindex;
-
-	public:
-		Location() {
-			init();
-		}
-
-		void parseAutoIndex(ContIter &begin) {
-
-			if (!begin->is("on") && !begin->is("off")) {
-				throw (ParseConfig<TokenCont>::ConfigExcept("autoindex simple directive expect on or off, unexpected '" + begin->value + "'", begin->line));
-			}
-			m_autoindex = begin->value == "on" ? true : false;
-			++begin;
-		}
-
-		void parseIndex(ContIter &begin) {
-			while (begin->is(WORD)) {
-				m_indexes.push_back(begin->value);
-				++begin;
-			}
-		}
-
-		void parseRoot(ContIter &begin) {
-			m_root = begin->value;
-			++begin;
-		}
-
-		void parseLocation(ContIter &begin) {
-			std::string location = begin->value;
-			// check location
-			begin++;
-			m_location = location;
-
-			(void)begin;
-
-		}
-		void parseUploadDir(ContIter &begin) {
-			// check if upload dir is valid
-			m_upload_dir = begin->value;	
-			++begin;
-		}
-
-		void parseAccessLog(ContIter &begin) {
-			m_access_log = begin->value;
-			++begin;
-		}
-};
-
-template<typename T> typename Location<T>::MapHandler Location<T>::s_handlers;
+#include "Location.hpp"
 
 typedef std::string dir_t;
 // namespace 
 
-template <typename Container = std::vector<token> > class Server : public Location<Container> {
+class Server : public Location {
 
 	public:
-
-		typedef typename Container::iterator ContIter;
+		typedef std::vector<token> Container;
+		typedef Container::iterator ContIter;
 		typedef void (Server::*HandlerFunc)(ContIter&);
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
 		static MapHandler s_handlers;
-		static void init() {
-			if (s_handlers.empty()) {
-				s_handlers["access_log"] = &Server::parseAccessLog;
-				s_handlers["server_name"] = &Server::parseServerName;
-				s_handlers["listen"] = &Server::parseIPort;
-				s_handlers["autoindex"] = &Server::parseAutoIndex;
-				s_handlers["index"] = &Server::parseIndex;
-				s_handlers["root"] = &Server::parseRoot;
-				s_handlers["upload_dir"] = &Server::parseUploadDir;
-			}
-		}
+
+		static void init();
 
 		static in_port_t default_port;
 		static in_port_t default_ip;
 
-
 		struct IPort {
-			IPort(in_addr_t addr, in_port_t port): m_addr_ip(addr),
-			m_port(port) {}
-			IPort(){}
-			bool operator==(const IPort& other) const {
-				return (m_addr_ip == other.m_addr_ip && m_port == other.m_port);
-			}
-			void setIp(const std::string& ip) throw(std::exception) {
-				struct in_addr addr;
-				int sucess;
 
-				sucess = inet_pton(AF_INET, ip.c_str(), &addr);
-				if (sucess == 1) {
-					m_addr_ip = addr.s_addr;	
-				}
-				else {
-					if (sucess == 0)	
-					{
-						throw (std::exception());
-					}
-					else {
-						perror("error inet_pton");
-						throw (std::exception());
-					}
-				}
-			}
+			IPort();
+			IPort(in_addr_t addr, in_port_t port);
 
-			void setPort(const std::string& port) throw(std::exception) {
-				std::stringstream ss(port);
-				ss >> m_port;
-				if (ss.fail())
-					throw (std::exception());
-			}
+			bool operator==(const IPort& other) const;
+			void setIp(const std::string& ip) throw(std::exception);
+			void setIp(in_addr_t ip);
 
+			void setPort(const std::string& port) throw(std::exception);
 
-			void setIp(in_addr_t ip) {
-				m_addr_ip = ip;
-			}
+			const in_port_t& getPort() const;
+			const in_addr_t& getAddr() const;
 
-			const in_port_t& getPort() const {
-				return (m_port);
-			}
-
-			const in_addr_t& getAddr() const {
-				return (m_addr_ip);
-			}
-
-			bool operator<(const IPort& other) const {
-				if (m_addr_ip < other.m_addr_ip)
-					return (true);
-				if (m_port < other.m_port)
-					return (true);
-				return (false);
-			}
-
+			bool operator<(const IPort& other) const;
 
 			private:
 			in_addr_t m_addr_ip;
 			in_port_t m_port;
 		};
-		Server(){}
 
+		Server();
+		void parseServerName(ContIter &begin);
+		void parseIPort(ContIter &begin);
+		static HandlerFunc getDirectiveHandler(const std::string dir_name);
+		bool conflictsWith(const Server& other, std::string& server_name) const;
+		void make_pair(std::multimap<Server::IPort, const Server*>& iport_server_map) const;
 
-
-
-
-
-
-		void parseServerName(ContIter &begin) {
-			while (begin->is(WORD)) {
-				m_hosts.push_back(begin->value);
-				m_ordered_hosts.insert(begin->value);
-				begin++;
-			}
-		}
-
-
-
-
-		void parseIPort(ContIter &begin) {
-			std::string iport_str = begin->value;
-			size_t pos;
-			IPort iport(0, 80);
-
-			std::string ip;
-			std::string port;
-
-			if ((pos = iport_str.find(":")) != std::string::npos) {
-				ip = iport_str.substr(0, pos);
-				port = iport_str.substr(pos + 1);
-
-				iport.setPort(ip);
-				iport.setPort(port);
-
-				std::cout << ip << "\n";
-				std::cout << "\n";
-				std::cout << port << "\n";
-
-			}
-			else if (iport_str.find(".") != std::string::npos) {
-				iport.setIp(iport_str);
-			}
-			else {
-				iport.setPort(iport_str);
-			}
-			if (std::find(m_addr.begin(), m_addr.end(), iport) != m_addr.end())
-			{
-				std::cout << "hey found duplacate";
-				throw (ParseConfig<TokenCont>::ConfigExcept("duplcate iport", begin->line));
-			}
-			else {
-				std::cout << (std::find(m_addr.begin(), m_addr.end(), iport) == m_addr.end()) << "\n";
-			}
-			m_addr.push_back(iport);
-			m_ordered_addr.insert(iport);
-			++begin;
-		}
-
-		static HandlerFunc getDirectiveHandler(const std::string dir_name) {
-			if (s_handlers.find(dir_name) == s_handlers.end()) {
-				return (NULL);
-			}
-			return (s_handlers[dir_name]);
-		}
-
-	public:
-
-		bool conflictsWith(const Server& other, std::string& server_name) const{
-
-			bool same_host = false;
-			bool same_iport = false;
-
-			for (std::set<std::string>::const_iterator it = other.m_ordered_hosts.begin();it != other.m_ordered_hosts.end() && !same_host; ++it) {
-				if (m_ordered_hosts.find(*it) != m_ordered_hosts.end())	
-				{
-					same_host = true;
-					server_name = *it;
-				}
-			}
-			if (!same_host)
-				return (false);
-
-			for (std::set<Server<std::vector<token> >::IPort>::const_iterator it = other.m_ordered_addr.begin();
-					it != other.m_ordered_addr.end() && !same_iport; ++it) {
-				if (m_ordered_addr.find(*it) != m_ordered_addr.end())	
-					same_iport = true;
-			}
-			if (!same_iport)
-				return (false);
-
-			return (true);
-		}
+		typedef Location LocationType ;
+		typedef ParseConfig ParseConfigType ;
 
 		std::vector<std::string> m_hosts;
 		std::set<std::string> m_ordered_hosts;
 		std::vector<IPort> m_addr;
 		std::set<IPort> m_ordered_addr;
-		std::vector<Location<Container> > m_locations;
-
-
-
+		std::vector<LocationType> m_locations;
 };
 
-template<typename T> typename Server<T>::MapHandler Server<T>::s_handlers;
+std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
 
-std::ostream& operator<<(std::ostream& out, const Server<std::vector<token> >::IPort& iport);
+typedef Server ServerType;
 
 #endif

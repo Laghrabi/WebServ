@@ -2,12 +2,10 @@
 #define _SERVER_H
 
 #include "webserver.hpp"
+#include "RouteConfig.hpp"
 #include "Location.hpp"
 
-typedef std::string dir_t;
-// namespace 
-
-class Server : public Location {
+class Server : public RouteConfig {
 
 	public:
 		typedef std::vector<token> Container;
@@ -47,7 +45,8 @@ class Server : public Location {
 		void parseIPort(ContIter &begin);
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);
 		bool conflictsWith(const Server& other, std::string& server_name) const;
-		void make_pair(std::multimap<Server::IPort, const Server*>& iport_server_map) const;
+		void make_pair(std::multimap<Server::IPort, Server>& iport_server_map) const;
+		~Server();
 
 		typedef Location LocationType ;
 		typedef ParseConfig ParseConfigType ;

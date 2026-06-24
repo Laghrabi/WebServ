@@ -1,9 +1,12 @@
+#include "RouteConfig.hpp"
 #include "webserver.hpp"
 #include <map>
 #include "Server.hpp"
 #include "ParseConfig.hpp"
 
-Server::Server(){}
+Server::Server() : RouteConfig() {
+	init();
+}
 
 void Server::parseServerName(ContIter &begin) {
 	while (begin->is(WORD)) {
@@ -88,14 +91,15 @@ bool Server::conflictsWith(const Server& other, std::string& server_name) const{
 }
 
 void Server::init() {
+	RouteConfig::init();
 	if (s_handlers.empty()) {
+		for (RouteConfig::MapHandler::const_iterator it = RouteConfig::s_handlers.begin(); it != RouteConfig::s_handlers.end(); ++it) {
+			s_handlers[it->first] = it->second;
+		}
 		s_handlers["access_log"] = &Server::parseAccessLog;
 		s_handlers["server_name"] = &Server::parseServerName;
 		s_handlers["listen"] = &Server::parseIPort;
 		s_handlers["autoindex"] = &Server::parseAutoIndex;
-		s_handlers["index"] = &Server::parseIndex;
-		s_handlers["root"] = &Server::parseRoot;
-		s_handlers["upload_dir"] = &Server::parseUploadDir;
 	}
 }
 
@@ -140,7 +144,7 @@ void Server::IPort::setPort(const std::string& port) throw(std::exception) {
 void Server::IPort::setIp(in_addr_t ip) {
 	m_addr_ip = ip;
 }
-
+// . This is the perfect reason to use inheritance over composition.
 const in_port_t& Server::IPort::getPort() const {
 	return (m_port);
 }
@@ -149,9 +153,9 @@ const in_addr_t& Server::IPort::getAddr() const {
 	return (m_addr_ip);
 }
 
-void Server::make_pair(std::multimap<Server::IPort, const Server*>& iport_server_map) const{
+void Server::make_pair(std::multimap<Server::IPort, Server>& iport_server_map) const{
 	for (std::vector<IPort>::const_iterator it = m_addr.begin(); it != m_addr.end(); ++it) {
-		iport_server_map.insert(std::make_pair(*it, this));
+		iport_server_map.insert(std::make_pair(*it, *this));
 	}
 }
 
@@ -169,3 +173,5 @@ std::ostream& operator<<(std::ostream& out, const Server::IPort& iport) {
 }
 
 Server::MapHandler Server::s_handlers;
+
+Server::~Server() {}

@@ -9,7 +9,7 @@
 struct Config {
 	typedef std::list<Server> ServerCont;
 	MimeTypesExt m_types;
-	std::multimap<Server::IPort, const Server*> m_iport_server;
+	std::multimap<Server::IPort, Server> m_iport_server;
 	std::list<Server> m_servers;
 };
 

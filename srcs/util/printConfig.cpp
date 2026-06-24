@@ -1,4 +1,5 @@
 #include "Config.hpp"
+#include "RouteConfig.hpp"
 #include "Server.hpp"
 #include "webserver.hpp"
 #include "tokenization.hpp"
@@ -73,20 +74,42 @@ template <typename T> void print_dir(const T& directive, const std::string& dire
 	}
 };
 
+
+
+void print_max_body_size(const std::size_t max, bool does_exist, int level) {
+	if (does_exist)
+		std::cout << std::string(level, '\t') << COLOR_BRIGHT_CYAN << "max_body_size" << ": " << max << "\n";
+}
+
 void print_dir(std::string directive, const std::string& str, int level) {
 	if (!directive.empty())
 		std::cout << std::string(level, '\t') << COLOR_BRIGHT_CYAN << str << ": " << directive << "\n";
 }
 
+void printRouteConfig(const RouteConfig& conf, int level) {
+	print_dir(conf.m_root, "root", level + 1 );
+	print_dir(conf.m_indexes, "index", level + 1);
+	print_dir(conf.m_autoindex ? std::string("on") : "off", "autoindex", level + 1);
+	print_dir(conf.m_allowed_methods, "allowed methods", level + 1);
+	print_max_body_size(conf.m_max_body_size, conf.m_max_body_size_exist, level + 1);
+}
+void printLocation(const std::vector<Location>& locations, int level) {
+	for (std::vector<Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+		std::cout << std::string(level, '\t') << COLOR_YELLOW << "new location" << COLOR_RESET << "\n";
+		printRouteConfig(*it, level);
+	}
+}
+
+
+
 void print_server(const ServerType& server, int level) {
 	(void)level;
-	print_dir(server.m_root, "root", 2);
-	print_dir(server.m_root, "upload directory", level);
-	print_dir(server.m_autoindex ? std::string("on") : "off", "autoindex", level);
-
-	print_dir(server.m_indexes, "index", level);
 	print_dir(server.m_hosts, "server_names", level);
 	print_dir(server.m_addr, "addr/port", level);
+	const RouteConfig &route_conf = server;
+	printRouteConfig(route_conf, level);
+	printLocation(server.m_locations, level + 1);
+
 }
 
 void print(const Config& conf) {

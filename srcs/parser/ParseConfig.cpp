@@ -22,7 +22,7 @@ Config ParseConfig::parse(void) {
 			if (checkServerConflict(m_config.m_servers.begin(), m_config.m_servers.end(), server, server_name))
 				throw (ParseConfig::ConfigExcept("conflict Server Name '" + server_name + "'", server_begin_line));
 			m_config.m_servers.push_back(server);
-			m_config.m_servers.back().make_pair(m_config.m_iport_server);
+			server.make_pair(m_config.m_iport_server);
 			// m_config.m_iport_server.insert(std::make_pair(T1 x, T2 y));
 		}
 		else if (m_it->is("types")) {

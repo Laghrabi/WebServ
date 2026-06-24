@@ -26,13 +26,13 @@ int main(int argc, char **argv){
 		try {
 			const Config conf = parser.parse();
 			print(conf);
-			std::multimap<Server::IPort, const Server*> hey = conf.m_iport_server;
+			std::multimap<Server::IPort, Server> hey = conf.m_iport_server;
 
-			for (std::multimap<Server::IPort, const Server*>::const_iterator it = hey.begin(); it != hey.end();) {
+			for (std::multimap<Server::IPort, Server>::const_iterator it = hey.begin(); it != hey.end();) {
 				const Server::IPort& iport =  it->first;
 				std::cout << iport.getPort() << "\n";
 				it = hey.upper_bound(iport);
-				sleep (1);
+				// sleep (1);
 			}
 		}
 		catch (const ParseConfig::ConfigExcept& e) {
@@ -42,6 +42,7 @@ int main(int argc, char **argv){
 	catch (const std::exception& e){
 
 	}
+	Location hey;
 
 
 	return (0);

@@ -1,6 +1,8 @@
 #include "RouteConfig.hpp"
 #include "webserver.hpp"
+#include <cstring>
 #include <map>
+#include <sys/socket.h>
 #include "Server.hpp"
 #include "ParseConfig.hpp"
 
@@ -50,9 +52,14 @@ void Server::parseIPort(ContIter &begin) {
 	else {
 		std::cout << (std::find(m_addr.begin(), m_addr.end(), iport) == m_addr.end()) << "\n";
 	}
+	struct sockaddr hey;
 	m_addr.push_back(iport);
 	m_ordered_addr.insert(iport);
 	++begin;
+	struct addrinfo hints;
+	std::memset(&hints, 0, sizeof(hints));
+	hints.ai_addr = iport.getAddr();
+	int success = getaddrinfo("google.com", NULL, );
 }
 
 
@@ -175,3 +182,33 @@ std::ostream& operator<<(std::ostream& out, const Server::IPort& iport) {
 Server::MapHandler Server::s_handlers;
 
 Server::~Server() {}
+
+const sockaddr* Server::IPortV4::get() const {
+	return (reinterpret_cast<const sockaddr*>(&m_addr));
+}
+void Server::IPortV4::setIp(const std::string& ip) {
+
+}
+void Server::IPortV4::setPort(const std::string& port) {
+
+}
+void Server::IPortV4::print() const {
+
+}
+
+
+const sockaddr* Server::IPortV6::get() const {
+	return (reinterpret_cast<const sockaddr*>(&m_addr));
+}
+void Server::IPortV6::setIp(const std::string& ip) {
+}
+void Server::IPortV6::setPort(const std::string& port) {
+}
+void Server::IPortV6::print() const {
+
+}
+bool Server::IPortV6::operator==(const Server::IPortInterface& other) const {
+	return (m_famlily == other.getFamily());
+}
+
+

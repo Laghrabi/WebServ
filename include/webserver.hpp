@@ -27,6 +27,9 @@
 #include <iterator>
 #include "tokenization.hpp"
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 typedef std::vector<token> TokenCont;
 

@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/22 17:57:16 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/11 17:31:42 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/21 16:29:28 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,4 +87,14 @@ ParseState HttpRequest::getCurrentState() const {
 std::vector<char>	HttpRequest::getLeftoverData() const {
 	return (std::vector<char>(_savedData.begin() + _bufferIndex,
 			_savedData.end()));
+}
+
+/**
+ * @brief Retrieves the HTTP status code associated with the request parsing state.
+ * This allows the server response logic to determine the exact reason a 
+ * request failed during parsing (e.g., 400 Bad Request, 501 Not Implemented).
+ * @return The HTTP status code as an integer.
+ */
+int	HttpRequest::getStatusCode() const {
+    return( _statusCode);
 }

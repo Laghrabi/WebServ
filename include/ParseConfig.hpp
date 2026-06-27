@@ -34,6 +34,7 @@ class ParseConfig {
 
 		void parseServerLocation(LocationType& location);
 		
+		void make_pair(const Server& server);
 
 		void parseServer(ServerType& server);
 

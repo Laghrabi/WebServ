@@ -1,4 +1,5 @@
 #include "ParseConfig.hpp"
+#include "Config.hpp"
 #include "Server.hpp"
 #include "tokenization.hpp"
 #include <exception>
@@ -9,6 +10,13 @@ ParseConfig::ParseConfig(Container& tokens) :
 {
 	LocationType::init();
 	ServerType::init();
+}
+
+void ParseConfig::make_pair(const Server& server) {
+	const std::vector<Server::IPort>& iport = server.m_addr;
+	for (std::vector<Server::IPort>::const_iterator it = iport.begin(); it != iport.end(); ++it) {
+		m_config.m_iport_server.insert(*it, server);
+	}
 }
 
 Config ParseConfig::parse(void) {
@@ -22,7 +30,7 @@ Config ParseConfig::parse(void) {
 			if (checkServerConflict(m_config.m_servers.begin(), m_config.m_servers.end(), server, server_name))
 				throw (ParseConfig::ConfigExcept("conflict Server Name '" + server_name + "'", server_begin_line));
 			m_config.m_servers.push_back(server);
-			server.make_pair(m_config.m_iport_server);
+			// server.make_pair(m_config.m_iport_server);
 			// m_config.m_iport_server.insert(std::make_pair(T1 x, T2 y));
 		}
 		else if (m_it->is("types")) {

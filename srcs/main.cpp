@@ -24,16 +24,24 @@ int main(int argc, char **argv){
 
 		ParseConfig parser(tokens);
 		try {
-			const Config conf = parser.parse();
+			Config conf = parser.parse();
 			print(conf);
-			std::multimap<Server::IPort, Server> hey = conf.m_iport_server;
 
-			for (std::multimap<Server::IPort, Server>::const_iterator it = hey.begin(); it != hey.end();) {
-				const Server::IPort& iport =  it->first;
-				std::cout << iport.getPort() << "\n";
-				it = hey.upper_bound(iport);
-				// sleep (1);
+
+			UnorderedMultiMap<Server::IPort, Server>& mymap = conf.m_iport_server;
+
+			for (UnorderedMultiMap<Server::IPort, Server>::iterator it = mymap.begin(); it != mymap.end(); it.nextBound()) {
+				std::cout << "key = " << it.getKey() << "\n";
+				sleep(1);
 			}
+			// std::multimap<Server::IPort, Server> hey = conf.m_iport_server;
+			//
+			// for (std::multimap<Server::IPort, Server>::const_iterator it = hey.begin(); it != hey.end();) {
+			// 	const Server::IPort& iport =  it->first;
+			// 	// std::cout << iport.getPort() << "\n";
+			// 	it = hey.upper_bound(iport);
+			// 	// sleep (1);
+			// }
 		}
 		catch (const ParseConfig::ConfigExcept& e) {
 			std::cerr << e.what() << "\n";
@@ -44,6 +52,24 @@ int main(int argc, char **argv){
 	}
 	Location hey;
 
+	UnorderedMultiMap<int, std::string> h;
+	h.insert(2, "hey");
+	h.insert(2, "heyb");
+	h.insert(1, "heyb");
+	h.insert(2, "heyb");
+	h.insert(2, "heyb");
+	h.insert(5, "5");
+	h.insert(6, "6");
+	h.insert(10, "10");
+	h.insert(10, "10");
+	h.insert(10, "10");
+	h.insert(10, "10");
+
+
+	for (UnorderedMultiMap<int, std::string>::iterator it = h.begin(); it != h.end(); it.nextBound()) {
+			std::cout << "key = " << it.getKey() << "\n";
+			sleep(1);
+	}
 
 	return (0);
 }

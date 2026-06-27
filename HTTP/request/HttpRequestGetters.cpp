@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/22 17:57:16 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/21 16:29:28 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/27 17:48:25 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,4 +97,18 @@ std::vector<char>	HttpRequest::getLeftoverData() const {
  */
 int	HttpRequest::getStatusCode() const {
     return( _statusCode);
+}
+
+/**
+ * @brief Retrieves the core URI path (excluding query string).
+ */
+const std::string&	HttpRequest::getRouteUri() const {
+	return (_routeUri);
+}
+
+/**
+ * @brief Retrieves the request query string (everything after '?').
+ */
+const std::string& HttpRequest::getQueryString() const {
+	return (_queryString);
 }

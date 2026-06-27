@@ -6,6 +6,34 @@
 #include "Location.hpp"
 #include <sys/socket.h>
 
+/**
+ * @brief A node within the routing tree representing a single URI segment.
+ * * Each node corresponds to a specific directory or segment in a URL path (e.g., "api", "v1").
+ * The tree structure allows for fast, segment-by-segment matching of incoming HTTP requests
+ * to their corresponding location configurations.
+ */
+struct RouteNode {
+    std::string segmentName;
+    RouteConfig* config; 
+    std::map<std::string, RouteNode*> children;
+
+	/**
+     * @brief Constructs a new Route Node.
+     * @param name The URI segment string this node represents.
+     */
+    RouteNode(const std::string& name) : segmentName(name), config(NULL) {}
+
+	/**
+     * @brief Recursively deletes the tree to ensure no memory leaks.
+     * C++98 compliant deletion iterator for safely freeing all allocated child nodes.
+     */
+    ~RouteNode() {
+        for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
+            delete it->second;
+        }
+    }
+};
+
 class Server : public RouteConfig {
 
 	public:
@@ -92,6 +120,7 @@ class Server : public RouteConfig {
 		void parseIPort(ContIter &begin);
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);
 		bool conflictsWith(const Server& other, std::string& server_name) const;
+		void buildRouteTree();
 		~Server();
 
 		typedef Location LocationType ;
@@ -102,6 +131,7 @@ class Server : public RouteConfig {
 		std::vector<IPort> m_addr;
 		// std::set<IPort> m_ordered_addr;
 		std::vector<LocationType> m_locations;
+		RouteNode* m_route_tree;
 };
 
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);

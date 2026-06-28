@@ -43,9 +43,12 @@ class Server : public RouteConfig {
 
 		struct IPort {
 			public:
-			const int m_famlily;
-			const std::size_t m_size;
+			int m_famlily;
+			std::size_t m_size;
 			IPort(int family, std::size_t size);
+
+			IPort();
+			IPort(const IPort& other);
 
 			virtual const sockaddr	*get() const;
 
@@ -104,6 +107,10 @@ class Server : public RouteConfig {
 		std::vector<LocationType> m_locations;
 };
 
+std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
+
+std::ostream& operator<<(std::ostream& out, const sockaddr_in6& addr);
+std::ostream& operator<<(std::ostream& out, const sockaddr_in& addr);
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
 
 typedef Server ServerType;

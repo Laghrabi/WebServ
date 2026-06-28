@@ -120,7 +120,7 @@ void print(const Config& conf) {
 	// 	print_types(conf.m_types, 1);
 	// }
 	for (std::list<ServerType>::const_iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
-		std::cout << COLOR_MAGENTA"new server\n"COLOR_RESET;
+		std::cout << COLOR_MAGENTA << "new server\n" << COLOR_RESET;
 		print_server(*it, 1);
 	}
 }

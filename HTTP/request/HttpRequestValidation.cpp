@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/21 16:15:41 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/21 16:39:00 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/27 17:47:15 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,4 +69,25 @@ bool	HttpRequest::validateVersion() {
         return (false); 
 	}
 	return (true);
+}
+
+/**
+ * @brief Separates the request URI into the core route path and the query string.
+ * * Scans the URI for the '?' delimiter. If found, the portion before the delimiter 
+ * is stored in `_routeUri` (used for path matching), and the portion after is 
+ * stored in `_queryString` (used for parameters). If no delimiter exists, the 
+ * entire URI is treated as the route path and the query string is cleared.
+ * * @return true always, as this operation is deterministic and non-failing.
+ */
+bool HttpRequest::splitQueryString() {
+    size_t queryPos = _uri.find('?');
+    
+    if (queryPos != std::string::npos) {
+        _routeUri = _uri.substr(0, queryPos);
+        _queryString = _uri.substr(queryPos + 1);
+    } else {
+        _routeUri = _uri;
+        _queryString = "";
+    }
+    return (true);
 }

@@ -1,4 +1,4 @@
 CompileFlags:
   Add:
-    - "-I/home/hsacr/COMMON_CORE/webserver/work/WebServ/include"
+    - "-I/home/hsacr/COMMON_CORE/webserver/work/WebServer/include"
     - -std=c++98

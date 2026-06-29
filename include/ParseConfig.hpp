@@ -5,20 +5,20 @@
 #include "webserver.hpp"
 #include "Config.hpp"
 #include "MimeTypesExt.hpp"
+#include "tokenization.hpp"
 
 class ParseConfig {
 
 	public:
-
 		// types
-		typedef std::vector<token> Container;
 		typedef Server ServerType;
 		typedef Location LocationType;
-		typedef Container::iterator ContIter;
+		typedef lexer::Container Container;
+		typedef lexer::ContIter ContIter;
 
 	private:
 		Config m_config;
-		Container::iterator m_it;
+		ContIter m_it;
 
 
 	public:

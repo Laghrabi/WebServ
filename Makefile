@@ -10,7 +10,7 @@ INCLUDE_DIR = ./include/
 
 OBJS = $(SRCS:%.cpp=%.o)
 
-NAME = parser
+NAME = webserver
 
 $(NAME): $(OBJS)
 	$(CPP) $(CPP_FLAGS) -o $@ $^
@@ -26,7 +26,7 @@ fclean: clean
 
 re: fclean $(NAME)
 
-test: $(TARGET)
-	./$(TARGET) ./config/test_file.conf
+test: $(NAME)
+	./$(NAME) ./test_config/test.conf
 
 .PHONY: $(NAME)

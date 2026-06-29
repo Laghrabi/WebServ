@@ -48,6 +48,8 @@ class lexer
         int line;
     
     public:
+				typedef std::vector<token> Container;
+				typedef std::vector<token>::const_iterator ContIter;
         lexer(const std::string& content): input(content), pos(0), line(1) {};
         std::vector<token> tokenization();
         static std::vector<token> tokenizeFile(const std::string& file_name);

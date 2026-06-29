@@ -3,6 +3,8 @@
 
 /*          stl containers           */
 
+#include <cstring>
+
 #include <list>
 #include <map>
 #include <vector>
@@ -30,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include "findElem.hpp"
 
 typedef std::vector<token> TokenCont;
 

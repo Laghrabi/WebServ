@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/26 15:39:18 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/29 17:31:47 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,7 @@ enum ParseState {
 enum HttpStatus {
     OK = 200,
     BAD_REQUEST = 400,
+    FORBIDDEN = 403,
     NOT_FOUND = 404,
     METHOD_NOT_ALLOWED = 405,
 	BODY_LENGTH_REQUIRED = 411,
@@ -64,18 +65,15 @@ enum HttpStatus {
 
 class HttpRequest {
     private:
-        ParseState	_currentState;
-
-        // The permanent storage and its bookmark
-        std::vector<char>	_savedData;
-        size_t				_bufferIndex;          
-
-        // Storage for the parsed data
+        ParseState                      	_currentState;
+        std::vector<char>	                _savedData;
+        size_t				                _bufferIndex;          
         int									_statusCode;
         std::string							_method;
         std::string							_uri;
         std::string							_routeUri;
     	std::string							_queryString;
+        std::map<std::string, std::string> _queryParams;
         std::string							_version;
         std::map<std::string, std::string>	_headers;
         size_t                              _contentLength;
@@ -92,8 +90,11 @@ class HttpRequest {
         bool    parseChunkData();
 		bool	validateMethod();
 		bool	validateVersion();
-        bool	uriDecode();
+        bool	decodeString(std::string& target);
+        bool    uriDecode();
 		bool	splitQueryString();
+        bool    parseQueryParams();
+        bool    normalizeUri();
 		
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);

@@ -6,7 +6,7 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/27 17:55:58 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/29 17:10:43 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,9 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
 					validateMethod() == false ||
 					validateVersion() == false ||
 					splitQueryString() == false ||
-					uriDecode() == false)
+					parseQueryParams() == false ||
+					uriDecode() == false ||
+					normalizeUri() == false)
 						return ;
 				break ;
 			case READING_HEADERS:

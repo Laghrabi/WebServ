@@ -27,9 +27,7 @@ int main(int argc, char **argv){
 			Config conf = parser.parse();
 			print(conf);
 
-		for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
-    		it->buildRouteTree();
-		}
+		
 
 			UnorderedMultiMap<Server::IPort, Server>& mymap = conf.m_iport_server;
 
@@ -45,6 +43,9 @@ int main(int argc, char **argv){
 			// 	it = hey.upper_bound(iport);
 			// 	// sleep (1);
 			// }
+			for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
+    			it->buildRouteTree();
+			}
 		}
 		catch (const ParseConfig::ConfigExcept& e) {
 			std::cerr << e.what() << "\n";

@@ -37,24 +37,6 @@ struct RouteNode {
         }
     }
 
-	RouteNode& operator=(const RouteNode& other) {
-        if (this != &other) {
-            segmentName = other.segmentName;
-            config = other.config;
-            
-            for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
-                delete it->second;
-            }
-            children.clear();
-
-            for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
-                 it != other.children.end(); ++it) {
-                this->children[it->first] = new RouteNode(*(it->second));
-            }
-        }
-        return *this;
-    }
-
 	/**
      * @brief Recursively deletes the tree to ensure no memory leaks.
      * C++98 compliant deletion iterator for safely freeing all allocated child nodes.

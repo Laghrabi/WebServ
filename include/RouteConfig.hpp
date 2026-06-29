@@ -8,7 +8,7 @@ class ParseConfig;
 class RouteConfig {
 	protected:
 	typedef std::vector<token> Container;
-	typedef Container::iterator ContIter;
+	typedef Container::const_iterator ContIter;
 
 	typedef void (RouteConfig::*HandlerFunc)(ContIter&);
 	typedef std::map<std::string, HandlerFunc> MapHandler ;

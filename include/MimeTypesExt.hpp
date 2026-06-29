@@ -10,8 +10,8 @@
 
 struct MimeTypesExt : public std::map<std::string, std::string> {
 	public:
+		typedef lexer::ContIter ContIter;
 		typedef std::map<std::string, std::string> MAP;
-		typedef std::vector<token>::iterator ContIter;
 		typedef void (MimeTypesExt::*HandlerFunc)(ContIter&);
 		typedef std::map<std::string, HandlerFunc> MapHandler;
 

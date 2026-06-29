@@ -7,13 +7,15 @@
 #include <sys/socket.h>
 
 class Server : public RouteConfig {
+	protected:
+		typedef std::vector<token> Container;
+		typedef Container::const_iterator ContIter;
+
 	public:
 		typedef void (Server::*HandlerFunc)(ContIter&);
 	protected:
-		typedef std::vector<token> Container;
-		typedef Container::iterator ContIter;
-		typedef std::map<std::string, HandlerFunc> MapHandler ;
 
+		typedef std::map<std::string, HandlerFunc> MapHandler ;
 		static MapHandler s_handlers;
 
 		static in_port_t default_port;

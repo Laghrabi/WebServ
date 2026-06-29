@@ -2,17 +2,19 @@
 #include <utility>
 
 template <class Key, class Value> struct UnorderedMultiMap {
+	private:
 	struct KeyValues {
 		typedef std::deque<Value> ValuesCont;
 		typedef typename std::deque<Value>::iterator iterator;
 		typedef typename std::deque<Value>::const_iterator const_iterator;
+		// std::pair<const Key, Value> m_pair;
 		const Key m_key;
 		ValuesCont m_values;
 
 		typename ValuesCont::iterator m_it;
 
 		public:
-		KeyValues(const Key& key) :m_key(key) {}
+		KeyValues(const Key& key) :m_key(key){}
 		const Key& getKey() const {
 			return (m_key);
 		}
@@ -27,6 +29,7 @@ template <class Key, class Value> struct UnorderedMultiMap {
 		}
 	};
 
+	public:
 	std::list<KeyValues> m_cont_pair;
 	typedef std::list<KeyValues> KeyValuesCont;
 

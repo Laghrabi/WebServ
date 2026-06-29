@@ -149,4 +149,4 @@ void ParseConfig::parseServerLocation(LocationType& location) {
 			while (m_it->is(WORD)) {
 				parseServerSimpleDir(location, "location");
 			}
-		}
+}

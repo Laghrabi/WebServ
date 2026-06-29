@@ -2,8 +2,6 @@
 #include "webserver.hpp"
 #include "RouteConfig.hpp"
 #include "ParseConfig.hpp"
-#include <exception>
-#include <stdexcept>
 
 RouteConfig::MapHandler RouteConfig::s_handlers;
 std::set<std::string> RouteConfig::s_available_methods;

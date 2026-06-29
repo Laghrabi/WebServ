@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include "findElem.hpp"
 
 typedef std::vector<token> TokenCont;
 

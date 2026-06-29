@@ -6,12 +6,7 @@
 class ParseConfig;
 
 class RouteConfig {
-	// class HttpMethods {
-	// 	public:
-	// 	HttpMethods();
-	// };
-
-	public:
+	protected:
 	typedef std::vector<token> Container;
 	typedef Container::iterator ContIter;
 
@@ -21,6 +16,7 @@ class RouteConfig {
 
 	static MapHandler s_handlers;
 
+	public:
 	RouteConfig();
 
 	static HandlerFunc getDirectiveHandler(const std::string dir_name);

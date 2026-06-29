@@ -7,40 +7,20 @@
 #include <sys/socket.h>
 
 class Server : public RouteConfig {
-
 	public:
+		typedef void (Server::*HandlerFunc)(ContIter&);
+	protected:
 		typedef std::vector<token> Container;
 		typedef Container::iterator ContIter;
-		typedef void (Server::*HandlerFunc)(ContIter&);
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
-		static MapHandler s_handlers;
 
-		static void init();
+		static MapHandler s_handlers;
 
 		static in_port_t default_port;
 		static in_port_t default_ip;
 
-		// struct IPort {
-		// 	IPort();
-		// 	IPort(in_addr_t addr, in_port_t port);
-		//
-		// 	struct sockaddr addr;	
-		// 	bool operator==(const IPort& other) const;
-		// 	void setIp(const std::string& ip) throw(std::exception);
-		// 	void setIp(in_addr_t ip);
-		//
-		// 	void setPort(const std::string& port) throw(std::exception);
-		//
-		// 	const in_port_t& getPort() const;
-		// 	const in_addr_t& getAddr() const;
-		//
-		// 	bool operator<(const IPort& other) const;
-		//
-		// 	private:
-		// 	in_addr_t m_addr_ip;
-		// 	in_port_t m_port;
-		// };
-
+	public:	
+		static void init();
 		struct IPort {
 			public:
 			int m_famlily;
@@ -49,13 +29,11 @@ class Server : public RouteConfig {
 
 			IPort();
 			IPort(const IPort& other);
-
-			virtual const sockaddr	*get() const;
-
+			const sockaddr	*get() const;
 			virtual void print() const;
 			virtual bool operator==(const IPort& other) const;
-			bool operator<(const IPort& other) const;
 			addrinfo getAddrHints() const;
+			IPort& operator=(const Server::IPort& other);
 			virtual ~IPort();
 			protected:
 			sockaddr *m_addr;
@@ -71,7 +49,7 @@ class Server : public RouteConfig {
 			virtual void setIp(const std::string& ip);
 			virtual void setPort(const std::string& port);
 			// virtual void print() const;
-			virtual bool operator==(const IPort& other) const;
+			virtual bool operator==(const IPortV4& other) const;
 			bool isStrictIp(const std::string& ip);
 			private:
 			sockaddr_in* m_addr;
@@ -83,7 +61,7 @@ class Server : public RouteConfig {
 			virtual void setIp(const std::string& ip);
 			virtual void setPort(const std::string& port);
 			// virtual void print() const;
-			virtual bool operator==(const IPort& other) const;
+			virtual bool operator==(const IPortV6& other) const;
 			bool isStrictIp(const std::string& ip);
 			private:
 			sockaddr_in6* m_addr;
@@ -101,20 +79,15 @@ class Server : public RouteConfig {
 		typedef ParseConfig ParseConfigType ;
 
 		std::vector<std::string> m_hosts;
-		std::set<std::string> m_ordered_hosts;
 		std::vector<IPort> m_addr;
-		// std::set<IPort> m_ordered_addr;
 		std::vector<LocationType> m_locations;
 };
 
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
-
 std::ostream& operator<<(std::ostream& out, const sockaddr_in6& addr);
 std::ostream& operator<<(std::ostream& out, const sockaddr_in& addr);
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
 
 typedef Server ServerType;
-
-
 
 #endif

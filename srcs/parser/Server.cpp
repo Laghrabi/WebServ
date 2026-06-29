@@ -178,7 +178,11 @@ std::ostream& operator<<(std::ostream& out, const Server::IPort& iport) {
 Server::MapHandler Server::s_handlers;
 
 
-Server::~Server() {}
+Server::~Server() {
+	if (m_route_tree != NULL) {
+        delete m_route_tree; 
+    }
+}
 
 Server::IPort::IPort(int family, std::size_t size) : m_famlily(family), m_size(size) {}
 

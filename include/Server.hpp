@@ -30,24 +30,38 @@ struct RouteNode {
  	* independent of the original.
  	* @param other The RouteNode instance to copy.
  	*/
-	RouteNode(const RouteNode& other) {
-    	this->segmentName = other.segmentName;
-    
-    	this->config = (other.config != NULL) ? new RouteConfig(*(other.config)) : NULL;
-    
-    	for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
-         	it != other.children.end(); ++it) {
-        		this->children[it->first] = new RouteNode(*(it->second));
-    	}
-	}
+	RouteNode(const RouteNode& other) : segmentName(other.segmentName), config(other.config) {
+        for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
+             it != other.children.end(); ++it) {
+            this->children[it->first] = new RouteNode(*(it->second));
+        }
+    }
+
+	RouteNode& operator=(const RouteNode& other) {
+        if (this != &other) {
+            segmentName = other.segmentName;
+            config = other.config; // Shallow copy the observer pointer
+            
+            // Clear existing children
+            for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
+                delete it->second;
+            }
+            children.clear();
+            
+            // Deep copy new children
+            for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
+                 it != other.children.end(); ++it) {
+                this->children[it->first] = new RouteNode(*(it->second));
+            }
+        }
+        return *this;
+    }
 
 	/**
      * @brief Recursively deletes the tree to ensure no memory leaks.
      * C++98 compliant deletion iterator for safely freeing all allocated child nodes.
      */
     ~RouteNode() {
-		delete config;
-
         for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
             delete it->second;
         }

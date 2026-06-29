@@ -273,3 +273,64 @@ std::ostream& operator<<(std::ostream& out, const Server::IPort& iport) {
 	}
 	return (out);
 }
+// void Server::IPortV6::print() const {
+// 	char buffer[INET6_ADDRSTRLEN] =  {0};
+// 	const char *addr_str = inet_ntop(m_famlily, &m_addr.sin6_addr, buffer, INET6_ADDRSTRLEN);
+//
+// 	std::cout << "Ip = " << addr_str << "port = "  << ntohs(m_addr.sin6_port) << "\n";
+// }
+
+/**
+ * @brief Tokenizes a raw URI path into individual segments.
+ * * Splits a path string by the '/' delimiter. Consecutive slashes are ignored, 
+ * ensuring clean tokens (e.g., "/api//users/" becomes ["api", "users"]).
+ * * @param path The raw URI path string to tokenize.
+ * @return A vector of path segments.
+ */
+std::vector<std::string> tokenizeRoutePath(const std::string& path) {
+    std::vector<std::string> tokens;
+    std::string current = "";
+    
+    for (size_t i = 0; i < path.length(); ++i) {
+        if (path[i] == '/') {
+            if (!current.empty()) {
+                tokens.push_back(current);
+                current = "";
+            }
+        } else {
+            current += path[i];
+        }
+    }
+    if (!current.empty()) {
+        tokens.push_back(current);
+    }
+    return tokens;
+}
+
+/**
+ * @brief Constructs the hierarchical routing tree for the server instance.
+ * * Iterates over all parsed location blocks (`m_locations`) and inserts them into 
+ * a Trie-like data structure starting at `m_route_tree`. This transforms flat 
+ * configuration arrays into an optimized, traversable tree. Upon reaching the final 
+ * segment of a parsed location, a pointer to its `LocationType` config is attached 
+ * to the leaf node.
+ */
+void Server::buildRouteTree() {
+    m_route_tree = new RouteNode("/");
+
+    for (size_t i = 0; i < m_locations.size(); ++i) {
+        
+        std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].m_location);
+        RouteNode* currentNode = m_route_tree;
+
+        for (size_t j = 0; j < tokens.size(); ++j) {
+            const std::string& token = tokens[j];
+            
+            if (currentNode->children.find(token) == currentNode->children.end()) {
+                currentNode->children[token] = new RouteNode(token);
+            }
+            currentNode = currentNode->children[token];
+        }
+        currentNode->config = &m_locations[i]; 
+    }
+}

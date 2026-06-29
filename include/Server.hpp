@@ -24,10 +24,30 @@ struct RouteNode {
     RouteNode(const std::string& name) : segmentName(name), config(NULL) {}
 
 	/**
+ 	* @brief Copy constructor for RouteNode, performing a deep copy of the tree.
+ 	* * Deeply copies the `segmentName`, clones the `RouteConfig` (if present),
+ 	* and recursively clones all child nodes to ensure the new tree is completely 
+ 	* independent of the original.
+ 	* @param other The RouteNode instance to copy.
+ 	*/
+	RouteNode(const RouteNode& other) {
+    	this->segmentName = other.segmentName;
+    
+    	this->config = (other.config != NULL) ? new RouteConfig(*(other.config)) : NULL;
+    
+    	for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
+         	it != other.children.end(); ++it) {
+        		this->children[it->first] = new RouteNode(*(it->second));
+    	}
+	}
+
+	/**
      * @brief Recursively deletes the tree to ensure no memory leaks.
      * C++98 compliant deletion iterator for safely freeing all allocated child nodes.
      */
     ~RouteNode() {
+		delete config;
+
         for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
             delete it->second;
         }
@@ -131,7 +151,7 @@ class Server : public RouteConfig {
 		std::vector<IPort> m_addr;
 		// std::set<IPort> m_ordered_addr;
 		std::vector<LocationType> m_locations;
-		RouteNode* m_route_tree;
+		RouteNode m_route_tree;
 };
 
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);

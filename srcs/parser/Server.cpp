@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include "Server.hpp"
 #include "ParseConfig.hpp"
+#include "ParseConfig.hpp"
 
 Server::Server() : RouteConfig() {
 	init();
@@ -108,63 +109,6 @@ void Server::init() {
 	}
 }
 
-// Server::IPort::IPort(in_addr_t addr, in_port_t port) :
-// 	m_addr_ip(addr),
-// 	m_port(port) {}
-//
-//
-// 	bool Server::IPort::operator==(const IPort& other) const {
-// 		return (m_addr_ip == other.m_addr_ip && m_port == other.m_port);
-// 	}
-//
-// void Server::IPort::setIp(const std::string& ip) throw(std::exception) {
-// 	struct in_addr addr;
-// 	int sucess;
-//
-// 	sucess = inet_pton(AF_INET, ip.c_str(), &addr);
-// 	if (sucess == 1) {
-// 		m_addr_ip = addr.s_addr;	
-// 	}
-// 	else {
-// 		if (sucess == 0)	
-// 		{
-// 			throw (std::exception());
-// 		}
-// 		else {
-// 			perror("error inet_pton");
-// 			throw (std::exception());
-// 		}
-// 	}
-// }
-//
-// void Server::IPort::setPort(const std::string& port) throw(std::exception) {
-// 	std::stringstream ss(port);
-// 	ss >> m_port;
-// 	if (ss.fail())
-// 		throw (std::exception());
-// }
-//
-// void Server::IPort::setIp(in_addr_t ip) {
-// 	m_addr_ip = ip;
-// }
-// // . This is the perfect reason to use inheritance over composition.
-// const in_port_t& Server::IPort::getPort() const {
-// 	return (m_port);
-// }
-//
-// const in_addr_t& Server::IPort::getAddr() const {
-// 	return (m_addr_ip);
-// }
-
-
-// bool Server::IPort::operator<(const IPort& other) const {
-// 	if (m_addr_ip < other.m_addr_ip)
-// 		return (true);
-// 	if (m_port < other.m_port)
-// 		return (true);
-// 	return (false);
-// }
-
 
 Server::MapHandler Server::s_handlers;
 
@@ -190,19 +134,23 @@ Server::IPort::IPort(const Server::IPort& other) :
 
 Server::IPort& Server::IPort::operator=(const Server::IPort& other) {
 	delete m_addr;
+	m_famlily = other.m_famlily;
 	if (m_famlily == AF_INET) {
 		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in);
 	}
 	if (m_famlily == AF_INET6) {
 		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in6);
 	}
+	if (!other.m_addr)
+	{
+		std::cerr << "what is goiing on\n";
+	}
 	*m_addr = *other.m_addr;
 	return (*this);
 }
 
 
-Server::IPort::IPort(int family, std::size_t size) : m_famlily(family), m_size(size), m_addr() {
-}
+Server::IPort::IPort(int family, std::size_t size) : m_famlily(family), m_size(size), m_addr() {}
 
 addrinfo Server::IPort::getAddrHints() const {
 	struct addrinfo hints;
@@ -247,54 +195,9 @@ Server::IPort::~IPort(){
 }
 
 
-bool Server::IPortV4::isStrictIp(const std::string& ip) {
-	int success = inet_pton(m_famlily, ip.c_str(), &m_addr->sin_addr);
-	return (success);
-}
-
-Server::IPortV4::IPortV4() : IPort(AF_INET, sizeof(sockaddr_in)) {
-	IPort::m_addr = reinterpret_cast<sockaddr *>(new sockaddr_in());
-	m_addr = reinterpret_cast<sockaddr_in *>(IPort::m_addr);
-}
-
-
-bool Server::IPortV4::operator==(const Server::IPortV4& other) const {
-	return (std::memcmp(&m_addr, &other.m_addr, sizeof(sockaddr_in)));
-}
-
-
-void Server::IPortV4::setIp(const std::string& ip) {
-	addrinfo hints = getAddrHints();
-	addrinfo *res;
-	addrinfo *tmp;
-
-	std::cout << "new setIp \n";
-	if (!isStrictIp(ip))	{
-		std::cout << "not strict " << ip << "\n";
-		int fail = getaddrinfo(ip.c_str(), NULL, &hints, &res);
-		if (fail) {
-			throw (std::runtime_error("error getaddrinfo"));
-		}
-		tmp = res;
-		for (; tmp != NULL; tmp = tmp->ai_next) {
-			sockaddr_in* hey = reinterpret_cast<sockaddr_in *>(tmp->ai_addr);
-			*m_addr = *hey;
-			break;
-		}
-		freeaddrinfo(res);
-	}
-}
-
-void Server::IPortV4::setPort(const std::string& port_str) {
-	in_port_t port;
-	std::stringstream ss(port_str);
-	ss >> port;
-	m_addr->sin_port = htons(port);
-}
-
 Server::IPortV6::IPortV6() : IPort(AF_INET6, sizeof(sockaddr_in6)) {
 	IPort::m_addr = reinterpret_cast<sockaddr *>(new sockaddr_in6());
-	m_addr = reinterpret_cast<sockaddr_in6 *>(IPort::m_addr);
+	m_addr = reinterpret_cast<sockaddr_in6*>(IPort::m_addr);
 }
 
 

@@ -3,6 +3,8 @@
 
 /*          stl containers           */
 
+#include <cstring>
+
 #include <list>
 #include <map>
 #include <vector>

@@ -44,29 +44,8 @@ class Server : public RouteConfig {
 			virtual void setPort(const std::string& port) = 0;
 		};
 
-		struct IPortV4 : public IPort, public ParseIPortInterface{
-			IPortV4();
-			virtual void setIp(const std::string& ip);
-			virtual void setPort(const std::string& port);
-			// virtual void print() const;
-			virtual bool operator==(const IPortV4& other) const;
-			bool isStrictIp(const std::string& ip);
-			private:
-			sockaddr_in* m_addr;
-		};
-
-
-		struct IPortV6 : public IPort, public ParseIPortInterface{
-			IPortV6();
-			virtual void setIp(const std::string& ip);
-			virtual void setPort(const std::string& port);
-			// virtual void print() const;
-			virtual bool operator==(const IPortV6& other) const;
-			bool isStrictIp(const std::string& ip);
-			private:
-			sockaddr_in6* m_addr;
-		};
-
+		struct IPortV4;
+		struct IPortV6;
 
 		Server();
 		void parseServerName(ContIter &begin);
@@ -90,4 +69,6 @@ std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
 
 typedef Server ServerType;
 
+#include "IPortV4.hpp"
+#include "IPortV6.hpp"
 #endif

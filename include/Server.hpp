@@ -40,15 +40,13 @@ struct RouteNode {
 	RouteNode& operator=(const RouteNode& other) {
         if (this != &other) {
             segmentName = other.segmentName;
-            config = other.config; // Shallow copy the observer pointer
+            config = other.config;
             
-            // Clear existing children
             for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
                 delete it->second;
             }
             children.clear();
-            
-            // Deep copy new children
+
             for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
                  it != other.children.end(); ++it) {
                 this->children[it->first] = new RouteNode(*(it->second));

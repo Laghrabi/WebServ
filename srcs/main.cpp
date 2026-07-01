@@ -5,6 +5,7 @@
 #include "webserver.hpp"
 #include <unistd.h>
 #include "Config.hpp"
+#include "ConnectionManager.hpp"
 
 int main(int argc, char **argv){
 	if (argc != 2)
@@ -26,7 +27,10 @@ int main(int argc, char **argv){
 		ParseConfig parser(tokens);
 		try {
 			Config conf = parser.parse();
-			print(conf);
+			ConnectionManager manager(conf);
+			manager.init();
+			manager.run();
+			// print(conf);
 
 		
 

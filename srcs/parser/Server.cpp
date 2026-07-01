@@ -168,6 +168,14 @@ addrinfo Server::IPort::getAddrHints() const {
 	return (hints);
 }
 
+int Server::IPort::getFamily() const {
+	return (m_famlily);
+}
+
+std::size_t Server::IPort::getSize() const {
+	return (m_size);
+}
+
 const sockaddr* Server::IPort::get() const {
 	return (m_addr);
 }

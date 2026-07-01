@@ -77,6 +77,8 @@ class Server : public RouteConfig {
 			virtual void print() const;
 			virtual bool operator==(const IPort& other) const;
 			addrinfo getAddrHints() const;
+			std::size_t getSize() const;
+			int getFamily() const;
 			IPort& operator=(const Server::IPort& other);
 			virtual ~IPort();
 			protected:

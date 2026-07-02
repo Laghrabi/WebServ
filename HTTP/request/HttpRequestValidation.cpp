@@ -6,37 +6,44 @@
 /*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/21 16:15:41 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/27 17:47:15 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/06/29 17:33:03 by claghrab         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "HttpRequest.hpp"
 
 /**
- * @brief Decodes percent-encoded characters in the HTTP request URI.
- * * Iterates through the URI string and replaces valid percent-encoded 
- * hexadecimal sequences (e.g., "%20") with their corresponding ASCII 
- * characters. If an invalid or incomplete percent-encoding sequence 
- * is detected, it transitions the finite state machine to the ERROR state.
- * * @return true if the URI was successfully decoded; false if malformed 
- * percent-encoding was encountered.
+ * @brief Utility to decode percent-encoded characters in a string.
+ * * Replaces "%XX" with the corresponding ASCII character.
+ * @param target The string to decode in-place.
+ * @return true if encoding is valid, false otherwise.
+ */
+bool HttpRequest::decodeString(std::string& target) {
+    size_t i = 0;
+    while ((i = target.find('%', i)) != std::string::npos) {
+        if (i + 2 >= target.length() || 
+            !std::isxdigit(static_cast<unsigned char>(target[i + 1])) || 
+            !std::isxdigit(static_cast<unsigned char>(target[i + 2]))) {
+                return false;
+        }
+        std::string hexStr = target.substr(i + 1, 2);
+        long convertedHex = std::strtol(hexStr.c_str(), NULL, 16);
+        target.replace(i, 3, 1, static_cast<char>(convertedHex));
+        i++;
+    }
+    return true;
+}
+
+/**
+ * @brief Decodes the route URI and handles errors with status codes.
+ * @return true if success, false and sets 400 status on failure.
  */
 bool HttpRequest::uriDecode() {
-	size_t	i = 0;
-	while ((i = _uri.find('%', i)) != std::string::npos) {
-		if (i + 2 >= _uri.length()|| 
-            !std::isxdigit(static_cast<unsigned char>(_uri[i + 1])) || 
-            !std::isxdigit(static_cast<unsigned char>(_uri[i + 2]))) {
-				_statusCode = BAD_REQUEST;
-				_currentState = ERROR;
-				return (false);
-		}
-		std::string	hexStr = _uri.substr(i + 1, 2);
-		long	convertedHex = std::strtol(hexStr.c_str(), NULL, 16);
-		char	convertedChar = static_cast<char>(convertedHex);
-		_uri.replace(i, 3, 1, convertedChar);
-		i++;
-	}
+    if (decodeString(_routeUri) == false) {
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return false;
+    }
 	return (true);
 }
 
@@ -89,5 +96,88 @@ bool HttpRequest::splitQueryString() {
         _routeUri = _uri;
         _queryString = "";
     }
+    return (true);
+}
+
+/**
+ * @brief Parses the query string into a map of key-value parameters.
+ * * Splits the query string by '&' and '=' delimiters. Supports multi-value 
+ * parameters by comma-separating values for duplicate keys. Decodes 
+ * percent-encoded characters in both keys and values.
+ * @return true on success.
+ */
+bool	HttpRequest::parseQueryParams() {
+	if (_queryString.empty())
+		return (true);
+		
+	size_t	startPos = 0;
+	size_t	ampPos = _queryString.find('&');
+
+	while (startPos < _queryString.length()) {
+		std::string	pair;
+		
+		if (ampPos != std::string::npos) {
+			pair = _queryString.substr(startPos, ampPos - startPos);
+			startPos = ampPos + 1;
+			ampPos = _queryString.find('&', startPos);
+		} else {
+			pair = _queryString.substr(startPos);
+			startPos = _queryString.length();
+		}
+		
+		size_t	eqPos = pair.find('=');
+		if (eqPos != std::string::npos) {
+			std::string	key = pair.substr(0, eqPos);
+			std::string	value = pair.substr(eqPos + 1);
+			decodeString(key);
+    		decodeString(value);
+			if (_queryParams.find(key) != _queryParams.end()) {
+        		_queryParams[key] += "," + value;
+    		} else {
+        		_queryParams[key] = value;
+   			}
+		} else {
+			_queryParams[pair] = "";
+		}
+	}
+	return (true);
+}
+
+/**
+ * @brief Normalizes the URI path to resolve '.' and '..' segments.
+ * * Uses a stack-based algorithm to process path segments. Resolves relative 
+ * navigation and prevents directory traversal attacks by returning an error 
+ * if a '..' attempts to go above the root.
+ * @return true if valid, false and sets 403 status if traversal is invalid.
+ */
+bool    HttpRequest::normalizeUri() {
+    std::vector<std::string>    stack;
+    size_t                      start = 0;
+    size_t                      end = 0;
+
+    while (start < _routeUri.length()) {
+        end = _routeUri.find('/', start);
+        if (end == std::string::npos)
+            end = _routeUri.length();
+        std::string segment = _routeUri.substr(start, end - start);
+        start = end + 1;
+        if (segment == "" || segment == ".")
+            continue ;
+        else if (segment == "..") {
+            if (!stack.empty())
+                stack.pop_back();
+            else {
+                _statusCode = FORBIDDEN;
+                _currentState = ERROR;
+                return (false);
+            }
+        } else
+            stack.push_back(segment);         
+    }
+    _routeUri = "";
+    for (int i = 0; i < stack.size(); ++i)
+        _routeUri += "/" + stack[i];
+    if (_routeUri.empty())
+        _routeUri = "/";
     return (true);
 }

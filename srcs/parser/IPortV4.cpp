@@ -6,7 +6,7 @@ Server::IPortV4::IPortV4() : IPort(AF_INET, sizeof(sockaddr_in)) {
 }
 
 bool Server::IPortV4::isStrictIp(const std::string& ip) {
-	int success = inet_pton(m_famlily, ip.c_str(), &m_addr->sin_addr);
+	int success = inet_pton(m_family, ip.c_str(), &m_addr->sin_addr);
 	return (success);
 }
 

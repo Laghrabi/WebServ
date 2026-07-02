@@ -34,6 +34,9 @@
 #include <netdb.h>
 #include "findElem.hpp"
 
+#include <fcntl.h>
+#include <unistd.h>
+
 typedef std::vector<token> TokenCont;
 
 #include "utils.tpp"

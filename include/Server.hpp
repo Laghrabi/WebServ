@@ -67,12 +67,14 @@ class Server : public RouteConfig {
 		static void init();
 		struct IPort {
 			public:
-			int m_famlily;
+			int m_family;
 			std::size_t m_size;
 			IPort(int family, std::size_t size);
 
 			IPort();
 			IPort(const IPort& other);
+			int getFamily() const;
+			socklen_t getSize() const;
 			const sockaddr	*get() const;
 			virtual void print() const;
 			virtual bool operator==(const IPort& other) const;

@@ -22,6 +22,7 @@ void Server::parseServerName(ContIter &begin) {
 	}
 }
 
+
 void Server::parseIPort(ContIter &begin) {
 	std::string iport_str = begin->value;
 	size_t pos;
@@ -120,12 +121,12 @@ Server::IPort::IPort() {
 }
 
 Server::IPort::IPort(const Server::IPort& other) :
-	m_famlily(other.m_famlily),
+	m_family(other.m_family),
 	m_size(other.m_size) {
-	if (m_famlily == AF_INET) {
+	if (m_family == AF_INET) {
 		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in);
 	}
-	if (m_famlily == AF_INET6) {
+	if (m_family == AF_INET6) {
 		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in6);
 	}
 	*m_addr = *other.m_addr;
@@ -134,11 +135,11 @@ Server::IPort::IPort(const Server::IPort& other) :
 
 Server::IPort& Server::IPort::operator=(const Server::IPort& other) {
 	delete m_addr;
-	m_famlily = other.m_famlily;
-	if (m_famlily == AF_INET) {
+	m_family = other.m_family;
+	if (m_family == AF_INET) {
 		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in);
 	}
-	if (m_famlily == AF_INET6) {
+	if (m_family == AF_INET6) {
 		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in6);
 	}
 	if (!other.m_addr)
@@ -146,18 +147,26 @@ Server::IPort& Server::IPort::operator=(const Server::IPort& other) {
 		std::cerr << "what is goiing on\n";
 	}
 	*m_addr = *other.m_addr;
+	m_size = other.m_size;
 	return (*this);
 }
 
 
-Server::IPort::IPort(int family, std::size_t size) : m_famlily(family), m_size(size), m_addr() {}
+Server::IPort::IPort(int family, std::size_t size) : m_family(family), m_size(size), m_addr() {}
+
+int Server::IPort::getFamily() const{
+	return (m_family);
+}
+socklen_t Server::IPort::getSize() const {
+	return (m_size);
+}
 
 addrinfo Server::IPort::getAddrHints() const {
 	struct addrinfo hints;
 
 	std::memset(&hints, 0, sizeof(hints));
 
-	hints.ai_family = m_famlily;
+	hints.ai_family = m_family;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = 0;
 	hints.ai_flags = 0; 
@@ -174,17 +183,17 @@ const sockaddr* Server::IPort::get() const {
 
 void Server::IPort::print() const {
 	std::cout << "hey";
-	if (m_famlily == AF_INET) {
+	if (m_family == AF_INET) {
 		std::cout << *reinterpret_cast<sockaddr_in*>(	m_addr);
 	}
-	else if (m_famlily == AF_INET6) {
+	else if (m_family == AF_INET6) {
 		std::cout << *reinterpret_cast<sockaddr_in6*>(m_addr);
 	}
 }
 
 
 bool Server::IPort::operator==(const Server::IPort& other) const {
-	if (m_famlily != other.m_famlily)
+	if (m_family != other.m_family)
 		return (false);
 	return (std::memcmp(m_addr, other.m_addr, m_size) == 0);
 }
@@ -234,7 +243,7 @@ void Server::IPortV6::setPort(const std::string& port_str) {
 }
 
 bool Server::IPortV6::isStrictIp(const std::string& ip) {
-	int fail = inet_pton(m_famlily, ip.c_str(), &m_addr->sin6_addr);
+	int fail = inet_pton(m_family, ip.c_str(), &m_addr->sin6_addr);
 	return (!fail);
 }
 
@@ -265,17 +274,17 @@ std::ostream& operator<<(std::ostream& out, const sockaddr_in6& addr) {
 
 
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport) {
-	if (iport.m_famlily == AF_INET) {
+	if (iport.m_family == AF_INET) {
 		out << *reinterpret_cast<const sockaddr_in*>(iport.get());
 	}
-	else if (iport.m_famlily == AF_INET6) {
+	else if (iport.m_family == AF_INET6) {
 		out << *reinterpret_cast<const sockaddr_in6*>(iport.get());
 	}
 	return (out);
 }
 // void Server::IPortV6::print() const {
 // 	char buffer[INET6_ADDRSTRLEN] =  {0};
-// 	const char *addr_str = inet_ntop(m_famlily, &m_addr.sin6_addr, buffer, INET6_ADDRSTRLEN);
+// 	const char *addr_str = inet_ntop(m_family, &m_addr.sin6_addr, buffer, INET6_ADDRSTRLEN);
 //
 // 	std::cout << "Ip = " << addr_str << "port = "  << ntohs(m_addr.sin6_port) << "\n";
 // }

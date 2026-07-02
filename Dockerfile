@@ -6,4 +6,4 @@ WORKDIR /src
 
 COPY . .
 
-RUN make && cp ./webserver /bin/
+RUN make re && make re CPP=clang++ && cp ./webserver /bin/

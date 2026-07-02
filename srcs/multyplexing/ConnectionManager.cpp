@@ -35,7 +35,11 @@ void ConnectionManager::createListeningSockets()
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
             throw std::runtime_error("setsockopt failed");
         if (bind(fd, listener.getEndpoint().get(), listener.getEndpoint().getSize()) < 0)
+        {
+            std::cout << (listener.getEndpoint().getFamily() == AF_INET) << "\n";
+            perror("bind");
             throw std::runtime_error("bind failed");
+        }
         else
         {
             std::cout << "bind socket fd = " << fd << "for endpoint ";

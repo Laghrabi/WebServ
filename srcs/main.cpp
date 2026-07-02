@@ -25,16 +25,18 @@ int main(int argc, char **argv){
 
 		ParseConfig parser(tokens);
 		try {
-			Config conf = parser.parse();
+			const Config conf = parser.parse();
 			print(conf);
 
-		for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
-    		it->buildRouteTree();
-		}
+		// for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
+		//   		it->buildRouteTree();
+		// }
 
-			UnorderedMultiMap<Server::IPort, Server>& mymap = conf.m_iport_server;
+			// typedef UnorderedMultiMap<Server::IPort, Server> type;
+			const UnorderedMultiMap<Server::IPort, Server>& mymap = conf.m_iport_server;
 
-			for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = mymap.begin(); it != mymap.end(); ++it) {
+			for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = mymap.begin(); it != mymap.end(); it = mymap.upper_bound(it->first)) {
+				// it->first = "hey";
 				std::cout << "new iport: " << it->first << "\n";
 			}
 		}

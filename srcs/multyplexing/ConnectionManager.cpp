@@ -36,7 +36,8 @@ void ConnectionManager::createListeningSockets()
             throw std::runtime_error("setsockopt failed");
         if (bind(fd, listener.getEndpoint().get(), listener.getEndpoint().getSize()) < 0)
         {
-            std::cout << (listener.getEndpoint().getFamily() == AF_INET) << "\n";
+            
+            std::cout << (listener.getEndpoint().getFamily() ) << "\n";
             perror("bind");
             throw std::runtime_error("bind failed");
         }

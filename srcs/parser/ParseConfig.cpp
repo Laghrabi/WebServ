@@ -15,6 +15,7 @@ ParseConfig::ParseConfig(Container& tokens) :
 void ParseConfig::make_pair(const Server& server) {
 	const std::vector<Server::IPort>& iport = server.m_addr;
 	for (std::vector<Server::IPort>::const_iterator it = iport.begin(); it != iport.end(); ++it) {
+		std::cout << "iport make pair : " << *it << "\n";
 		m_config.m_iport_server.insert(*it, server);
 	}
 }
@@ -30,6 +31,7 @@ Config ParseConfig::parse(void) {
 			if (checkServerConflict(m_config.m_servers.begin(), m_config.m_servers.end(), server, server_name))
 				throw (ParseConfig::ConfigExcept("conflict Server Name '" + server_name + "'", server_begin_line));
 			m_config.m_servers.push_back(server);
+			make_pair(server);
 			// server.make_pair(m_config.m_iport_server);
 			// m_config.m_iport_server.insert(std::make_pair(T1 x, T2 y));
 		}
@@ -147,4 +149,4 @@ void ParseConfig::parseServerLocation(LocationType& location) {
 			while (m_it->is(WORD)) {
 				parseServerSimpleDir(location, "location");
 			}
-		}
+}

@@ -113,12 +113,11 @@ void print_server(const ServerType& server, int level) {
 }
 
 void print(const Config& conf) {
-	// if (!conf.m_types.empty())
-	// {
-	// 	std::cout << "hey\n";
-	// 	std::cout << COLOR_GREEN"global types: ";
-	// 	print_types(conf.m_types, 1);
-	// }
+	if (!conf.m_types.empty())
+	{
+		std::cout << COLOR_GREEN"global types: ";
+		print_types(conf.m_types, 1);
+	}
 	for (std::list<ServerType>::const_iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
 		std::cout << COLOR_MAGENTA << "new server\n" << COLOR_RESET;
 		print_server(*it, 1);

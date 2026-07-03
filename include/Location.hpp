@@ -9,9 +9,10 @@ class ParseConfig;
 class Location : public RouteConfig {
 	public:
 		typedef std::vector<token> Container;
-		typedef Container::iterator ContIter;
+		typedef Container::const_iterator ContIter;
 		typedef void (Location::*HandlerFunc)(ContIter&);
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
+		bool hasSamePath(const Location& other);
 
 		Location();
 
@@ -21,6 +22,7 @@ class Location : public RouteConfig {
 
 	private:
 		static MapHandler s_handlers;
+		std::string m_path;
 };
 
 #endif

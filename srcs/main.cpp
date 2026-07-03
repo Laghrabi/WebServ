@@ -4,6 +4,7 @@
 #include "ParseConfig.hpp"
 #include "webserver.hpp"
 #include <unistd.h>
+#include "Config.hpp"
 
 int main(int argc, char **argv){
 	if (argc != 2)
@@ -31,9 +32,8 @@ int main(int argc, char **argv){
 
 			UnorderedMultiMap<Server::IPort, Server>& mymap = conf.m_iport_server;
 
-			for (UnorderedMultiMap<Server::IPort, Server>::iterator it = mymap.begin(); it != mymap.end(); it.nextBound()) {
-				std::cout << "key = " << it.getKey() << "\n";
-				sleep(1);
+			for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = mymap.begin(); it != mymap.end(); ++it) {
+				std::cout << "new iport: " << it->first << "\n";
 			}
 			// std::multimap<Server::IPort, Server> hey = conf.m_iport_server;
 			//
@@ -54,26 +54,8 @@ int main(int argc, char **argv){
 	catch (const std::exception& e){
 
 	}
-	Location hey;
-
-	UnorderedMultiMap<int, std::string> h;
-	h.insert(2, "hey");
-	h.insert(2, "heyb");
-	h.insert(1, "heyb");
-	h.insert(2, "heyb");
-	h.insert(2, "heyb");
-	h.insert(5, "5");
-	h.insert(6, "6");
-	h.insert(10, "10");
-	h.insert(10, "10");
-	h.insert(10, "10");
-	h.insert(10, "10");
-
-
-	for (UnorderedMultiMap<int, std::string>::iterator it = h.begin(); it != h.end(); it.nextBound()) {
-			std::cout << "key = " << it.getKey() << "\n";
-			sleep(1);
-	}
+	
+	
 
 	return (0);
 }

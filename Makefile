@@ -1,6 +1,6 @@
 CPP = c++
 
-CPP_FLAGS =  -std=c++98 -Wall -Wextra -Werror -g -fPIE
+CPP_FLAGS =  -std=c++98 -Wall -Wextra -Werror -g -fPIE -O0
 
 SRCS := $(wildcard ./srcs/parser/*.cpp) \
 				$(wildcard ./srcs/util/*.cpp) \

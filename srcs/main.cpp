@@ -1,10 +1,5 @@
 
-#include "MimeTypesExt.hpp"
-#include "Server.hpp"
-#include "ParseConfig.hpp"
 #include "webserver.hpp"
-#include <unistd.h>
-#include "Config.hpp"
 
 int main(int argc, char **argv){
 	if (argc != 2)

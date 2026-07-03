@@ -1,10 +1,4 @@
-#include "Config.hpp"
-#include "RouteConfig.hpp"
-#include "Server.hpp"
 #include "webserver.hpp"
-#include "tokenization.hpp"
-#include "MimeTypesExt.hpp"
-
 // Reset
 #define COLOR_RESET        "\033[0m"
 

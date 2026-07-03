@@ -1,5 +1,4 @@
-#include "MimeTypesExt.hpp"
-#include "ParseConfig.hpp"
+#include "webserver.hpp"
 
 /* NOTE: 
  * this function takes an iterator

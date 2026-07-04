@@ -1,6 +1,4 @@
-#include "RouteConfig.hpp"
 #include "webserver.hpp"
-#include "Location.hpp"
 
 Location::MapHandler Location::s_handlers;
 

@@ -1,7 +1,7 @@
 #ifndef _FINDELEM_H
 #define _FINDELEM_H
 
-#include <iterator>
+#include <algorithm>
 
 template <typename T, typename ValueType> bool elemExist(const T& cont, const ValueType& value) {
 	typename T::const_iterator end = cont.end();

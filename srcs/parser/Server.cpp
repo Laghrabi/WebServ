@@ -1,3 +1,4 @@
+#include "findElem.hpp"
 #include "webserver.hpp"
 
 Server::Server() : RouteConfig(), m_route_tree("/") {
@@ -54,6 +55,15 @@ Server::HandlerFunc Server::getDirectiveHandler(const std::string dir_name) {
 		return (NULL);
 	}
 	return (s_handlers[dir_name]);
+}
+
+
+bool Server::hasServerName(const std::string& name) const {
+	return (elemExist(m_hosts, name));
+}
+
+const std::vector<std::string>& Server::getServerNames(void) const{
+	return (m_hosts);
 }
 
 
@@ -143,21 +153,21 @@ Server::IPort::IPort(int family, std::size_t size,
 
 	}
 
-	addrinfo Server::IPort::getAddrHints() const {
-		struct addrinfo hints;
+addrinfo Server::IPort::getAddrHints() const {
+	struct addrinfo hints;
 
-		std::memset(&hints, 0, sizeof(hints));
+	std::memset(&hints, 0, sizeof(hints));
 
-		hints.ai_family = m_family;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_protocol = 0;
-		hints.ai_flags = 0; 
-		hints.ai_canonname = NULL;
-		hints.ai_addr = NULL;
-		hints.ai_next = NULL;
+	hints.ai_family = m_family;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = 0;
+	hints.ai_flags = 0; 
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
 
-		return (hints);
-	}
+	return (hints);
+}
 
 const sockaddr* Server::IPort::get() const {
 	return (m_addr);
@@ -190,7 +200,7 @@ bool Server::IPort::operator==(const Server::IPort& other) const {
 		return (false);
 	// std::cout << "hello" << *reinterpret_cast<IPortV4*>(other.m_addr) << "\n";
 	// std::cout << "hey" << *reinterpret_cast<IPortV4*>(m_addr) << "\n";
-	std::cout << m_addr << " " << other.m_addr << "\n";
+	// std::cout << m_addr << " " << other.m_addr << "\n";
 	return (std::memcmp(m_addr, other.m_addr, m_size) == 0);
 }
 
@@ -206,6 +216,11 @@ int Server::IPort::getFamily() const {
 
 int Server::IPort::getSize() const {
 	return (m_size);
+}
+
+
+const std::vector<Server::IPort>& Server::getAddrs(void) const{
+	return (m_addr);
 }
 
 
@@ -289,7 +304,7 @@ void Server::buildRouteTree() {
 	RouteNode* currentNode = &m_route_tree; 
 
 	for (size_t i = 0; i < m_locations.size(); ++i) {
-		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].m_location);
+		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].getPath());
 
 		currentNode = &m_route_tree; 
 

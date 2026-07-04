@@ -1,4 +1,6 @@
 **/*.o
 **/*.swp
+TODO/
 **/webserver
+tests/
 **/EXE_FILE

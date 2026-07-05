@@ -10,7 +10,7 @@ ParseConfig::ParseConfig(Container& tokens) :
 void ParseConfig::make_pair(const Server& server) {
 	const std::vector<Server::IPort>& iport = server.getAddrs();
 	for (std::vector<Server::IPort>::const_iterator it = iport.begin(); it != iport.end(); ++it) {
-		std::cout << "iport make pair : " << *it << "\n";
+		// std::cout << "iport make pair : " << *it << "\n";
 		m_config.m_iport_server.insert(*it, server);
 	}
 }

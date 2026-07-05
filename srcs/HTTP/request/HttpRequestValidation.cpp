@@ -1,4 +1,4 @@
-#include "HttpRequest.hpp"
+#include "../../../include/webserver.hpp"
 
 /**
  * @brief Utility to decode percent-encoded characters in a string.
@@ -159,7 +159,7 @@ bool    HttpRequest::normalizeUri() {
             stack.push_back(segment);         
     }
     _routeUri = "";
-    for (int i = 0; i < stack.size(); ++i)
+    for (std::size_t i = 0; i < stack.size(); ++i)
         _routeUri += "/" + stack[i];
     if (_routeUri.empty())
         _routeUri = "/";

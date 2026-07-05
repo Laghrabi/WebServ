@@ -11,7 +11,7 @@
 # include <ctime>
 # include <cstdio>
 #include <cctype>
-#include "../../include/Server.hpp"
+#include "webserver.hpp"
 
 
 /**
@@ -54,10 +54,10 @@ enum HttpStatus {
 
 class HttpRequest {
     private:
+        int									_statusCode;
         ParseState                      	_currentState;
         std::vector<char>	                _savedData;
         size_t				                _bufferIndex;          
-        int									_statusCode;
         std::string							_method;
         std::string							_uri;
         std::string							_routeUri;
@@ -70,7 +70,9 @@ class HttpRequest {
         std::vector<char>                   _body;
         size_t								_bodyBytesWritten;
         static const size_t                 _MAX_BODY_SIZE = 1024;
+        static const size_t                 _MAX_BODY_SIZE = 10485760;
         Server                              *_server;
+        Config::ServerRange                  _serverRange;
 
         bool	parseRequestLine();
 		bool	parseHeaders();
@@ -88,9 +90,11 @@ class HttpRequest {
 		
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
+        const Server* findServer(const std::string& name);
         
     public:
         HttpRequest();
+        HttpRequest(const Config::ServerRange& serverRange);
         ~HttpRequest();
     
         void	parse(const std::vector<char>& rawBuffer);

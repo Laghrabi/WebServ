@@ -1,7 +1,7 @@
-#include "HttpRequest.hpp"
-#include "../../Utils/StringUtils.hpp"
+#include "../../../include/webserver.hpp"
 
-
+HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL) {}
 
 /**
   * @brief Default constructor.
@@ -9,8 +9,8 @@
   * Initializes a new HTTP request, setting the initial parsing state 
   * to READING_REQUEST_LINE and the buffer index to 0.
   */
-HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL) {}
+HttpRequest::HttpRequest(const Config::ServerRange& serverRange) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL), _serverRange(serverRange) {}
 
 /**
   * @brief Destructor.
@@ -181,6 +181,7 @@ bool	HttpRequest::validateHeaders() {
         _currentState = ERROR;
         return false;
     }
+	//findServer(itHost->second);
 	if (_method == "POST" && itContentLength == _headers.end() && itTransferEncoding == _headers.end()) {
         _statusCode = BODY_LENGTH_REQUIRED;
         _currentState = ERROR;
@@ -228,6 +229,21 @@ bool	HttpRequest::validateHeaders() {
  		_bufferIndex = 0;
 	}
 	return (true);
+}
+
+
+const Server* HttpRequest::findServer(const std::string& name) {
+	
+	Config::ServerMultiMapConstIter& begin = _serverRange.first;
+	const Config::ServerMultiMapConstIter& end = _serverRange.second;
+	
+	for (; begin != end; ++begin) {
+		const Server *server = &begin->second;
+		if (server->hasServerName(name)) {
+			return (server);
+		}
+	}
+	return (&_serverRange.first->second);
 }
 
 /**

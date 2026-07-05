@@ -1,4 +1,4 @@
-#include "HttpRequest.hpp"
+#include "../../../include/webserver.hpp"
 
 /**
  * @brief Retrieves the HTTP method of the parsed request.

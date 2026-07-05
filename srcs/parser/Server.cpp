@@ -1,4 +1,3 @@
-#include "findElem.hpp"
 #include "webserver.hpp"
 
 Server::Server() : RouteConfig(), m_route_tree("/") {
@@ -153,21 +152,23 @@ Server::IPort::IPort(int family, std::size_t size,
 
 	}
 
-addrinfo Server::IPort::getAddrHints() const {
-	struct addrinfo hints;
+	}
 
-	std::memset(&hints, 0, sizeof(hints));
+	addrinfo Server::IPort::getAddrHints() const {
+		struct addrinfo hints;
 
-	hints.ai_family = m_family;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = 0;
-	hints.ai_flags = 0; 
-	hints.ai_canonname = NULL;
-	hints.ai_addr = NULL;
-	hints.ai_next = NULL;
+		std::memset(&hints, 0, sizeof(hints));
 
-	return (hints);
-}
+		hints.ai_family = m_family;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_protocol = 0;
+		hints.ai_flags = 0; 
+		hints.ai_canonname = NULL;
+		hints.ai_addr = NULL;
+		hints.ai_next = NULL;
+
+		return (hints);
+	}
 
 const sockaddr* Server::IPort::get() const {
 	return (m_addr);
@@ -216,11 +217,6 @@ int Server::IPort::getFamily() const {
 
 int Server::IPort::getSize() const {
 	return (m_size);
-}
-
-
-const std::vector<Server::IPort>& Server::getAddrs(void) const{
-	return (m_addr);
 }
 
 

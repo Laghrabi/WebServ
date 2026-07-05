@@ -33,15 +33,6 @@ int main(int argc, char **argv){
 			for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = mymap.begin(); it != mymap.end(); it = mymap.upper_bound(it->first)) {
 				// it->first = "hey";
 				std::cout << "new iport: " << it->first << "\n";
-
-				std::pair<UnorderedMultiMap<Server::IPort, Server>::const_iterator, UnorderedMultiMap<Server::IPort, Server>::const_iterator> pair = mymap.equal_range(it->first)	;
-
-				UnorderedMultiMap<Server::IPort, Server>::const_iterator begin = pair.first;
-				UnorderedMultiMap<Server::IPort, Server>::const_iterator end = pair.second;
-
-				for (;begin != end; ++begin) {
-					Server myserver = begin->second;
-				}
 			}
 		}
 		catch (const ParseConfig::ConfigExcept& e) {

@@ -27,11 +27,13 @@
 #include <sstream>
 #include <string>
 #include <iterator>
-#include "tokenization.hpp"
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+
+
+#include "tokenization.hpp"
 #include "findElem.hpp"
 
 #include <fcntl.h>
@@ -39,7 +41,19 @@
 
 typedef std::vector<token> TokenCont;
 
-#include "utils.tpp"
 
+#include "UnorderedMultiMap.hpp"
+
+#include "utils.tpp"
+#include "./MimeTypesExt.hpp"
+#include "Server.hpp"
+#include "Config.hpp"
+#include "ParseConfig.hpp"
+#include "Location.hpp"
+#include "IPortV4.hpp"
+#include "IPortV6.hpp"
+
+#define DEFAULT_ADDR 0
+#define DEFAULT_PORT 80
 
 #endif

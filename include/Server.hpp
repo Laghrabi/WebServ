@@ -67,22 +67,31 @@ class Server : public RouteConfig {
 		static void init();
 		struct IPort {
 			public:
-			int m_family;
-			std::size_t m_size;
-			IPort(int family, std::size_t size);
-
 			IPort();
+			IPort(int family, std::size_t size, sockaddr* (*create)(void), void (*clean)(sockaddr*));
 			IPort(const IPort& other);
 			int getFamily() const;
 			socklen_t getSize() const;
 			const sockaddr	*get() const;
+
 			virtual void print() const;
+			static std::string getFamilyStr(const int family);
+
 			virtual bool operator==(const IPort& other) const;
-			addrinfo getAddrHints() const;
 			IPort& operator=(const Server::IPort& other);
 			virtual ~IPort();
+
+			addrinfo getAddrHints() const;
+
+			int getFamily() const;
+			int getSize() const;
+
 			protected:
+			std::size_t m_size;
+			int m_family;
 			sockaddr *m_addr;
+			sockaddr* (*create)(void);
+			void (*clean)(sockaddr*);
 		};
 
 		struct ParseIPortInterface {
@@ -117,6 +126,5 @@ std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
 
 typedef Server ServerType;
 
-#include "IPortV4.hpp"
-#include "IPortV6.hpp"
+std::string getFamilyStr(const int family);
 #endif

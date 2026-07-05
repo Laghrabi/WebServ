@@ -1,15 +1,4 @@
-#include "RouteConfig.hpp"
-#include "findElem.hpp"
 #include "webserver.hpp"
-#include <cstring>
-#include <map>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <stdexcept>
-#include <sys/socket.h>
-#include "Server.hpp"
-#include "ParseConfig.hpp"
-#include "ParseConfig.hpp"
 
 Server::Server() : RouteConfig(), m_route_tree("/") {
 	init();
@@ -24,6 +13,7 @@ void Server::parseServerName(ContIter &begin) {
 
 
 void Server::parseIPort(ContIter &begin) {
+	std::cout << "parseIPort\n";
 	std::string iport_str = begin->value;
 	size_t pos;
 	IPortV4 iport;
@@ -37,10 +27,6 @@ void Server::parseIPort(ContIter &begin) {
 
 		iport.setIp(ip);
 		iport.setPort(port);
-
-		std::cout << ip << "\n";
-		std::cout << "\n";
-		std::cout << port << "\n";
 
 	}
 	else if (iport_str.find(".") != std::string::npos) {
@@ -121,64 +107,73 @@ Server::IPort::IPort() {
 }
 
 Server::IPort::IPort(const Server::IPort& other) :
+	m_size(other.m_size),
 	m_family(other.m_family),
-	m_size(other.m_size) {
-	if (m_family == AF_INET) {
-		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in);
+	create(other.create),
+	clean(other.clean){
+		m_addr = create();
+		// std::cout << "copy constructor: " << m_addr << "\n";
+		*m_addr = *other.m_addr;
 	}
-	if (m_family == AF_INET6) {
-		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in6);
-	}
-	*m_addr = *other.m_addr;
-}
 
 
 Server::IPort& Server::IPort::operator=(const Server::IPort& other) {
-	delete m_addr;
-	m_family = other.m_family;
-	if (m_family == AF_INET) {
-		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in);
-	}
-	if (m_family == AF_INET6) {
-		m_addr = reinterpret_cast<sockaddr*>(new sockaddr_in6);
+	if (m_family != other.m_family)
+	{
+		clean(m_addr);
+		m_family = other.m_family;
+		m_addr = other.create();
 	}
 	if (!other.m_addr)
 	{
 		std::cerr << "what is goiing on\n";
 	}
+	// std::cout << "copy assignment operator: " << m_addr << "\n";
 	*m_addr = *other.m_addr;
 	m_size = other.m_size;
 	return (*this);
 }
 
 
-Server::IPort::IPort(int family, std::size_t size) : m_family(family), m_size(size), m_addr() {}
+Server::IPort::IPort(int family, std::size_t size, 
+		sockaddr* (*create)(void), void (*clean)(sockaddr*)) : 
+	m_size(size), 
+	m_family(family), 
+	m_addr(NULL),
+	create(create),
+	clean(clean){
 
-int Server::IPort::getFamily() const{
-	return (m_family);
-}
-socklen_t Server::IPort::getSize() const {
-	return (m_size);
-}
+	}
 
-addrinfo Server::IPort::getAddrHints() const {
-	struct addrinfo hints;
+	addrinfo Server::IPort::getAddrHints() const {
+		struct addrinfo hints;
 
-	std::memset(&hints, 0, sizeof(hints));
+		std::memset(&hints, 0, sizeof(hints));
 
-	hints.ai_family = m_family;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = 0;
-	hints.ai_flags = 0; 
-	hints.ai_canonname = NULL;
-	hints.ai_addr = NULL;
-	hints.ai_next = NULL;
+		hints.ai_family = m_family;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_protocol = 0;
+		hints.ai_flags = 0; 
+		hints.ai_canonname = NULL;
+		hints.ai_addr = NULL;
+		hints.ai_next = NULL;
 
-	return (hints);
-}
+		return (hints);
+	}
 
 const sockaddr* Server::IPort::get() const {
 	return (m_addr);
+}
+
+std::string Server::IPort::getFamilyStr(const int family) {
+	switch (family) {
+		case AF_INET:
+			return "AF_INET";
+		case AF_INET6:
+			return "AF_INET6";
+		default:
+			return "Not Known";
+	}
 }
 
 void Server::IPort::print() const {
@@ -195,6 +190,9 @@ void Server::IPort::print() const {
 bool Server::IPort::operator==(const Server::IPort& other) const {
 	if (m_family != other.m_family)
 		return (false);
+	// std::cout << "hello" << *reinterpret_cast<IPortV4*>(other.m_addr) << "\n";
+	// std::cout << "hey" << *reinterpret_cast<IPortV4*>(m_addr) << "\n";
+	std::cout << m_addr << " " << other.m_addr << "\n";
 	return (std::memcmp(m_addr, other.m_addr, m_size) == 0);
 }
 
@@ -203,49 +201,15 @@ Server::IPort::~IPort(){
 	delete m_addr;
 }
 
-
-Server::IPortV6::IPortV6() : IPort(AF_INET6, sizeof(sockaddr_in6)) {
-	IPort::m_addr = reinterpret_cast<sockaddr *>(new sockaddr_in6());
-	m_addr = reinterpret_cast<sockaddr_in6*>(IPort::m_addr);
+int Server::IPort::getFamily() const {
+	return (m_family);
 }
 
 
-bool Server::IPortV6::operator==(const Server::IPortV6& other) const {
-	return (std::memcmp(&m_addr, &other.m_addr, sizeof(sockaddr_in6)));
+int Server::IPort::getSize() const {
+	return (m_size);
 }
 
-
-void Server::IPortV6::setIp(const std::string& ip) {
-	addrinfo hints = getAddrHints();
-	addrinfo *res;
-	addrinfo *tmp;
-
-	if (!isStrictIp(ip))	{
-	int fail = getaddrinfo(ip.c_str(), NULL, &hints, &res);
-	if (fail) {
-		throw (std::runtime_error("error getaddrinfo"));
-	}
-	tmp = res;
-	for (; tmp != NULL; tmp = tmp->ai_next) {
-		sockaddr_in6* hey = reinterpret_cast<sockaddr_in6 *>(tmp->ai_addr);
-		*m_addr = *hey;
-		break;
-	}
-	freeaddrinfo(res);
-	}
-}
-
-void Server::IPortV6::setPort(const std::string& port_str) {
-	in_port_t port;
-	std::stringstream ss(port_str);
-	ss >> port;
-	m_addr->sin6_port = htons(port);
-}
-
-bool Server::IPortV6::isStrictIp(const std::string& ip) {
-	int fail = inet_pton(m_family, ip.c_str(), &m_addr->sin6_addr);
-	return (!fail);
-}
 
 std::ostream& operator<<(std::ostream& out, const sockaddr_in& addr) {
 	char buffer[INET6_ADDRSTRLEN] =  {0};
@@ -269,15 +233,15 @@ std::ostream& operator<<(std::ostream& out, const sockaddr_in6& addr) {
 
 	}
 	port = ntohs(addr.sin6_port);
-	return (out << buffer << ":" << port);
+	return (out << buffer << ":" << port << " family = ");
 }
 
 
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport) {
-	if (iport.m_family == AF_INET) {
+	if (iport.getFamily() == AF_INET) {
 		out << *reinterpret_cast<const sockaddr_in*>(iport.get());
 	}
-	else if (iport.m_family == AF_INET6) {
+	else if (iport.getFamily() == AF_INET6) {
 		out << *reinterpret_cast<const sockaddr_in6*>(iport.get());
 	}
 	return (out);
@@ -297,23 +261,23 @@ std::ostream& operator<<(std::ostream& out, const Server::IPort& iport) {
  * @return A vector of path segments.
  */
 std::vector<std::string> tokenizeRoutePath(const std::string& path) {
-    std::vector<std::string> tokens;
-    std::string current = "";
-    
-    for (size_t i = 0; i < path.length(); ++i) {
-        if (path[i] == '/') {
-            if (!current.empty()) {
-                tokens.push_back(current);
-                current = "";
-            }
-        } else {
-            current += path[i];
-        }
-    }
-    if (!current.empty()) {
-        tokens.push_back(current);
-    }
-    return tokens;
+	std::vector<std::string> tokens;
+	std::string current = "";
+
+	for (size_t i = 0; i < path.length(); ++i) {
+		if (path[i] == '/') {
+			if (!current.empty()) {
+				tokens.push_back(current);
+				current = "";
+			}
+		} else {
+			current += path[i];
+		}
+	}
+	if (!current.empty()) {
+		tokens.push_back(current);
+	}
+	return tokens;
 }
 
 /**
@@ -324,21 +288,21 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
  * corresponding RouteConfig.
  */
 void Server::buildRouteTree() {
-    RouteNode* currentNode = &m_route_tree; 
+	RouteNode* currentNode = &m_route_tree; 
 
-    for (size_t i = 0; i < m_locations.size(); ++i) {
-        std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].m_location);
-        
-        currentNode = &m_route_tree; 
+	for (size_t i = 0; i < m_locations.size(); ++i) {
+		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].m_location);
 
-        for (size_t j = 0; j < tokens.size(); ++j) {
-            const std::string& token = tokens[j];
-            
-            if (currentNode->children.find(token) == currentNode->children.end()) {
-                currentNode->children[token] = new RouteNode(token);
-            }
-            currentNode = currentNode->children[token];
-        }
-        currentNode->config = &m_locations[i]; 
-    }
+		currentNode = &m_route_tree; 
+
+		for (size_t j = 0; j < tokens.size(); ++j) {
+			const std::string& token = tokens[j];
+
+			if (currentNode->children.find(token) == currentNode->children.end()) {
+				currentNode->children[token] = new RouteNode(token);
+			}
+			currentNode = currentNode->children[token];
+		}
+		currentNode->config = &m_locations[i]; 
+	}
 }

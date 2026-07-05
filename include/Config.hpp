@@ -2,9 +2,6 @@
 #define _CONFIG_H
 
 #include "webserver.hpp"
-#include "MimeTypesExt.hpp"
-#include "Server.hpp"
-#include "UnorderedMultiMap.hpp"
 
 struct Config {
 	typedef std::list<Server> ServerCont;

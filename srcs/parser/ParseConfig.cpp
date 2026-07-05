@@ -1,9 +1,4 @@
-#include "ParseConfig.hpp"
-#include "Config.hpp"
-#include "Server.hpp"
-#include "tokenization.hpp"
-#include <exception>
-#include <utility>
+#include "webserver.hpp"
 
 ParseConfig::ParseConfig(Container& tokens) :
 	m_it(tokens.begin())

@@ -14,11 +14,12 @@ class Client
         std::vector<char> m_readBuffer;
         std::vector<char> m_writeBuffer;
         ListeningSocket*    m_listener;
+        HttpRequest           m_request;
 
     public:
 
-        Client();
-        Client(int fd, ListeningSocket* listener);
+        Client() ;
+        Client(int fd, ListeningSocket* listener, const Config::ServerRange& serverRange) ;
         Client(const Client& other);
         Client& operator=(const Client& other);
         ~Client();

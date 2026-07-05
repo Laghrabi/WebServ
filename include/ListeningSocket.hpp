@@ -9,7 +9,7 @@ class ListeningSocket
     public:
 
         ListeningSocket();
-        ListeningSocket(const Server::IPort& endpoint);
+        ListeningSocket(const Server::IPort *endpoint);
         ListeningSocket(const ListeningSocket& other);
         ListeningSocket& operator=(const ListeningSocket& other);
         ~ListeningSocket();
@@ -24,7 +24,7 @@ class ListeningSocket
     private:
 
         int                    m_fd;
-        Server::IPort   m_endpoint;
+        const Server::IPort   *m_endpoint;
 };
 
 #endif

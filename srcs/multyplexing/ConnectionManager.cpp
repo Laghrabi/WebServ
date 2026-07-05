@@ -19,7 +19,7 @@ void ConnectionManager::createListeningSockets()
     it != m_config.m_iport_server.end(); it = m_config.m_iport_server.upper_bound(it->first))
     {
         std::cout << "hello\n";
-        ListeningSocket listener(it->first);
+        ListeningSocket listener(&it->first);
         
         int fd = socket(listener.getEndpoint().getFamily(), SOCK_STREAM, 0);
         if (fd < 0)
@@ -117,7 +117,9 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
         return;
     }
 
-    Client client(clientFd, &listener);
+    const Server::IPort& key = listener.getEndpoint();
+    const Config::ServerMultiMap map = m_config.m_iport_server;
+    Client client(clientFd, &listener,map.equal_range(key));
     std::cout << "Accepted new client with fd: " << clientFd << "\n";
     client.setAddress(address);
     client.setAddressLength(addressLength);
@@ -196,6 +198,10 @@ void ConnectionManager::handleClient(Client& client)
 {
     receive(client);
 
+    // i will use equal range and pass to it the .....
+    // HttpRequestHandler handler;
+
+    
     //i need to know what should i pass to the http request handler, 
     //i think i should pass the second value of the unordredmultimap which is the server object,
     //so probably i will pass config.find(client.getListener()->getEndpoint())

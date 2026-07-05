@@ -1,21 +1,22 @@
 #include "ClientSocket.hpp"
 
-Client::Client(): m_fd(-1),
-    m_address(),
-    m_addressLength(sizeof(sockaddr_storage)),
-    m_readBuffer(),
-    m_writeBuffer(),
-    m_listener(NULL)
-{
-}
+// Client::Client(): m_fd(-1),
+//     m_address(),
+//     m_addressLength(sizeof(sockaddr_storage)),
+//     m_readBuffer(),
+//     m_writeBuffer(),
+//     m_listener(NULL)
+// {
+// }
 
-Client::Client(int fd, ListeningSocket* listener):
+Client::Client(int fd, ListeningSocket* listener, const Config::ServerRange& serverRange):
     m_fd(fd),
     m_address(),
     m_addressLength(sizeof(sockaddr_storage)),
     m_readBuffer(),
     m_writeBuffer(),
-    m_listener(listener)
+    m_listener(listener),
+    m_request(serverRange)
 {
 }
 
@@ -26,6 +27,7 @@ Client::Client(const Client& other):
     m_readBuffer(other.m_readBuffer),
     m_writeBuffer(other.m_writeBuffer),
     m_listener(other.m_listener)
+    // m_request(other.m_request)
 {
 }
 
@@ -39,6 +41,7 @@ Client& Client::operator=(const Client& other)
         m_readBuffer = other.m_readBuffer;
         m_writeBuffer = other.m_writeBuffer;
         m_listener = other.m_listener;
+        // m_request = other.m_request;
     }
     return (*this);
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequestValidation.cpp                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: zfarouk <zfarouk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/21 16:15:41 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/29 17:33:03 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/07/05 19:19:37 by zfarouk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -175,7 +175,7 @@ bool    HttpRequest::normalizeUri() {
             stack.push_back(segment);         
     }
     _routeUri = "";
-    for (int i = 0; i < stack.size(); ++i)
+    for (std::size_t i = 0; i < stack.size(); ++i)
         _routeUri += "/" + stack[i];
     if (_routeUri.empty())
         _routeUri = "/";

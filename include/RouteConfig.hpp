@@ -66,7 +66,6 @@ class RouteConfig {
 
 
 	private:
-		std::string m_location;
 		std::string m_root;
 		std::string m_upload_dir;
 		std::string m_access_log;

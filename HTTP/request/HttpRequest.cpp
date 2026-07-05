@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: zfarouk <zfarouk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/29 17:10:43 by claghrab         ###   ########.fr       */
+/*   Updated: 2026/07/05 19:47:53 by zfarouk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@
 #include "../../Utils/StringUtils.hpp"
 
 
+HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0) {}
 
 /**
   * @brief Default constructor.
@@ -21,8 +23,8 @@
   * Initializes a new HTTP request, setting the initial parsing state 
   * to READING_REQUEST_LINE and the buffer index to 0.
   */
-HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0) {}
+HttpRequest::HttpRequest(const Config::ServerRange& serverRange) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _serverRange(serverRange) {}
 
 /**
   * @brief Destructor.
@@ -193,6 +195,7 @@ bool	HttpRequest::validateHeaders() {
         _currentState = ERROR;
         return false;
     }
+	//findServer(itHost->second);
 	if (_method == "POST" && itContentLength == _headers.end() && itTransferEncoding == _headers.end()) {
         _statusCode = BODY_LENGTH_REQUIRED;
         _currentState = ERROR;
@@ -240,6 +243,21 @@ bool	HttpRequest::validateHeaders() {
  		_bufferIndex = 0;
 	}
 	return (true);
+}
+
+
+const Server* HttpRequest::findServer(const std::string& name) {
+	
+	Config::ServerMultiMapConstIter& begin = _serverRange.first;
+	const Config::ServerMultiMapConstIter& end = _serverRange.second;
+	
+	for (; begin != end; ++begin) {
+		const Server *server = &begin->second;
+		if (server->hasServerName(name)) {
+			return (server);
+		}
+	}
+	return (&_serverRange.first->second);
 }
 
 /**

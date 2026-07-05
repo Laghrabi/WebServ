@@ -6,7 +6,7 @@ ListeningSocket::ListeningSocket()
 {
 }
 
-ListeningSocket::ListeningSocket(const Server::IPort& endpoint)
+ListeningSocket::ListeningSocket(const Server::IPort *endpoint)
     : m_fd(-1),
       m_endpoint(endpoint)
 {
@@ -44,7 +44,7 @@ void ListeningSocket::setFd(int fd)
 
 const Server::IPort& ListeningSocket::getEndpoint() const
 {
-    return (m_endpoint);
+    return (*m_endpoint);
 }
 
 bool ListeningSocket::isOpen() const

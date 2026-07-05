@@ -58,6 +58,15 @@ Server::HandlerFunc Server::getDirectiveHandler(const std::string dir_name) {
 }
 
 
+bool Server::hasServerName(const std::string& name) const {
+	return (elemExist(m_hosts, name));
+}
+
+const std::vector<std::string>& Server::getServerNames(void) const{
+	return (m_hosts);
+}
+
+
 bool Server::conflictsWith(const Server& other, std::string& server_name) const{
 	bool same_host = false;
 	bool same_iport = false;
@@ -145,6 +154,8 @@ Server::IPort::IPort(int family, std::size_t size,
 
 	}
 
+	}
+
 	addrinfo Server::IPort::getAddrHints() const {
 		struct addrinfo hints;
 
@@ -192,7 +203,7 @@ bool Server::IPort::operator==(const Server::IPort& other) const {
 		return (false);
 	// std::cout << "hello" << *reinterpret_cast<IPortV4*>(other.m_addr) << "\n";
 	// std::cout << "hey" << *reinterpret_cast<IPortV4*>(m_addr) << "\n";
-	std::cout << m_addr << " " << other.m_addr << "\n";
+	// std::cout << m_addr << " " << other.m_addr << "\n";
 	return (std::memcmp(m_addr, other.m_addr, m_size) == 0);
 }
 
@@ -291,7 +302,7 @@ void Server::buildRouteTree() {
 	RouteNode* currentNode = &m_route_tree; 
 
 	for (size_t i = 0; i < m_locations.size(); ++i) {
-		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].m_location);
+		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].getPath());
 
 		currentNode = &m_route_tree; 
 

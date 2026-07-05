@@ -49,14 +49,10 @@ struct RouteNode {
 };
 
 class Server : public RouteConfig {
-	protected:
-		typedef std::vector<token> Container;
-		typedef Container::const_iterator ContIter;
-
 	public:
 		typedef void (Server::*HandlerFunc)(ContIter&);
+		
 	protected:
-
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
 		static MapHandler s_handlers;
 
@@ -65,14 +61,12 @@ class Server : public RouteConfig {
 
 	public:	
 		static void init();
+
 		struct IPort {
 			public:
 			IPort();
 			IPort(int family, std::size_t size, sockaddr* (*create)(void), void (*clean)(sockaddr*));
 			IPort(const IPort& other);
-			int getFamily() const;
-			socklen_t getSize() const;
-			const sockaddr	*get() const;
 
 			virtual void print() const;
 			static std::string getFamilyStr(const int family);
@@ -81,12 +75,12 @@ class Server : public RouteConfig {
 			IPort& operator=(const Server::IPort& other);
 			virtual ~IPort();
 
-			addrinfo getAddrHints() const;
-
+			const sockaddr	*get() const;
 			int getFamily() const;
 			int getSize() const;
 
 			protected:
+			addrinfo getAddrHints() const;
 			std::size_t m_size;
 			int m_family;
 			sockaddr *m_addr;
@@ -106,17 +100,24 @@ class Server : public RouteConfig {
 		void parseServerName(ContIter &begin);
 		void parseIPort(ContIter &begin);
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);
+
+		const std::vector<std::string>& getServerNames(void) const;
+
 		bool conflictsWith(const Server& other, std::string& server_name) const;
 		void buildRouteTree();
+		const std::vector<IPort>& getAddrs(void) const;
+		bool hasServerName(const std::string& name) const;
 		~Server();
+		
 
 		typedef Location LocationType ;
 		typedef ParseConfig ParseConfigType ;
 
-		std::vector<std::string> m_hosts;
-		std::vector<IPort> m_addr;
 		std::vector<LocationType> m_locations;
 		RouteNode m_route_tree;
+	private:	
+		std::vector<IPort> m_addr;
+		std::vector<std::string> m_hosts;
 };
 
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);

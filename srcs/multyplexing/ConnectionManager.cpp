@@ -18,7 +18,7 @@ void ConnectionManager::createListeningSockets()
     for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = m_config.m_iport_server.begin();
     it != m_config.m_iport_server.end(); it = m_config.m_iport_server.upper_bound(it->first))
     {
-        std::cout << "hello  awald l97ba\n";
+        std::cout << "hello\n";
         ListeningSocket listener(it->first);
         
         int fd = socket(listener.getEndpoint().getFamily(), SOCK_STREAM, 0);
@@ -36,7 +36,7 @@ void ConnectionManager::createListeningSockets()
             throw std::runtime_error("setsockopt failed");
         if (bind(fd, listener.getEndpoint().get(), listener.getEndpoint().getSize()) < 0)
         {
-            
+
             std::cout << (listener.getEndpoint().getFamily() ) << "\n";
             perror("bind");
             throw std::runtime_error("bind failed");
@@ -66,6 +66,7 @@ void ConnectionManager::createListeningSockets()
         listener.setFd(fd);
         m_listeners.insert(
         std::make_pair(fd, listener));
+        std::cout << "listener added for endpoint " << std::endl;
     }
 }
 
@@ -123,24 +124,46 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 
     m_clients.insert(
         std::make_pair(clientFd, client));
+    
+    struct pollfd pfd;
+        
+    pfd.fd = clientFd;
+    pfd.events = POLLIN | POLLOUT;
+    pfd.revents = 0;
+    
+    m_pollfds.push_back(pfd);
 }
+
 
 void ConnectionManager::disconnect(Client& client)
 {
     int fd = client.getFd();
+    std::cout << "Disconnecting client with fd: " << fd << "\n";
 
     close(fd);
 
     m_clients.erase(fd);
+    std::vector<struct pollfd>::iterator it;
+
+    for (it = m_pollfds.begin(); it != m_pollfds.end(); ++it)
+    {
+        if (it->fd == fd)
+        {
+            m_pollfds.erase(it);
+            break;
+        }
+    }
+
 }
+
 
 void ConnectionManager::receive(Client& client)
 {
-    char    buffer[4096];
+    char    buffer[4096] = {0};
     ssize_t bytes;
 
-    while (true)
-    {
+    // while (true)
+    // {
         bytes = recv(client.getFd(), buffer, sizeof(buffer), 0);
 
         if (bytes > 0)
@@ -156,13 +179,17 @@ void ConnectionManager::receive(Client& client)
         else
         {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
-            
+            {
+                std::cout << std::string(buffer) << "\n";
+                // client.getReadBuffer.
+                return;
+            }
             perror("recv");
             disconnect(client);
             return;
         }
-    }
+    std::string hey = std::string(buffer);
+    send(client.getFd(), hey.c_str(), hey.length(), 0);
 }
 
 void ConnectionManager::handleClient(Client& client)
@@ -176,6 +203,8 @@ void ConnectionManager::handleClient(Client& client)
     //and also the readbuffer of the client and config object as i remember 
 
     //and i still have to work on the send function to send the response back to the client
+    //one more thing , i should desable the POLLOUT flag from the client socket untile i reccieve a response from http response
+    //only then i will able that flag and disable it after i call send
 }
 
 void ConnectionManager::run()
@@ -184,6 +213,7 @@ void ConnectionManager::run()
     {
         int ready;
         ready = poll(&m_pollfds[0], m_pollfds.size(), -1);
+
         if (ready < 0)
         {
             if (errno == EINTR)
@@ -210,16 +240,14 @@ void ConnectionManager::run()
             if (events & (POLLIN | POLLOUT))
             {
                 if (m_listeners.find(fd) != m_listeners.end() && (events & POLLIN))
+                {
                     acceptClient(m_listeners.find(fd)->second);
-                else
+                }          
+                else if (m_clients.find(fd) != m_clients.end()  && (events & POLLIN))
+                {
                     handleClient(m_clients.find(fd)->second);
+                }
             }
-
-            // if (events & POLLOUT)
-            // {
-            //     sendToClient(fd);
-            // }
-
         }
     }
 }

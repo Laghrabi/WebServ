@@ -33,7 +33,7 @@ public:
     
     void receive(Client& client);
     
-    void send(Client& client);
+    // void send(Client& client);
     
     void disconnect(Client& client);
 

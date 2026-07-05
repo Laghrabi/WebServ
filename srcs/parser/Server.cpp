@@ -12,7 +12,6 @@ void Server::parseServerName(ContIter &begin) {
 }
 
 void Server::parseIPort(ContIter &begin) {
-	std::cout << "parseIPort\n";
 	std::string iport_str = begin->value;
 	size_t pos;
 	IPortV4 iport;
@@ -42,7 +41,7 @@ void Server::parseIPort(ContIter &begin) {
 	else {
 		std::cout << (std::find(m_addr.begin(), m_addr.end(), iport) == m_addr.end()) << "\n";
 	}
-	std::cout << "I insert iport " << iport << "\n";
+	// std::cout << "I insert iport " << iport << "\n";
 	m_addr.push_back(iport);
 	// m_ordered_addr.insert(iport);
 	++begin;

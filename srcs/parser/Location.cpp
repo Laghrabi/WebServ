@@ -3,7 +3,7 @@
 Location::MapHandler Location::s_handlers;
 
 Location::Location() : RouteConfig() {
-	std::cout << "s_handlers = " << s_handlers.size() << "\n";
+	// std::cout << "s_handlers = " << s_handlers.size() << "\n";
 }
 
 

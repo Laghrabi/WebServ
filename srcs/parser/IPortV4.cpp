@@ -24,9 +24,9 @@ void Server::IPortV4::setIp(const std::string& ip) {
 	addrinfo *res;
 	addrinfo *tmp;
 
-	std::cout << "new setIp \n";
+	// std::cout << "new setIp \n";
 	if (!isStrictIp(ip))	{
-		std::cout << "not strict " << ip << "\n";
+		// std::cout << "not strict " << ip << "\n";
 		int fail = getaddrinfo(ip.c_str(), NULL, &hints, &res);
 		if (fail) {
 			throw (std::runtime_error("error getaddrinfo"));

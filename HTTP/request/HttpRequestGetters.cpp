@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpRequestGetters.cpp                             :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/22 17:57:16 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/27 17:48:25 by claghrab         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "HttpRequest.hpp"
 
 /**
@@ -111,4 +99,8 @@ const std::string&	HttpRequest::getRouteUri() const {
  */
 const std::string& HttpRequest::getQueryString() const {
 	return (_queryString);
+}
+
+const std::multimap<std::string, std::string>& HttpRequest::getQueryParams() const {
+	return (_queryParams);
 }

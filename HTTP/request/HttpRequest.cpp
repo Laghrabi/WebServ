@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpRequest.cpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/29 17:10:43 by claghrab         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "HttpRequest.hpp"
 #include "../../Utils/StringUtils.hpp"
 
@@ -22,7 +10,7 @@
   * to READING_REQUEST_LINE and the buffer index to 0.
   */
 HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0) {}
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL) {}
 
 /**
   * @brief Destructor.

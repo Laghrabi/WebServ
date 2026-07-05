@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpRequestValidation.cpp                          :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/21 16:15:41 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/29 17:33:03 by claghrab         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "HttpRequest.hpp"
 
 /**
@@ -131,13 +119,9 @@ bool	HttpRequest::parseQueryParams() {
 			std::string	value = pair.substr(eqPos + 1);
 			decodeString(key);
     		decodeString(value);
-			if (_queryParams.find(key) != _queryParams.end()) {
-        		_queryParams[key] += "," + value;
-    		} else {
-        		_queryParams[key] = value;
-   			}
+			_queryParams.insert(std::make_pair(key, value));
 		} else {
-			_queryParams[pair] = "";
+			_queryParams.insert(std::make_pair(pair, ""));
 		}
 	}
 	return (true);

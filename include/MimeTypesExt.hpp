@@ -1,5 +1,6 @@
 #ifndef _MIMETYPESEXT_H
 #define _MIMETYPESEXT_H
+
 #include "webserver.hpp"
 
 // NOTE: extentions are case insensitive

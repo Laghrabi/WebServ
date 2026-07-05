@@ -1,7 +1,4 @@
-#include "tokenization.hpp"
 #include "webserver.hpp"
-#include "RouteConfig.hpp"
-#include "ParseConfig.hpp"
 
 RouteConfig::MapHandler RouteConfig::s_handlers;
 std::set<std::string> RouteConfig::s_available_methods;
@@ -112,7 +109,43 @@ void RouteConfig::addMethod(const std::string& method) throw (std::exception) {
 }
 
 
-bool RouteConfig::isAllowed(const std::string& method) {
+bool RouteConfig::isAllowed(const std::string& method) const{
 	return (m_allowed_methods.find(method) != m_allowed_methods.end());
+}
+
+
+const std::string& RouteConfig::getRoot() const
+{
+    return m_root;
+}
+
+const std::string& RouteConfig::getUploadDir() const
+{
+    return m_upload_dir;
+}
+
+const std::string& RouteConfig::getAccessLog() const
+{
+    return m_access_log;
+}
+
+const std::list<std::string>& RouteConfig::getIndexes() const
+{
+    return m_indexes;
+}
+
+bool RouteConfig::isAutoindex() const
+{
+    return m_autoindex;
+}
+
+std::size_t RouteConfig::getMaxBodySize() const
+{
+    return m_max_body_size;
+}
+
+bool RouteConfig::hasMaxBodySize() const
+{
+    return m_max_body_size_exist;
 }
 

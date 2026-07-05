@@ -2,7 +2,6 @@
 #define _IPORTV4_HPP_
 
 #include "webserver.hpp"
-#include "Server.hpp"
 
 struct Server::IPortV4 : public Server::IPort, public Server::ParseIPortInterface{
 	IPortV4();
@@ -11,6 +10,9 @@ struct Server::IPortV4 : public Server::IPort, public Server::ParseIPortInterfac
 	// virtual void print() const;
 	virtual bool operator==(const IPortV4& other) const;
 	bool isStrictIp(const std::string& ip);
+	std::string info(const sockaddr_in& addr);
+	static void clean(sockaddr *addr);
+	static sockaddr* create();
 	private:
 	sockaddr_in* m_addr;
 };

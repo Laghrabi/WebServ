@@ -49,14 +49,10 @@ struct RouteNode {
 };
 
 class Server : public RouteConfig {
-	protected:
-		typedef std::vector<token> Container;
-		typedef Container::const_iterator ContIter;
-
 	public:
 		typedef void (Server::*HandlerFunc)(ContIter&);
+		
 	protected:
-
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
 		static MapHandler s_handlers;
 
@@ -65,22 +61,31 @@ class Server : public RouteConfig {
 
 	public:	
 		static void init();
+
 		struct IPort {
 			public:
-			int m_famlily;
-			std::size_t m_size;
-			IPort(int family, std::size_t size);
-
 			IPort();
+			IPort(int family, std::size_t size, sockaddr* (*create)(void), void (*clean)(sockaddr*));
 			IPort(const IPort& other);
-			const sockaddr	*get() const;
+
 			virtual void print() const;
+			static std::string getFamilyStr(const int family);
+
 			virtual bool operator==(const IPort& other) const;
-			addrinfo getAddrHints() const;
 			IPort& operator=(const Server::IPort& other);
 			virtual ~IPort();
+
+			const sockaddr	*get() const;
+			int getFamily() const;
+			int getSize() const;
+
 			protected:
+			addrinfo getAddrHints() const;
+			std::size_t m_size;
+			int m_family;
 			sockaddr *m_addr;
+			sockaddr* (*create)(void);
+			void (*clean)(sockaddr*);
 		};
 
 		struct ParseIPortInterface {
@@ -95,17 +100,24 @@ class Server : public RouteConfig {
 		void parseServerName(ContIter &begin);
 		void parseIPort(ContIter &begin);
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);
+
+		const std::vector<std::string>& getServerNames(void) const;
+
 		bool conflictsWith(const Server& other, std::string& server_name) const;
 		void buildRouteTree();
+		const std::vector<IPort>& getAddrs(void) const;
+		bool hasServerName(const std::string& name) const;
 		~Server();
+		
 
 		typedef Location LocationType ;
 		typedef ParseConfig ParseConfigType ;
 
-		std::vector<std::string> m_hosts;
-		std::vector<IPort> m_addr;
 		std::vector<LocationType> m_locations;
 		RouteNode m_route_tree;
+	private:	
+		std::vector<IPort> m_addr;
+		std::vector<std::string> m_hosts;
 };
 
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
@@ -115,6 +127,5 @@ std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
 
 typedef Server ServerType;
 
-#include "IPortV4.hpp"
-#include "IPortV6.hpp"
+std::string getFamilyStr(const int family);
 #endif

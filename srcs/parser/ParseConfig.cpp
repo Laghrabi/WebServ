@@ -1,9 +1,4 @@
-#include "ParseConfig.hpp"
-#include "Config.hpp"
-#include "Server.hpp"
-#include "tokenization.hpp"
-#include <exception>
-#include <utility>
+#include "webserver.hpp"
 
 ParseConfig::ParseConfig(Container& tokens) :
 	m_it(tokens.begin())
@@ -13,9 +8,9 @@ ParseConfig::ParseConfig(Container& tokens) :
 }
 
 void ParseConfig::make_pair(const Server& server) {
-	const std::vector<Server::IPort>& iport = server.m_addr;
+	const std::vector<Server::IPort>& iport = server.getAddrs();
 	for (std::vector<Server::IPort>::const_iterator it = iport.begin(); it != iport.end(); ++it) {
-		std::cout << "iport make pair : " << *it << "\n";
+		// std::cout << "iport make pair : " << *it << "\n";
 		m_config.m_iport_server.insert(*it, server);
 	}
 }
@@ -32,8 +27,6 @@ Config ParseConfig::parse(void) {
 				throw (ParseConfig::ConfigExcept("conflict Server Name '" + server_name + "'", server_begin_line));
 			m_config.m_servers.push_back(server);
 			make_pair(server);
-			// server.make_pair(m_config.m_iport_server);
-			// m_config.m_iport_server.insert(std::make_pair(T1 x, T2 y));
 		}
 		else if (m_it->is("types")) {
 			parseContext(m_config.m_types, &ParseConfig::parseAllMimeTypes, "types")	;

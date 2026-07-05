@@ -2,14 +2,15 @@
 #define _CONFIG_H
 
 #include "webserver.hpp"
-#include "MimeTypesExt.hpp"
-#include "Server.hpp"
-#include "UnorderedMultiMap.hpp"
 
 struct Config {
 	typedef std::list<Server> ServerCont;
+
+	// NOTE: typedef for iport server map to ease the code
+	typedef UnorderedMultiMap<Server::IPort, Server> ServerMultiMap;
+
 	MimeTypesExt m_types;
-	UnorderedMultiMap<Server::IPort, Server> m_iport_server;
+	ServerMultiMap m_iport_server;
 	std::list<Server> m_servers;
 };
 

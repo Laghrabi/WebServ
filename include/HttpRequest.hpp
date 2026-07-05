@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpRequest.hpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: zfarouk <zfarouk@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/07/05 19:32:55 by zfarouk          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef HTTP_REQUEST_HPP
 # define HTTP_REQUEST_HPP
 
@@ -74,15 +62,17 @@ class HttpRequest {
         std::string							_uri;
         std::string							_routeUri;
     	std::string							_queryString;
-        std::map<std::string, std::string> _queryParams;
+        std::multimap<std::string, std::string> _queryParams;
         std::string							_version;
         std::map<std::string, std::string>	_headers;
         size_t                              _contentLength;
         size_t                              _chunkedSize;
         std::vector<char>                   _body;
         size_t								_bodyBytesWritten;
+        static const size_t                 _MAX_BODY_SIZE = 1024;
         static const size_t                 _MAX_BODY_SIZE = 10485760;
-        Config::ServerRange                        _serverRange;
+        Server                              *_server;
+        Config::ServerRange                  _serverRange;
 
         bool	parseRequestLine();
 		bool	parseHeaders();
@@ -122,6 +112,7 @@ class HttpRequest {
         std::string getHeader(const std::string& key) const;
         ParseState getCurrentState() const;
 		int	getStatusCode() const;
+        const std::multimap<std::string, std::string>& getQueryParams() const;
 };
 
 char	safeToLower(char c);

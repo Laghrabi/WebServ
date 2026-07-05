@@ -1,21 +1,7 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpRequest.cpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: zfarouk <zfarouk@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/07/05 19:47:53 by zfarouk          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-#include "HttpRequest.hpp"
-#include "../../Utils/StringUtils.hpp"
-
+#include "../../../include/webserver.hpp"
 
 HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0) {}
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL) {}
 
 /**
   * @brief Default constructor.
@@ -24,7 +10,7 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
   * to READING_REQUEST_LINE and the buffer index to 0.
   */
 HttpRequest::HttpRequest(const Config::ServerRange& serverRange) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _serverRange(serverRange) {}
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL), _serverRange(serverRange) {}
 
 /**
   * @brief Destructor.

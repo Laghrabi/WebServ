@@ -1,16 +1,4 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpRequestValidation.cpp                          :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: zfarouk <zfarouk@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/21 16:15:41 by claghrab          #+#    #+#             */
-/*   Updated: 2026/07/05 19:19:37 by zfarouk          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-#include "HttpRequest.hpp"
+#include "../../../include/webserver.hpp"
 
 /**
  * @brief Utility to decode percent-encoded characters in a string.
@@ -131,13 +119,9 @@ bool	HttpRequest::parseQueryParams() {
 			std::string	value = pair.substr(eqPos + 1);
 			decodeString(key);
     		decodeString(value);
-			if (_queryParams.find(key) != _queryParams.end()) {
-        		_queryParams[key] += "," + value;
-    		} else {
-        		_queryParams[key] = value;
-   			}
+			_queryParams.insert(std::make_pair(key, value));
 		} else {
-			_queryParams[pair] = "";
+			_queryParams.insert(std::make_pair(pair, ""));
 		}
 	}
 	return (true);

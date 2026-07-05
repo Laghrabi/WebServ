@@ -8,6 +8,9 @@ struct Config {
 
 	// NOTE: typedef for iport server map to ease the code
 	typedef UnorderedMultiMap<Server::IPort, Server> ServerMultiMap;
+	typedef ServerMultiMap::const_iterator ServerMultiMapConstIter;
+	typedef std::pair<ServerMultiMapConstIter, ServerMultiMapConstIter> ServerRange;
+	
 
 	MimeTypesExt m_types;
 	ServerMultiMap m_iport_server;

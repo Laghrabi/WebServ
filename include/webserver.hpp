@@ -36,6 +36,9 @@
 #include "tokenization.hpp"
 #include "findElem.hpp"
 
+#include <fcntl.h>
+#include <unistd.h>
+
 typedef std::vector<token> TokenCont;
 
 
@@ -49,6 +52,7 @@ typedef std::vector<token> TokenCont;
 #include "Location.hpp"
 #include "IPortV4.hpp"
 #include "IPortV6.hpp"
+#include "../HTTP/request/HttpRequest.hpp"
 
 #define DEFAULT_ADDR 0
 #define DEFAULT_PORT 80

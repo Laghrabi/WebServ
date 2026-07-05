@@ -11,6 +11,7 @@ void Server::parseServerName(ContIter &begin) {
 	}
 }
 
+
 void Server::parseIPort(ContIter &begin) {
 	std::string iport_str = begin->value;
 	size_t pos;
@@ -137,6 +138,7 @@ Server::IPort& Server::IPort::operator=(const Server::IPort& other) {
 	}
 	// std::cout << "copy assignment operator: " << m_addr << "\n";
 	*m_addr = *other.m_addr;
+	m_size = other.m_size;
 	return (*this);
 }
 

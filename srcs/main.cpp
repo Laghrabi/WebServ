@@ -21,7 +21,7 @@ int main(int argc, char **argv){
 		ParseConfig parser(tokens);
 		try {
 			const Config conf = parser.parse();
-			print(conf);
+			// print(conf);
 
 		// for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
 		//   		it->buildRouteTree();

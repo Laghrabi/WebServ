@@ -13,3 +13,25 @@
 char	safeToLower(char c) {
 	return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
 }
+
+/**
+ * @brief Searches for a server configuration by its Host header name.
+ * * Iterates through the pre-filtered range of servers associated with the 
+ * request's listening address. Returns the first matching server based on 
+ * the 'server_name' directive, or defaults to the first server in the range.
+ * @param name The server name from the HTTP 'Host' header.
+ * @return A pointer to the matching Server, or the default Server if no match.
+ */
+const Server* HttpRequest::findServer(const std::string& name) {
+	
+	Config::ServerMultiMapConstIter& begin = _serverRange.first;
+	const Config::ServerMultiMapConstIter& end = _serverRange.second;
+	
+	for (; begin != end; ++begin) {
+		const Server *server = &begin->second;
+		if (server->hasServerName(name)) {
+			return (server);
+		}
+	}
+	return (&_serverRange.first->second);
+}

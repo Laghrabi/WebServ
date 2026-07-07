@@ -1,16 +1,4 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpRequestValidation.cpp                          :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/21 16:15:41 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/29 17:33:03 by claghrab         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-#include "HttpRequest.hpp"
+#include "../../../include/webserver.hpp"
 
 /**
  * @brief Utility to decode percent-encoded characters in a string.
@@ -70,7 +58,7 @@ bool HttpRequest::validateMethod() {
  * @return true if the version is HTTP/1.1, false otherwise.
  */
 bool	HttpRequest::validateVersion() {
-	if (_version != "HTTP/1.1") {
+	if (_version != "HTTP/1.0") {
 		_statusCode = HTTP_VERSION_NOT_SUPPORTED;
         _currentState = ERROR;
         return (false); 
@@ -131,13 +119,9 @@ bool	HttpRequest::parseQueryParams() {
 			std::string	value = pair.substr(eqPos + 1);
 			decodeString(key);
     		decodeString(value);
-			if (_queryParams.find(key) != _queryParams.end()) {
-        		_queryParams[key] += "," + value;
-    		} else {
-        		_queryParams[key] = value;
-   			}
+			_queryParams.insert(std::make_pair(key, value));
 		} else {
-			_queryParams[pair] = "";
+			_queryParams.insert(std::make_pair(pair, ""));
 		}
 	}
 	return (true);
@@ -175,7 +159,7 @@ bool    HttpRequest::normalizeUri() {
             stack.push_back(segment);         
     }
     _routeUri = "";
-    for (int i = 0; i < stack.size(); ++i)
+    for (std::size_t i = 0; i < stack.size(); ++i)
         _routeUri += "/" + stack[i];
     if (_routeUri.empty())
         _routeUri = "/";

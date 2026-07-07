@@ -1,5 +1,11 @@
 
 #include "webserver.hpp"
+#include <unistd.h>
+#include "Config.hpp"
+#include "ConnectionManager.hpp"
+#include "ClientSocket.hpp"
+#include "ConnectionManager.hpp"
+#include "ListeningSocket.hpp"
 
 int main(int argc, char **argv){
 	if (argc != 2)
@@ -20,27 +26,38 @@ int main(int argc, char **argv){
 
 		ParseConfig parser(tokens);
 		try {
-			const Config conf = parser.parse();
+			Config conf = parser.parse();
+			ConnectionManager manager(conf);
 			// print(conf);
-
-		// for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
-		//   		it->buildRouteTree();
-		// }
-
-			// typedef UnorderedMultiMap<Server::IPort, Server> type;
+			
+			
+			
 			const UnorderedMultiMap<Server::IPort, Server>& mymap = conf.m_iport_server;
-
-			for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = mymap.begin(); it != mymap.end(); it = mymap.upper_bound(it->first)) {
-				// it->first = "hey";
+			
+			for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = mymap.begin(); it != mymap.end(); it = mymap.upper_bound(it->first)) {	
 				std::cout << "new iport: " << it->first << "\n";
 			}
-		}
-		catch (const ParseConfig::ConfigExcept& e) {
-			std::cerr << e.what() << "\n";
-		}
+			// std::multimap<Server::IPort, Server> hey = conf.m_iport_server;
+			//
+			// for (std::multimap<Server::IPort, Server>::const_iterator it = hey.begin(); it != hey.end();) {
+				// 	const Server::IPort& iport =  it->first;
+				// 	// std::cout << iport.getPort() << "\n";
+				// 	it = hey.upper_bound(iport);
+				// 	// sleep (1);
+				// }
+				for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
+					it->buildRouteTree();
+			}
+			manager.init();
+			manager.run();
+			}
+			catch (const ParseConfig::ConfigExcept& e) {
+				std::cerr << e.what() << "\n";
+			}
 	}
 	catch (const std::exception& e){
-
+		std::cerr << e.what() << "\n";
+		return (1);
 	}
 	
 	

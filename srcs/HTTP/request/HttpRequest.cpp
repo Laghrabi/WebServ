@@ -1,19 +1,7 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpRequest.cpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/12 14:30:50 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/29 17:10:43 by claghrab         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
+#include "../../../include/webserver.hpp"
 
-#include "HttpRequest.hpp"
-#include "../../Utils/StringUtils.hpp"
-
-
+HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL) {}
 
 /**
   * @brief Default constructor.
@@ -21,8 +9,66 @@
   * Initializes a new HTTP request, setting the initial parsing state 
   * to READING_REQUEST_LINE and the buffer index to 0.
   */
-HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0) {}
+HttpRequest::HttpRequest(const Config::ServerRange& serverRange) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL), _serverRange(serverRange) {}
+
+							/**
+ * @brief Copy constructor for HttpRequest.
+ * Performs a member-wise copy of the request state, including buffer data,
+ * headers, query parameters, and FSM status.
+ * @param other The source HttpRequest object to copy.
+ */
+HttpRequest::HttpRequest(const HttpRequest& other) : 
+    _statusCode(other._statusCode),
+    _currentState(other._currentState),
+    _savedData(other._savedData),
+    _bufferIndex(other._bufferIndex),
+    _method(other._method),
+    _uri(other._uri),
+    _routeUri(other._routeUri),
+    _queryString(other._queryString),
+    _queryParams(other._queryParams),
+    _version(other._version),
+    _headers(other._headers),
+    _contentLength(other._contentLength),
+    _chunkedSize(other._chunkedSize),
+    _body(other._body),
+    _bodyBytesWritten(other._bodyBytesWritten),
+    _client_max_body_size(other._client_max_body_size),
+    _server(other._server),
+    _serverRange(other._serverRange) {}
+
+/**
+ * @brief Copy assignment operator for HttpRequest.
+ * Safely updates the current object's state to match the source object.
+ * Prevents self-assignment and performs a deep copy of all internal members.
+ * @param other The source HttpRequest object to assign from.
+ * @return A reference to the current object.
+ */
+HttpRequest& HttpRequest::operator=(const HttpRequest& other) {
+	if (this != &other) {
+		_statusCode = other._statusCode;
+		_currentState = other._currentState;
+		_savedData = other._savedData;
+		_bufferIndex = other._bufferIndex;
+		_method = other._method;
+		_uri = other._uri;
+		_routeUri = other._routeUri;
+		_queryString = other._queryString;
+		_queryParams = other._queryParams;
+		_version = other._version;
+		_headers = other._headers;
+		_contentLength = other._contentLength;
+		_chunkedSize = other._chunkedSize;
+		_body = other._body;
+		_bodyBytesWritten = other._bodyBytesWritten;
+		_client_max_body_size = other._client_max_body_size;
+		_server = other._server;
+		_serverRange = other._serverRange;
+	}
+	return (*this);
+}
+
 
 /**
   * @brief Destructor.
@@ -165,7 +211,17 @@ bool	HttpRequest::parseHeaders()
 		}
 		std::string	value = headerLine.substr(colonPos + 1);
 		std::transform(key.begin(), key.end(), key.begin(), safeToLower);
-		_headers[key] = trimSpaces(value);
+		if (_headers.find(key) != _headers.end()) {
+			if (key == "host" || key == "content-length" ||
+				key == "content-type" || key == "transfer-encoding") {
+					_statusCode = BAD_REQUEST;
+					_currentState = ERROR;
+					return (false);
+				}
+			_headers[key] = ", " + trimSpaces(value);
+		} else {
+			_headers[key] = trimSpaces(value);
+		}
 		_bufferIndex += headerLine.size() + 2;
 		return(true);
 	}
@@ -193,6 +249,19 @@ bool	HttpRequest::validateHeaders() {
         _currentState = ERROR;
         return false;
     }
+	_server = findServer(itHost->second);
+	if (_server->isAllowed(_method) == false) {
+		_statusCode = METHOD_NOT_ALLOWED;
+        _currentState = ERROR;
+        return false;
+	}
+	if (_server->hasMaxBodySize() == true) {
+		_client_max_body_size = _server->getMaxBodySize();
+		if (_client_max_body_size > _MAX_BODY_SIZE)
+     	   _client_max_body_size = _MAX_BODY_SIZE; 
+	}
+	else
+		_client_max_body_size = _DEFAULT_BODY_SIZE;
 	if (_method == "POST" && itContentLength == _headers.end() && itTransferEncoding == _headers.end()) {
         _statusCode = BODY_LENGTH_REQUIRED;
         _currentState = ERROR;
@@ -216,7 +285,7 @@ bool	HttpRequest::validateHeaders() {
 			_currentState = ERROR;
     		return (false);
 		}
-		if (_contentLength > _MAX_BODY_SIZE) {
+		if (_contentLength > _client_max_body_size || _contentLength > _MAX_BODY_SIZE) {
 			_statusCode = PAYLOAD_TOO_LARGE;
         	_currentState = ERROR;
         	return (false);
@@ -310,15 +379,16 @@ bool HttpRequest::parseChunkSize() {
 		_currentState = ERROR;
 		return (false);
 	} else if (_chunkedSize != 0) {
-		if (_chunkedSize > _MAX_BODY_SIZE) {
+		if (_chunkedSize > _client_max_body_size || _chunkedSize > _MAX_BODY_SIZE) {
 			_statusCode = PAYLOAD_TOO_LARGE;
             _currentState = ERROR;
             return (false);
         }
-		if (_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
-			_statusCode = PAYLOAD_TOO_LARGE;
-			_currentState = ERROR;
-			return (false);
+		if (_body.size() + _chunkedSize > _client_max_body_size ||
+			_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
+				_statusCode = PAYLOAD_TOO_LARGE;
+				_currentState = ERROR;
+				return (false);
 		}
 		_currentState = READING_CHUNK_DATA;
 		_bufferIndex += chunkedLine.size() + 2;
@@ -350,7 +420,7 @@ bool	HttpRequest::parseChunkData() {
 			_currentState = ERROR;
 			return (false);
 	}
-	if (_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
+	if (_body.size() + _chunkedSize > _client_max_body_size || _body.size() + _chunkedSize > _MAX_BODY_SIZE) {
 		_statusCode = PAYLOAD_TOO_LARGE;
 		_currentState = ERROR;
 		return (false);

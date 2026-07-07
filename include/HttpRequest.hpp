@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpRequest.hpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: claghrab <claghrab@student.1337.ma>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/12 14:13:03 by claghrab          #+#    #+#             */
-/*   Updated: 2026/06/29 17:31:47 by claghrab         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef HTTP_REQUEST_HPP
 # define HTTP_REQUEST_HPP
 
@@ -23,6 +11,7 @@
 # include <ctime>
 # include <cstdio>
 #include <cctype>
+#include "webserver.hpp"
 
 
 /**
@@ -65,15 +54,15 @@ enum HttpStatus {
 
 class HttpRequest {
     private:
+        int									_statusCode;
         ParseState                      	_currentState;
         std::vector<char>	                _savedData;
         size_t				                _bufferIndex;          
-        int									_statusCode;
         std::string							_method;
         std::string							_uri;
         std::string							_routeUri;
     	std::string							_queryString;
-        std::map<std::string, std::string> _queryParams;
+        std::multimap<std::string, std::string> _queryParams;
         std::string							_version;
         std::map<std::string, std::string>	_headers;
         size_t                              _contentLength;
@@ -81,6 +70,10 @@ class HttpRequest {
         std::vector<char>                   _body;
         size_t								_bodyBytesWritten;
         static const size_t                 _MAX_BODY_SIZE = 10485760;
+        static const size_t                 _DEFAULT_BODY_SIZE = 1048576;
+        size_t                              _client_max_body_size;
+        const Server                              *_server;
+        Config::ServerRange                  _serverRange;
 
         bool	parseRequestLine();
 		bool	parseHeaders();
@@ -95,12 +88,14 @@ class HttpRequest {
 		bool	splitQueryString();
         bool    parseQueryParams();
         bool    normalizeUri();
+        const Server* findServer(const std::string& name);
 		
+        
+        public:
+        HttpRequest();
+        HttpRequest(const Config::ServerRange& serverRange);
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
-        
-    public:
-        HttpRequest();
         ~HttpRequest();
     
         void	parse(const std::vector<char>& rawBuffer);
@@ -118,6 +113,7 @@ class HttpRequest {
         std::string getHeader(const std::string& key) const;
         ParseState getCurrentState() const;
 		int	getStatusCode() const;
+        const std::multimap<std::string, std::string>& getQueryParams() const;
 };
 
 char	safeToLower(char c);

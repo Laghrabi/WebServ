@@ -58,7 +58,7 @@ bool HttpRequest::validateMethod() {
  * @return true if the version is HTTP/1.1, false otherwise.
  */
 bool	HttpRequest::validateVersion() {
-	if (_version != "HTTP/1.1") {
+	if (_version != "HTTP/1.0") {
 		_statusCode = HTTP_VERSION_NOT_SUPPORTED;
         _currentState = ERROR;
         return (false); 

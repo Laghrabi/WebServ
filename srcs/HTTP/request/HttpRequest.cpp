@@ -218,7 +218,7 @@ bool	HttpRequest::parseHeaders()
 					_currentState = ERROR;
 					return (false);
 				}
-			_headers[key] = ", " + trimSpaces(value);
+			_headers[key] += ", " + trimSpaces(value);
 		} else {
 			_headers[key] = trimSpaces(value);
 		}

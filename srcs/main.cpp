@@ -1,4 +1,5 @@
 
+#include "HttpRequest.hpp"
 #include "webserver.hpp"
 #include <unistd.h>
 #include "Config.hpp"
@@ -8,59 +9,22 @@
 #include "ListeningSocket.hpp"
 
 int main(int argc, char **argv){
-	if (argc != 2)
-	{
-		std::cerr << "./webserver configfile.conf";
-		return (1);
+	(void)argc;
+	(void)argv;
+	HttpRequest request;	
+	std::string request_str = "GET /hey/but%F3?hey=but&but=hey\r\n";
+	std::vector<char> data(request_str.begin(), request_str.end());
+	request.parse(data);
+	// method uri name query_string
+	std::cout << request.getUri() << "\n";
+	std::cout << request.getMethod() << "\n";
+	std::cout << request.getQueryString();
+	typedef std::multimap<std::string, std::string> type;
+	type m = request.getQueryParams();
+	std::cout << m.size() << '\n';
+	for (type::iterator it = m.begin(); it != m.end(); ++it) {
+		std::cout << it->first << '\n';
 	}
-
-	std::ifstream file(argv[1]);
-
-	if (!file)
-	{
-		std::cerr << "failed to open file\n";
-		return (1);
-	}
-	try {
-		std::vector<token> tokens = lexer::tokenizeFile(argv[1]);
-
-		ParseConfig parser(tokens);
-		try {
-			Config conf = parser.parse();
-			ConnectionManager manager(conf);
-			// print(conf);
-			
-			
-			
-			const UnorderedMultiMap<Server::IPort, Server>& mymap = conf.m_iport_server;
-			
-			for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = mymap.begin(); it != mymap.end(); it = mymap.upper_bound(it->first)) {	
-				std::cout << "new iport: " << it->first << "\n";
-			}
-			// std::multimap<Server::IPort, Server> hey = conf.m_iport_server;
-			//
-			// for (std::multimap<Server::IPort, Server>::const_iterator it = hey.begin(); it != hey.end();) {
-				// 	const Server::IPort& iport =  it->first;
-				// 	// std::cout << iport.getPort() << "\n";
-				// 	it = hey.upper_bound(iport);
-				// 	// sleep (1);
-				// }
-				for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
-					it->buildRouteTree();
-			}
-			manager.init();
-			manager.run();
-			}
-			catch (const ParseConfig::ConfigExcept& e) {
-				std::cerr << e.what() << "\n";
-			}
-	}
-	catch (const std::exception& e){
-		std::cerr << e.what() << "\n";
-		return (1);
-	}
-	
-	
 
 	return (0);
 }

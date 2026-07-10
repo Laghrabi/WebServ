@@ -11,6 +11,7 @@ void RouteConfig::init(void) {
 		s_handlers["access_log"] = &RouteConfig::parseAccessLog;
 		s_handlers["max_client_body_size"] = &RouteConfig::parseMaxBodySize;
 		s_handlers["allowed_methods"] = &RouteConfig::parseAllowedMethods;
+		s_handlers["cgi"] = &RouteConfig::parseCgiConf;
 	}
 }
 
@@ -34,6 +35,24 @@ RouteConfig::RouteConfig() : m_max_body_size_exist(false) {
 	init();
 }
 
+void RouteConfig::parseCgiConf(ContIter &begin) {
+	std::string interpreter;
+	std::string ext = begin->value;
+	if (ext.empty())
+	{
+		throw (ParseConfigType::ConfigExcept("empty extention??", begin->line));
+	}
+	++begin;
+	interpreter = begin->value;
+	if (ext.empty()) {
+		throw (ParseConfigType::ConfigExcept("no interpreter??", begin->line));
+	}
+	++begin;
+	if (mapElemExist(m_cgi_map, ext)) {
+		throw (ParseConfigType::ConfigExcept("duplicate interpreter??", begin->line));
+	}
+	m_cgi_map[ext] = interpreter;
+}
 
 void RouteConfig::parseAutoIndex(ContIter &begin) {
 	if (!begin->is("on") && !begin->is("off")) {

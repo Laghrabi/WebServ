@@ -64,6 +64,8 @@ class RouteConfig {
 		// check if the method is allowed
 		bool isAllowed(const std::string& method) const;
 
+	void parseCgiConf(ContIter &begin);
+
 
 	private:
 		std::string m_root;
@@ -74,6 +76,7 @@ class RouteConfig {
 		std::size_t m_max_body_size;
 		bool m_max_body_size_exist;
 		std::set<std::string> m_allowed_methods;
+		std::map<std::string, std::string> m_cgi_map;
 
 		static std::set<std::string> s_available_methods;
 };

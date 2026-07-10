@@ -42,6 +42,7 @@
 typedef std::vector<token> TokenCont;
 
 
+
 #include "UnorderedMultiMap.hpp"
 
 #include "utils.tpp"
@@ -54,6 +55,7 @@ typedef std::vector<token> TokenCont;
 #include "IPortV6.hpp"
 #include "HttpRequest.hpp"
 #include "StringUtils.hpp"
+#include "CgiRequest.hpp"
 
 #define DEFAULT_ADDR 0
 #define DEFAULT_PORT 80

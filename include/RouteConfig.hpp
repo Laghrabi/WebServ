@@ -33,6 +33,8 @@ class RouteConfig {
 
 		void addMethod(const std::string& new_method) throw (std::exception);
 		const std::set<std::string>& getAllowedMethods() const;
+		void parseCgiConf(ContIter &begin);
+		bool validExtention(const std::string& ext, std::string& err_msg);
 
 	public:
 		RouteConfig();
@@ -64,7 +66,7 @@ class RouteConfig {
 		// check if the method is allowed
 		bool isAllowed(const std::string& method) const;
 
-	void parseCgiConf(ContIter &begin);
+
 
 
 	private:
@@ -76,7 +78,7 @@ class RouteConfig {
 		std::size_t m_max_body_size;
 		bool m_max_body_size_exist;
 		std::set<std::string> m_allowed_methods;
-		std::map<std::string, std::string> m_cgi_map;
+		std::set<std::string> m_cgi_map;
 
 		static std::set<std::string> s_available_methods;
 };

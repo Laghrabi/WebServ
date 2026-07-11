@@ -1,3 +1,4 @@
+#include "findElem.hpp"
 #include "webserver.hpp"
 
 RouteConfig::MapHandler RouteConfig::s_handlers;
@@ -35,23 +36,34 @@ RouteConfig::RouteConfig() : m_max_body_size_exist(false) {
 	init();
 }
 
-void RouteConfig::parseCgiConf(ContIter &begin) {
-	std::string interpreter;
-	std::string ext = begin->value;
-	if (ext.empty())
+bool RouteConfig::validExtention(const std::string& ext, std::string& err_msg) {
+	if (ext[0] != '.')
 	{
-		throw (ParseConfigType::ConfigExcept("empty extention??", begin->line));
+		err_msg = "extention is not valid: because it does not begin with .";
+		return (false);
 	}
-	++begin;
-	interpreter = begin->value;
-	if (ext.empty()) {
-		throw (ParseConfigType::ConfigExcept("no interpreter??", begin->line));
+	if (ext.find('.', 1) != std::string::npos) {
+		err_msg = "extention is not valid: because it has more than a .";
+		return (false);
 	}
-	++begin;
 	if (mapElemExist(m_cgi_map, ext)) {
-		throw (ParseConfigType::ConfigExcept("duplicate interpreter??", begin->line));
+		err_msg = "duplicate extention: " + ext;
+		return (false);
 	}
-	m_cgi_map[ext] = interpreter;
+	return (true);
+}
+
+void RouteConfig::parseCgiConf(ContIter &begin) {
+	std::string ext;
+	std::string err_msg;
+	while (begin->is(WORD))	{
+		ext = begin->value;
+		if (!validExtention(ext, err_msg)) {
+			throw (ParseConfig::ConfigExcept(err_msg, begin->line));
+		}
+		m_cgi_map.insert(ext);
+		++begin;
+	}
 }
 
 void RouteConfig::parseAutoIndex(ContIter &begin) {

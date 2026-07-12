@@ -35,7 +35,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
     if (route && !route->getRedirectUrl().empty()) {
         result.action = ACTION_REDIRECT;
         result.targetPath = route->getRedirectUrl();
-        result.statusCode = route->getRedirectStatusCode();;
+        result.statusCode = route->getRedirectStatusCode();
         return result;
     }
 

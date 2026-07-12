@@ -4,6 +4,7 @@
 /*          stl containers           */
 
 #include <cstring>
+#include <cerrno>
 
 #include <list>
 #include <map>
@@ -30,6 +31,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+# include <sys/stat.h>
 #include <netdb.h>
 
 
@@ -54,7 +56,8 @@ typedef std::vector<token> TokenCont;
 #include "IPortV6.hpp"
 #include "HttpRequest.hpp"
 #include "StringUtils.hpp"
-#include "HttpRouter.hpp"
+#include "ResourceLocator.hpp"
+#include "RouteManager.hpp"
 
 #define DEFAULT_ADDR 0
 #define DEFAULT_PORT 80

@@ -40,11 +40,14 @@ enum ParseState {
  */
 enum HttpStatus {
     OK = 200,
+    MOVED_PERMANENTLY = 301,
+    FOUND = 302,
+    TEMPORARY_REDIRECT = 307,
     BAD_REQUEST = 400,
     FORBIDDEN = 403,
     NOT_FOUND = 404,
     METHOD_NOT_ALLOWED = 405,
-	BODY_LENGTH_REQUIRED = 411,
+    BODY_LENGTH_REQUIRED = 411,
     PAYLOAD_TOO_LARGE = 413,
     URI_TOO_LONG = 414,
     INTERNAL_SERVER_ERROR = 500,
@@ -113,6 +116,7 @@ class HttpRequest {
         std::string getHeader(const std::string& key) const;
         ParseState getCurrentState() const;
 		int	getStatusCode() const;
+        const Server* getServer() const;
         const std::multimap<std::string, std::string>& getQueryParams() const;
 };
 

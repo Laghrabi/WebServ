@@ -7,6 +7,19 @@
 #include "ConnectionManager.hpp"
 #include "ListeningSocket.hpp"
 
+// void printQueryParams( const std::multimap<std::string, std::string> _queryParams) {
+//     std::cout << "--- Query Parameters ---\n";
+    
+//     for (std::multimap<std::string, std::string>::const_iterator it = _queryParams.begin(); 
+//          it != _queryParams.end(); 
+//          ++it) {
+        
+//         std::cout << it->first << " = " << it->second << "\n";
+//     }
+    
+//     std::cout << "------------------------\n";
+// }
+
 int main(int argc, char **argv){
 	if (argc != 2)
 	{
@@ -27,6 +40,7 @@ int main(int argc, char **argv){
 		ParseConfig parser(tokens);
 		try {
 			Config conf = parser.parse();
+			// HttpRequest request;
 			ConnectionManager manager(conf);
 			// print(conf);
 			
@@ -50,6 +64,24 @@ int main(int argc, char **argv){
 			}
 			manager.init();
 			manager.run();
+
+			// std::string rawString = 
+        	// "GET /api/users/../../../pass/?name=admin&sort=asc&name=chaimaa HTTP/1.0\r\n"
+        	// "Host: localhost:8080\r\n"
+        	// "User-Agent: curl/7.68.0\r\n"
+        	// "Accept: */*\r\n"
+        	// "\r\n";
+			// std::vector<char> rawBuffer(rawString.begin(), rawString.end());
+			// request.parse(rawBuffer);
+
+			// std::cout << "State       : " << request.getCurrentState() << " (FINISHED = 6, ERROR = 7)\n";
+    		// std::cout << "Status Code : " << request.getStatusCode() << "\n";
+    		// std::cout << "Method      : [" << request.getMethod() << "]\n";
+    		// std::cout << "Route URI   : [" << request.getRouteUri() << "]\n";
+    		// std::cout << "Query String: [" << request.getQueryString() << "]\n";
+    		// std::cout << "Version     : [" << request.getVersion() << "]\n";
+			// printQueryParams(request.getQueryParams());
+
 			}
 			catch (const ParseConfig::ConfigExcept& e) {
 				std::cerr << e.what() << "\n";

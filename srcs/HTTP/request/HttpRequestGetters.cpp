@@ -104,3 +104,7 @@ const std::string& HttpRequest::getQueryString() const {
 const std::multimap<std::string, std::string>& HttpRequest::getQueryParams() const {
 	return (_queryParams);
 }
+
+const Server* HttpRequest::getServer() const {
+    return (_server);
+}

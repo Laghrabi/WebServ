@@ -15,6 +15,28 @@ char	safeToLower(char c) {
 }
 
 /**
+ * @brief Utility to decode percent-encoded characters in a string.
+ * * Replaces "%XX" with the corresponding ASCII character.
+ * @param target The string to decode in-place.
+ * @return true if encoding is valid, false otherwise.
+ */
+bool HttpRequest::decodeString(std::string& target) {
+    size_t i = 0;
+    while ((i = target.find('%', i)) != std::string::npos) {
+        if (i + 2 >= target.length() || 
+            !std::isxdigit(static_cast<unsigned char>(target[i + 1])) || 
+            !std::isxdigit(static_cast<unsigned char>(target[i + 2]))) {
+                return false;
+        }
+        std::string hexStr = target.substr(i + 1, 2);
+        long convertedHex = std::strtol(hexStr.c_str(), NULL, 16);
+        target.replace(i, 3, 1, static_cast<char>(convertedHex));
+        i++;
+    }
+    return true;
+}
+
+/**
  * @brief Searches for a server configuration by its Host header name.
  * * Iterates through the pre-filtered range of servers associated with the 
  * request's listening address. Returns the first matching server based on 
@@ -45,4 +67,27 @@ const Server* HttpRequest::findServer(const std::string& name) {
 		}
 	}
 	return (&_serverRange.first->second);
+}
+
+/**
+ * @brief Splits the request URI into individual segments based on the '/' delimiter.
+ * * Populates the `_uriSegments` member variable, filtering out empty segments 
+ * caused by multiple consecutive slashes.
+ */
+void HttpRequest::tokenizeUri() { 
+    size_t start = 0;
+    size_t end = 0;
+    
+    while ((end = _routeUri.find('/', start)) != std::string::npos) {
+        std::string segment = _routeUri.substr(start, end - start);
+        if (!segment.empty()) {
+            _uriSegments.push_back(segment);
+        }
+        start = end + 1;
+    }
+    
+    std::string lastSegment = _uri.substr(start);
+    if (!lastSegment.empty()) {
+        _uriSegments.push_back(lastSegment);
+    }
 }

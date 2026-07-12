@@ -63,6 +63,7 @@ class HttpRequest {
         size_t				                _bufferIndex;          
         std::string							_method;
         std::string							_uri;
+        std::vector<std::string>            _uriSegments;
         std::string							_routeUri;
     	std::string							_queryString;
         std::multimap<std::string, std::string> _queryParams;
@@ -92,6 +93,7 @@ class HttpRequest {
         bool    parseQueryParams();
         bool    normalizeUri();
         const Server* findServer(const std::string& name);
+        void   tokenizeUri();
 		
         
         public:
@@ -118,6 +120,7 @@ class HttpRequest {
 		int	getStatusCode() const;
         const Server* getServer() const;
         const std::multimap<std::string, std::string>& getQueryParams() const;
+        const std::vector<std::string>& getUriSegments() const;
 };
 
 char	safeToLower(char c);

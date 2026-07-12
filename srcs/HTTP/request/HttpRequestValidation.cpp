@@ -1,28 +1,6 @@
 #include "../../../include/webserver.hpp"
 
 /**
- * @brief Utility to decode percent-encoded characters in a string.
- * * Replaces "%XX" with the corresponding ASCII character.
- * @param target The string to decode in-place.
- * @return true if encoding is valid, false otherwise.
- */
-bool HttpRequest::decodeString(std::string& target) {
-    size_t i = 0;
-    while ((i = target.find('%', i)) != std::string::npos) {
-        if (i + 2 >= target.length() || 
-            !std::isxdigit(static_cast<unsigned char>(target[i + 1])) || 
-            !std::isxdigit(static_cast<unsigned char>(target[i + 2]))) {
-                return false;
-        }
-        std::string hexStr = target.substr(i + 1, 2);
-        long convertedHex = std::strtol(hexStr.c_str(), NULL, 16);
-        target.replace(i, 3, 1, static_cast<char>(convertedHex));
-        i++;
-    }
-    return true;
-}
-
-/**
  * @brief Decodes the route URI and handles errors with status codes.
  * @return true if success, false and sets 400 status on failure.
  */
@@ -58,7 +36,7 @@ bool HttpRequest::validateMethod() {
  * @return true if the version is HTTP/1.1, false otherwise.
  */
 bool	HttpRequest::validateVersion() {
-	if (_version != "HTTP/1.0") {
+	if (_version != "HTTP/1.1") {
 		_statusCode = HTTP_VERSION_NOT_SUPPORTED;
         _currentState = ERROR;
         return (false); 
@@ -80,6 +58,7 @@ bool HttpRequest::splitQueryString() {
     if (queryPos != std::string::npos) {
         _routeUri = _uri.substr(0, queryPos);
         _queryString = _uri.substr(queryPos + 1);
+        tokenizeUri();
     } else {
         _routeUri = _uri;
         _queryString = "";

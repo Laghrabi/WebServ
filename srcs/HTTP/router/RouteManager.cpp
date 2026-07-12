@@ -24,7 +24,7 @@ RouteManager::~RouteManager() {}
 RouteResult RouteManager::processRequest(const HttpRequest& request) const {
     RouteResult result;
     result.statusCode = OK;
-    const RouteConfig* route = matchRoute(request.getRouteUri(), request.getServer());
+    const RouteConfig* route = matchRoute(request.getUriSegments(), request.getServer());
 
     if (route && !route->isAllowed(request.getMethod())) {
         result.action = ACTION_ERROR;
@@ -88,15 +88,15 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 }
 
 /**
- * @brief Matches a request URI to the most specific RouteConfig using the Trie tree.
- * * Traverses the server's routing tree segment-by-segment. Continues traversal as 
- * long as matching segments exist, keeping track of the deepest node that holds 
- * a configuration (longest prefix matching).
- * @param uri The normalized URI path from the request.
- * @param server The server configuration to search within.
- * @return A pointer to the best-matching RouteConfig, or NULL if the server is invalid.
+ * @brief Matches a list of URI segments to the most specific RouteConfig in the server tree.
+ * * Traverses the `m_route_tree` using the pre-tokenized URI segments. Keeps 
+ * track of the deepest node that contains a valid configuration to implement 
+ * longest-prefix matching.
+ * @param uriSegments A vector of path segments (e.g., {"api", "v1", "users"}).
+ * @param server The target server configuration containing the routing tree.
+ * @return A pointer to the most specific RouteConfig, or the server's default config if no match.
  */
-const RouteConfig* RouteManager::matchRoute(const std::string& uri, const Server* server) const {
+const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server) const {
     if (!server)
         return (NULL);
     const RouteNode* currNode = &(server->m_route_tree);
@@ -104,26 +104,17 @@ const RouteConfig* RouteManager::matchRoute(const std::string& uri, const Server
 
     if (currNode->config)
         bestMatch = currNode->config;
-    
-    size_t start = 0;
-    size_t end = 0;
-    while (start < uri.length()) {
-        end = uri.find('/', start);
-        if (end == std::string::npos)
-            end = uri.length();
-        std::string segment = uri.substr(start, end - start);
-        start = end + 1;
-        if (segment.empty())
-            continue ;
         
-        std::map<std::string, RouteNode*>::const_iterator it = currNode->children.find(segment);
-        if (it != currNode->children.end()) {
-            currNode = it->second;
+    for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
+        std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
+        if (match != currNode->children.end()) {
+            currNode = match->second;
             if (currNode->config)
                 bestMatch = currNode->config;
+        } else {
+            break;
         }
-        else
-            break ;
     }
+
     return (bestMatch);
 }

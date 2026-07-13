@@ -10,6 +10,10 @@ bool HttpRequest::uriDecode() {
         _currentState = ERROR;
         return false;
     }
+
+    for (size_t i = 0; i < _UriSegments.size(); ++i)
+        decodeString(_UriSegments[i]);
+    
 	return (true);
 }
 
@@ -57,10 +61,11 @@ bool HttpRequest::splitQueryString() {
     
     if (queryPos != std::string::npos) {
         _routeUri = _uri.substr(0, queryPos);
+        _EncodedRouteUri = _uri.substr(0, queryPos);
         _queryString = _uri.substr(queryPos + 1);
-        tokenizeUri();
     } else {
         _routeUri = _uri;
+        _EncodedRouteUri = _uri;
         _queryString = "";
     }
     return (true);
@@ -117,30 +122,46 @@ bool    HttpRequest::normalizeUri() {
     std::vector<std::string>    stack;
     size_t                      start = 0;
     size_t                      end = 0;
+    bool is_dir = true;
+    std::string segment;
 
     while (start < _routeUri.length()) {
         end = _routeUri.find('/', start);
         if (end == std::string::npos)
+        {
             end = _routeUri.length();
-        std::string segment = _routeUri.substr(start, end - start);
+            segment = _routeUri.substr(start, end - start);
+            if (segment != "" && segment != ".." && segment != ".")
+                is_dir = false;
+        }
+        else {
+            segment = _routeUri.substr(start, end - start);
+        }
         start = end + 1;
         if (segment == "" || segment == ".")
             continue ;
         else if (segment == "..") {
             if (!stack.empty())
                 stack.pop_back();
-            else {
-                _statusCode = FORBIDDEN;
-                _currentState = ERROR;
-                return (false);
-            }
-        } else
-            stack.push_back(segment);         
+        }
+        else {
+            stack.push_back(segment);
+        }
     }
-    _routeUri = "";
-    for (std::size_t i = 0; i < stack.size(); ++i)
+
+    _routeUri.clear();
+    _EncodedRouteUri.clear();
+    for (std::size_t i = 0; i < stack.size(); ++i) {
         _routeUri += "/" + stack[i];
-    if (_routeUri.empty())
-        _routeUri = "/";
+        _EncodedRouteUri += "/" + stack[i];
+    }
+    if (_routeUri.empty() || is_dir) {
+        _routeUri += "/";
+        _EncodedRouteUri += "/";
+    }
+
+    tokenizeUri(_EncodedUriSegments);
+    tokenizeUri(_UriSegments);
+
     return (true);
 }

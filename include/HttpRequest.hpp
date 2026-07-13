@@ -62,9 +62,11 @@ class HttpRequest {
         std::vector<char>	                _savedData;
         size_t				                _bufferIndex;          
         std::string							_method;
-        std::string							_uri;
-        std::vector<std::string>            _uriSegments;
-        std::string							_routeUri;
+        std::string							_uri; // uri string with querries not narmalized and not decoded.
+        std::string							_routeUri; // uri string without querries normalized and decoded.
+        std::string                         _EncodedRouteUri; // uri string without querries normalized and not decoded.
+        std::vector<std::string>            _EncodedUriSegments; // vector of encoded and normalized uri segments.
+        std::vector<std::string>            _UriSegments; // vector of decoded and normalized uri segments.
     	std::string							_queryString;
         std::multimap<std::string, std::string> _queryParams;
         std::string							_version;
@@ -76,8 +78,9 @@ class HttpRequest {
         static const size_t                 _MAX_BODY_SIZE = 10485760;
         static const size_t                 _DEFAULT_BODY_SIZE = 1048576;
         size_t                              _client_max_body_size;
-        const Server                              *_server;
-        Config::ServerRange                  _serverRange;
+        const Server*                       _server;
+        Config::ServerRange                 _serverRange;
+        RouteResult                         _routeResult;
 
         bool	parseRequestLine();
 		bool	parseHeaders();
@@ -93,7 +96,7 @@ class HttpRequest {
         bool    parseQueryParams();
         bool    normalizeUri();
         const Server* findServer(const std::string& name);
-        void   tokenizeUri();
+        void tokenizeUri(std::vector<std::string>& segments) const;
 		
         
         public:
@@ -121,6 +124,7 @@ class HttpRequest {
         const Server* getServer() const;
         const std::multimap<std::string, std::string>& getQueryParams() const;
         const std::vector<std::string>& getUriSegments() const;
+        const std::vector<std::string>& getEncodedUriSegments() const;
 };
 
 char	safeToLower(char c);

@@ -119,5 +119,12 @@ const Server* HttpRequest::getServer() const {
  * @brief Returns the list of pre-tokenized URI segments.
  */
 const std::vector<std::string>& HttpRequest::getUriSegments() const {
-    return (_uriSegments);
+    return (_UriSegments);
+}
+
+/**
+ * @brief Returns the list of pre-tokenized encoded URI segments.
+ */
+const std::vector<std::string>& HttpRequest::getEncodedUriSegments() const {
+    return (_EncodedUriSegments);
 }

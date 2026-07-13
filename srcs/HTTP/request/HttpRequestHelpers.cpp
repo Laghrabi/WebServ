@@ -74,20 +74,20 @@ const Server* HttpRequest::findServer(const std::string& name) {
  * * Populates the `_uriSegments` member variable, filtering out empty segments 
  * caused by multiple consecutive slashes.
  */
-void HttpRequest::tokenizeUri() { 
+void HttpRequest::tokenizeUri(std::vector<std::string>& segments) const {
     size_t start = 0;
     size_t end = 0;
     
     while ((end = _routeUri.find('/', start)) != std::string::npos) {
         std::string segment = _routeUri.substr(start, end - start);
         if (!segment.empty()) {
-            _uriSegments.push_back(segment);
+            segments.push_back(segment);
         }
         start = end + 1;
     }
     
-    std::string lastSegment = _uri.substr(start);
+    std::string lastSegment = _routeUri.substr(start);
     if (!lastSegment.empty()) {
-        _uriSegments.push_back(lastSegment);
+        segments.push_back(lastSegment);
     }
 }

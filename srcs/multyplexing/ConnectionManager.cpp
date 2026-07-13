@@ -236,6 +236,8 @@ void ConnectionManager::sendClient(Client& client)
     std::vector<char> response;// i will reciev data here
     send(client.getFd(), &response[0], response.size(), 0);
     disablePollout(client.getFd());
+    //anyway i still dont know if im done with the multiplexing,
+    // waiting ofr the respond to start testing
 }
 
 void ConnectionManager::run()

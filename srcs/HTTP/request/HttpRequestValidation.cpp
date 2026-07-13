@@ -11,9 +11,6 @@ bool HttpRequest::uriDecode() {
         return false;
     }
 
-    for (size_t i = 0; i < _UriSegments.size(); ++i)
-        decodeString(_UriSegments[i]);
-    
 	return (true);
 }
 
@@ -111,57 +108,134 @@ bool	HttpRequest::parseQueryParams() {
 	return (true);
 }
 
+// bool    HttpRequest::normalizeUri() {
+//     std::vector<std::string>    stack;
+//     size_t                      start = 0;
+//     size_t                      end = 0;
+//     bool is_dir = true;
+//     std::string segment;
+
+//     while (start < _routeUri.length()) {
+//         end = _routeUri.find('/', start);
+//         if (end == std::string::npos)
+//         {
+//             end = _routeUri.length();
+//             segment = _routeUri.substr(start, end - start);
+//             if (segment != "" && segment != ".." && segment != ".")
+//                 is_dir = false;
+//         }
+//         else {
+//             segment = _routeUri.substr(start, end - start);
+//         }
+//         start = end + 1;
+//         if (segment == "" || segment == ".")
+//             continue ;
+//         else if (segment == "..") {
+//             if (!stack.empty())
+//                 stack.pop_back();
+//         }
+//         else {
+//             stack.push_back(segment);
+//         }
+//     }
+
+//     _routeUri.clear();
+//     for (std::size_t i = 0; i < stack.size(); ++i) {
+//         _routeUri += "/" + stack[i];
+//     }
+//     if (_routeUri.empty() || is_dir) {
+//         _routeUri += "/";
+//     }
+
+//     tokenizeUri(_UriSegments);
+//     tokenizeUri(_EncodedUriSegments);
+
+//     return (true);
+// }
+
 /**
- * @brief Normalizes the URI path to resolve '.' and '..' segments.
- * * Uses a stack-based algorithm to process path segments. Resolves relative 
- * navigation and prevents directory traversal attacks by returning an error 
- * if a '..' attempts to go above the root.
- * @return true if valid, false and sets 403 status if traversal is invalid.
+ * @brief Normalizes the request URI by resolving relative path segments and percent-encoded characters.
+ * * Performs path canonicalization by resolving `.` and `..` segments. Maintains 
+ * both an encoded view (preserving percent-encoding) and a decoded view (for 
+ * logic/security checks). 
+ * * Protects against directory traversal by ensuring that relative path navigation 
+ * is resolved within the URI stack.
+ * @return Always returns true (indicates successful normalization).
  */
-bool    HttpRequest::normalizeUri() {
-    std::vector<std::string>    stack;
-    size_t                      start = 0;
-    size_t                      end = 0;
-    bool is_dir = true;
-    std::string segment;
+bool HttpRequest::normalizeUri() {
+    std::vector<std::string> encodedStack;
+    std::vector<std::string> decodedStack;
+    
+    size_t start = 0;
+    size_t end = 0;
+    bool enc_is_dir = true;
+    bool dec_is_dir = true;
+    std::string rawSegment;
+    std::string decodedSegment;
 
     while (start < _routeUri.length()) {
         end = _routeUri.find('/', start);
-        if (end == std::string::npos)
-        {
+        if (end == std::string::npos) {
             end = _routeUri.length();
-            segment = _routeUri.substr(start, end - start);
-            if (segment != "" && segment != ".." && segment != ".")
-                is_dir = false;
-        }
-        else {
-            segment = _routeUri.substr(start, end - start);
+            rawSegment = _routeUri.substr(start, end - start);
+            
+            decodedSegment = rawSegment;
+            decodeString(decodedSegment);
+            
+            // Check trailing slash requirements independently
+            if (rawSegment != "" && rawSegment != ".." && rawSegment != ".")
+                enc_is_dir = false;
+            if (decodedSegment != "" && decodedSegment != ".." && decodedSegment != ".")
+                dec_is_dir = false;
+        } else {
+            rawSegment = _routeUri.substr(start, end - start);
+            decodedSegment = rawSegment;
+            decodeString(decodedSegment);
         }
         start = end + 1;
-        if (segment == "" || segment == ".")
-            continue ;
-        else if (segment == "..") {
-            if (!stack.empty())
-                stack.pop_back();
+
+        // 1. Process the Encoded Stack (Only pops on literal "..")
+        if (rawSegment == "" || rawSegment == ".") {
+            continue;
+        } else if (rawSegment == "..") {
+            if (!encodedStack.empty())
+                encodedStack.pop_back();
+        } else {
+            encodedStack.push_back(rawSegment); // "%2E%2E" gets pushed here!
         }
-        else {
-            stack.push_back(segment);
+
+        // 2. Process the Decoded Stack (Pops on decoded "..")
+        if (decodedSegment == "" || decodedSegment == ".") {
+            continue;
+        } else if (decodedSegment == "..") {
+            if (!decodedStack.empty())
+                decodedStack.pop_back(); // "%2E%2E" pops the stack here!
+        } else {
+            decodedStack.push_back(decodedSegment);
         }
     }
 
-    _routeUri.clear();
+    // Clear old state and assign the generated vectors
     _EncodedRouteUri.clear();
-    for (std::size_t i = 0; i < stack.size(); ++i) {
-        _routeUri += "/" + stack[i];
-        _EncodedRouteUri += "/" + stack[i];
+    _routeUri.clear();
+    _EncodedUriSegments = encodedStack;
+    _UriSegments = decodedStack;
+
+    // Rebuild the Encoded Route URI
+    for (std::size_t i = 0; i < encodedStack.size(); ++i) {
+        _EncodedRouteUri += "/" + encodedStack[i];
     }
-    if (_routeUri.empty() || is_dir) {
-        _routeUri += "/";
+    if (_EncodedRouteUri.empty() || enc_is_dir) {
         _EncodedRouteUri += "/";
     }
 
-    tokenizeUri(_EncodedUriSegments);
-    tokenizeUri(_UriSegments);
+    // Rebuild the Decoded Route URI
+    for (std::size_t i = 0; i < decodedStack.size(); ++i) {
+        _routeUri += "/" + decodedStack[i];
+    }
+    if (_routeUri.empty() || dec_is_dir) {
+        _routeUri += "/";
+    }
 
     return (true);
 }

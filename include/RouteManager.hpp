@@ -3,6 +3,8 @@
 
 # include "webserver.hpp"
 
+ class HttpRequest;
+
 /**
  * @brief Defines the set of possible actions for the request handler.
  * * Each action corresponds to a specific server response behavior, 

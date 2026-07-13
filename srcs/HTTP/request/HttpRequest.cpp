@@ -97,8 +97,7 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
 					validateVersion() == false ||
 					splitQueryString() == false ||
 					parseQueryParams() == false ||
-					normalizeUri() == false ||
-					uriDecode() == false)
+					normalizeUri() == false)
 						return ;
 				break ;
 			case READING_HEADERS:

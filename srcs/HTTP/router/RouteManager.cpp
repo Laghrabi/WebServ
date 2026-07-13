@@ -32,23 +32,23 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
         return result;
     }
 
-    if (route && !route->getRedirectUrl().empty()) {
-        result.action = ACTION_REDIRECT;
-        result.targetPath = route->getRedirectUrl();
-        result.statusCode = route->getRedirectStatusCode();
-        return result;
-    }
+    // if (route && !route->getRedirectUrl().empty()) {
+    //     result.action = ACTION_REDIRECT;
+    //     result.targetPath = route->getRedirectUrl();
+    //     result.statusCode = route->getRedirectStatusCode();
+    //     return result;
+    // }
 
     std::string physicalPath = _locator.resolvePath(request.getRouteUri(), route, request.getServer());
     ResourceType type = _locator.getResourceType(physicalPath);
 
-    if (type == RESOURCE_FILE && _locator.isCgiExtension(physicalPath)) {
-        if (route && route->isCgiEnabled()) {
-            result.action = ACTION_EXECUTE_CGI;
-            result.targetPath = physicalPath;
-            return result;
-        }
-    }
+    // if (type == RESOURCE_FILE && _locator.isCgiExtension(physicalPath)) {
+    //     if (route && route->isCgiEnabled()) {
+    //         result.action = ACTION_EXECUTE_CGI;
+    //         result.targetPath = physicalPath;
+    //         return result;
+    //     }
+    // }
 
     switch (type) {
         case RESOURCE_FILE:
@@ -60,7 +60,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
             if (request.getRouteUri()[request.getRouteUri().length() - 1] != '/') {
                 result.action = ACTION_REDIRECT;
                 result.targetPath = request.getRouteUri() + "/";
-                result.statusCode = route->getRedirectStatusCode();;
+                // result.statusCode = route->getRedirectStatusCode();;
             } 
             else if (route && route->isAutoindex()) {
                 result.action = ACTION_AUTOINDEX;

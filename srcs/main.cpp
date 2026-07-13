@@ -66,7 +66,7 @@ int main(int argc, char **argv){
 			manager.run();
 
 			// std::string rawString = 
-        	// "GET /api/users/../../../pass/?name=admin&sort=asc&name=chaimaa HTTP/1.0\r\n"
+        	// "GET /cgi-bin/../bin/%2E%2E/a%2Eout HTTP/1.1\r\n"
         	// "Host: localhost:8080\r\n"
         	// "User-Agent: curl/7.68.0\r\n"
         	// "Accept: */*\r\n"
@@ -81,7 +81,18 @@ int main(int argc, char **argv){
     		// std::cout << "Query String: [" << request.getQueryString() << "]\n";
     		// std::cout << "Version     : [" << request.getVersion() << "]\n";
 			// printQueryParams(request.getQueryParams());
-
+			// const std::vector<std::string> uriSeg = request.getUriSegments();
+			// const std::vector<std::string> EncodedUriSeg = request.getEncodedUriSegments();
+			// std::cout << "example: /cgi-bin/../bin/%2E%2E/a%2Eout\n";
+			// std::cout << "decoded and normalized\n";
+			// for (size_t i = 0; i < uriSeg.size(); ++i) {
+			// 	std::cout << "[" << uriSeg[i] << "] ";
+			// }
+			// std::cout << "\n";
+			// std::cout << "encoded and normalized\n";
+			// for (size_t i = 0; i < EncodedUriSeg.size(); ++i) {
+			// 	std::cout << "[" << EncodedUriSeg[i] << "] ";
+			// }
 			}
 			catch (const ParseConfig::ConfigExcept& e) {
 				std::cerr << e.what() << "\n";

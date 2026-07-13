@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include <sys/stat.h>
 
 #include "tokenization.hpp"
 #include "findElem.hpp"

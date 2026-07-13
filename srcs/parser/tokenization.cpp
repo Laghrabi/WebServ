@@ -1,4 +1,4 @@
-#include "tokenization.hpp"
+#include "webserver.hpp"
 
 /**
  * @brief Creates a token object from its components.
@@ -149,6 +149,13 @@ std::string lexer::tokenTypeToString(TokenType type)
  */
 std::vector<token> lexer::tokenizeFile(const std::string& file_name)
 {
+    struct stat info;
+
+    if (stat(file_name.c_str(), &info) == -1)
+        throw std::runtime_error("The path doesn't exist.\n");
+    else if (S_ISDIR(info.st_mode))
+        throw std::runtime_error("This is a directory.\n");
+    
     std::ifstream file(file_name.c_str());
 
     if (!file)

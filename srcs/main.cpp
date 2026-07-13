@@ -13,14 +13,6 @@ int main(int argc, char **argv){
 		std::cerr << "./webserver configfile.conf";
 		return (1);
 	}
-
-	std::ifstream file(argv[1]);
-
-	if (!file)
-	{
-		std::cerr << "failed to open file\n";
-		return (1);
-	}
 	try {
 		std::vector<token> tokens = lexer::tokenizeFile(argv[1]);
 

@@ -29,13 +29,19 @@ public:
     
     void acceptClient(ListeningSocket& listener);
     
-    void handleClient(Client& client);
+    void recieveClient(Client& client);
     
-    void receive(Client& client);
+    void sendClient(Client& client);
+
+    int receive(Client& client);
     
     // void send(Client& client);
     
     void disconnect(Client& client);
+
+    void enablePollout(int fd);
+
+    void disablePollout(int fd);
 
 public:
 

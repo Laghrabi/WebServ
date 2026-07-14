@@ -13,45 +13,45 @@
  * to their corresponding location configurations.
  */
 struct RouteNode {
-    std::string segmentName;
-    RouteConfig* config; 
-    std::map<std::string, RouteNode*> children;
+	std::string segmentName;
+	RouteConfig* config; 
+	std::map<std::string, RouteNode*> children;
 
 	/**
-     * @brief Constructs a new Route Node.
-     * @param name The URI segment string this node represents.
-     */
-    RouteNode(const std::string& name) : segmentName(name), config(NULL) {}
+	 * @brief Constructs a new Route Node.
+	 * @param name The URI segment string this node represents.
+	 */
+	RouteNode(const std::string& name) : segmentName(name), config(NULL) {}
 
 	/**
- 	* @brief Copy constructor for RouteNode, performing a deep copy of the tree.
- 	* * Deeply copies the `segmentName`, clones the `RouteConfig` (if present),
- 	* and recursively clones all child nodes to ensure the new tree is completely 
- 	* independent of the original.
- 	* @param other The RouteNode instance to copy.
- 	*/
+	 * @brief Copy constructor for RouteNode, performing a deep copy of the tree.
+	 * * Deeply copies the `segmentName`, clones the `RouteConfig` (if present),
+	 * and recursively clones all child nodes to ensure the new tree is completely 
+	 * independent of the original.
+	 * @param other The RouteNode instance to copy.
+	 */
 	RouteNode(const RouteNode& other) : segmentName(other.segmentName), config(other.config) {
-        for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
-             it != other.children.end(); ++it) {
-            this->children[it->first] = new RouteNode(*(it->second));
-        }
-    }
+		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
+				it != other.children.end(); ++it) {
+			this->children[it->first] = new RouteNode(*(it->second));
+		}
+	}
 
 	/**
-     * @brief Recursively deletes the tree to ensure no memory leaks.
-     * C++98 compliant deletion iterator for safely freeing all allocated child nodes.
-     */
-    ~RouteNode() {
-        for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
-            delete it->second;
-        }
-    }
+	 * @brief Recursively deletes the tree to ensure no memory leaks.
+	 * C++98 compliant deletion iterator for safely freeing all allocated child nodes.
+	 */
+	~RouteNode() {
+		for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
+			delete it->second;
+		}
+	}
 };
 
 class Server : public RouteConfig {
 	public:
 		typedef void (Server::*HandlerFunc)(ContIter&);
-		
+
 	protected:
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
 		static MapHandler s_handlers;
@@ -62,35 +62,15 @@ class Server : public RouteConfig {
 	public:	
 		static void init();
 
-		struct IPort {
-			public:
-			IPort();
-			IPort(int family, std::size_t size, sockaddr* (*create)(void), void (*clean)(sockaddr*));
-			IPort(const IPort& other);
-
-			virtual void print() const;
-			static std::string getFamilyStr(const int family);
-
-			virtual bool operator==(const IPort& other) const;
-			IPort& operator=(const Server::IPort& other);
-			virtual ~IPort();
-
-			const sockaddr	*get() const;
-			int getFamily() const;
-			int getSize() const;
-
-			protected:
-			addrinfo getAddrHints() const;
-			std::size_t m_size;
-			int m_family;
-			sockaddr *m_addr;
-			sockaddr* (*create)(void);
-			void (*clean)(sockaddr*);
-		};
+		struct IPort;
 
 		struct ParseIPortInterface {
+			virtual bool isStrictIp(const std::string& ip) = 0;
 			virtual void setIp(const std::string& ip) = 0;
 			virtual void setPort(const std::string& port) = 0;
+			protected:
+			virtual void setIpString() = 0;
+			virtual void setPortString() = 0;
 		};
 
 		struct IPortV4;
@@ -108,7 +88,7 @@ class Server : public RouteConfig {
 		const std::vector<IPort>& getAddrs(void) const;
 		bool hasServerName(const std::string& name) const;
 		~Server();
-		
+
 
 		typedef Location LocationType ;
 		typedef ParseConfig ParseConfigType ;
@@ -121,11 +101,9 @@ class Server : public RouteConfig {
 };
 
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
-std::ostream& operator<<(std::ostream& out, const sockaddr_in6& addr);
-std::ostream& operator<<(std::ostream& out, const sockaddr_in& addr);
-std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);
 
 typedef Server ServerType;
 
 std::string getFamilyStr(const int family);
+#include "IPort.hpp"
 #endif

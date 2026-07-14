@@ -121,6 +121,9 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
     const Config::ServerMultiMap map = m_config.m_iport_server;
     Client client(clientFd, &listener,map.equal_range(key));
     std::cout << "Accepted new client with fd: " << clientFd << "\n";
+
+		Server::IPort s(address);
+		// std::cout << s.getIpStr() << "\n";
     client.setAddress(address);
     client.setAddressLength(addressLength);
 

@@ -18,7 +18,7 @@ void ConnectionManager::createListeningSockets()
     for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = m_config.m_iport_server.begin();
     it != m_config.m_iport_server.end(); it = m_config.m_iport_server.upper_bound(it->first))
     {
-        std::cout << "hello\n";
+        // std::cout << "hello\n";
         ListeningSocket listener(&it->first);
         
         int fd = socket(listener.getEndpoint().getFamily(), SOCK_STREAM, 0);
@@ -121,6 +121,9 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
     const Config::ServerMultiMap map = m_config.m_iport_server;
     Client client(clientFd, &listener,map.equal_range(key));
     std::cout << "Accepted new client with fd: " << clientFd << "\n";
+
+		Server::IPort s(address);
+		// std::cout << s.getIpStr() << "\n";
     client.setAddress(address);
     client.setAddressLength(addressLength);
 

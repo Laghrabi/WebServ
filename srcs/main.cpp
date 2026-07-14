@@ -29,38 +29,28 @@ int main(int argc, char **argv){
 			Config conf = parser.parse();
 			ConnectionManager manager(conf);
 			// print(conf);
-			
-			
-			
+
 			const UnorderedMultiMap<Server::IPort, Server>& mymap = conf.m_iport_server;
-			
+
 			for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = mymap.begin(); it != mymap.end(); it = mymap.upper_bound(it->first)) {	
-				std::cout << "new iport: " << it->first << "\n";
+				std::cout << "new iport: " << it->second.getRedirection().first << "\n";
 			}
-			// std::multimap<Server::IPort, Server> hey = conf.m_iport_server;
-			//
-			// for (std::multimap<Server::IPort, Server>::const_iterator it = hey.begin(); it != hey.end();) {
-				// 	const Server::IPort& iport =  it->first;
-				// 	// std::cout << iport.getPort() << "\n";
-				// 	it = hey.upper_bound(iport);
-				// 	// sleep (1);
-				// }
-				for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
-					it->buildRouteTree();
-			}
+			// for (std::list<Server>::iterator it = conf.m_servers.begin(); it != conf.m_servers.end(); ++it) {
+			// 	it->buildRouteTree();
+			// }
 			manager.init();
 			manager.run();
-			}
-			catch (const ParseConfig::ConfigExcept& e) {
-				std::cerr << e.what() << "\n";
-			}
+		}
+		catch (const ParseConfig::ConfigExcept& e) {
+			std::cerr << e.what() << "\n";
+		}
 	}
 	catch (const std::exception& e){
 		std::cerr << e.what() << "\n";
 		return (1);
 	}
-	
-	
+
+
 
 	return (0);
 }

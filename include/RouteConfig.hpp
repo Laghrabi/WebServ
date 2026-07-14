@@ -33,6 +33,9 @@ class RouteConfig {
 
 		void addMethod(const std::string& new_method) throw (std::exception);
 		const std::set<std::string>& getAllowedMethods() const;
+		void parseCgiConf(ContIter &begin);
+		bool validExtention(const std::string& ext, std::string& err_msg);
+		bool notRedirectCode(int code) const;
 
 	public:
 		RouteConfig();
@@ -48,6 +51,7 @@ class RouteConfig {
 		void parseAccessLog(ContIter &begin);
 		void parseMaxBodySize(ContIter &begin);
 		void parseAllowedMethods(ContIter &begin);
+		void parseRedirection(ContIter& begin);
 
 		void initAvailableMethods();
 
@@ -60,9 +64,13 @@ class RouteConfig {
 		bool isAutoindex() const;
 		std::size_t getMaxBodySize() const;
 		bool hasMaxBodySize() const;
+		const std::pair<int, std::string>& getRedirection() const;
 
 		// check if the method is allowed
 		bool isAllowed(const std::string& method) const;
+		bool doesRedirect() const;
+
+
 
 
 	private:
@@ -74,6 +82,9 @@ class RouteConfig {
 		std::size_t m_max_body_size;
 		bool m_max_body_size_exist;
 		std::set<std::string> m_allowed_methods;
+		std::set<std::string> m_cgi_map;
+		std::pair<int, std::string> m_redirect;
+		bool m_does_redirect;
 
 		static std::set<std::string> s_available_methods;
 };

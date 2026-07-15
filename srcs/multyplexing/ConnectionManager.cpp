@@ -53,14 +53,6 @@ void ConnectionManager::createListeningSockets()
             listener.getEndpoint().print();
             std::cout << "\n";
         }
-        if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-            throw std::runtime_error("fcntl failed");
-        else
-        {
-            std::cout << "socket fd = " << fd << "is set to non-blocking for endpoint ";
-            listener.getEndpoint().print();
-            std::cout << "\n";
-        }
         listener.setFd(fd);
         m_listeners.insert(
         std::make_pair(fd, listener));
@@ -116,7 +108,7 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
     }
 
     const Server::IPort& key = listener.getEndpoint();
-    const Config::ServerMultiMap map = m_config.m_iport_server;
+    const Config::ServerMultiMap& map = m_config.m_iport_server;
     Client client(clientFd, &listener, address, addressLength, map.equal_range(key));
     std::cout << "Accepted new client with fd: " << clientFd << "\n";
     m_clients.insert(

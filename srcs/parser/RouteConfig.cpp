@@ -1,4 +1,5 @@
 #include "webserver.hpp"
+#include <cstdlib>
 
 RouteConfig::MapHandler RouteConfig::s_handlers;
 std::set<std::string> RouteConfig::s_available_methods;
@@ -11,6 +12,8 @@ void RouteConfig::init(void) {
 		s_handlers["access_log"] = &RouteConfig::parseAccessLog;
 		s_handlers["max_client_body_size"] = &RouteConfig::parseMaxBodySize;
 		s_handlers["allowed_methods"] = &RouteConfig::parseAllowedMethods;
+		s_handlers["cgi"] = &RouteConfig::parseCgiConf;
+		s_handlers["redirect"] = &RouteConfig::parseRedirection;
 	}
 }
 
@@ -22,6 +25,30 @@ RouteConfig::HandlerFunc RouteConfig::getDirectiveHandler(const std::string dir_
 	return (s_handlers[dir_name]);
 }
 
+bool RouteConfig::notRedirectCode(int code) const {
+	return (code >= 300 && code <= 308);
+}
+
+void RouteConfig::parseRedirection(ContIter& begin) {
+	std::stringstream ss;
+	ss << begin->value;
+	ss >> m_redirect.first;
+	if (notRedirectCode(m_redirect.first)) {
+		throw (ParseConfig::ConfigExcept("invalid redirect code", begin->line));
+	}
+	++begin;
+
+	if (begin->is_eof()) {
+		throw (ParseConfig::ConfigExcept("got code but nor url", begin->line));
+	}
+	m_redirect.second = begin->value;
+	m_does_redirect = true;
+	++begin;
+}
+
+bool RouteConfig::doesRedirect(void) const {
+	return (m_does_redirect);
+}
 
 void RouteConfig::initAvailableMethods() {
 	s_available_methods.insert("GET");
@@ -29,11 +56,43 @@ void RouteConfig::initAvailableMethods() {
 	s_available_methods.insert("DELETE");
 }
 
-RouteConfig::RouteConfig() : m_max_body_size_exist(false) {
+RouteConfig::RouteConfig() : 
+	m_autoindex(false),
+	m_max_body_size_exist(false),
+	m_does_redirect(false){
 	initAvailableMethods();
 	init();
 }
 
+bool RouteConfig::validExtention(const std::string& ext, std::string& err_msg) {
+	if (ext[0] != '.')
+	{
+		err_msg = "extention is not valid: because it does not begin with .";
+		return (false);
+	}
+	if (ext.find('.', 1) != std::string::npos) {
+		err_msg = "extention is not valid: because it has more than a .";
+		return (false);
+	}
+	if (mapElemExist(m_cgi_map, ext)) {
+		err_msg = "duplicate extention: " + ext;
+		return (false);
+	}
+	return (true);
+}
+
+void RouteConfig::parseCgiConf(ContIter &begin) {
+	std::string ext;
+	std::string err_msg;
+	while (begin->is(WORD))	{
+		ext = begin->value;
+		if (!validExtention(ext, err_msg)) {
+			throw (ParseConfig::ConfigExcept(err_msg, begin->line));
+		}
+		m_cgi_map.insert(ext);
+		++begin;
+	}
+}
 
 void RouteConfig::parseAutoIndex(ContIter &begin) {
 	if (!begin->is("on") && !begin->is("off")) {
@@ -108,34 +167,32 @@ void RouteConfig::addMethod(const std::string& method) throw (std::exception) {
 	m_allowed_methods.insert(method);
 }
 
+const std::pair<int, std::string>& RouteConfig::getRedirection() const{
+	return (m_redirect);
+}
 
 bool RouteConfig::isAllowed(const std::string& method) const{
 	return (m_allowed_methods.find(method) != m_allowed_methods.end());
 }
 
 
-const std::string& RouteConfig::getRoot() const
-{
+const std::string& RouteConfig::getRoot() const {
     return m_root;
 }
 
-const std::string& RouteConfig::getUploadDir() const
-{
+const std::string& RouteConfig::getUploadDir() const {
     return m_upload_dir;
 }
 
-const std::string& RouteConfig::getAccessLog() const
-{
+const std::string& RouteConfig::getAccessLog() const {
     return m_access_log;
 }
 
-const std::list<std::string>& RouteConfig::getIndexes() const
-{
+const std::list<std::string>& RouteConfig::getIndexes() const{
     return m_indexes;
 }
 
-bool RouteConfig::isAutoindex() const
-{
+bool RouteConfig::isAutoindex() const{
     return m_autoindex;
 }
 

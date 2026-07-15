@@ -51,6 +51,7 @@ typedef std::vector<token> TokenCont;
 #include "Config.hpp"
 #include "ParseConfig.hpp"
 #include "Location.hpp"
+#include "IPort.hpp"
 #include "IPortV4.hpp"
 #include "IPortV6.hpp"
 #include "HttpRequest.hpp"

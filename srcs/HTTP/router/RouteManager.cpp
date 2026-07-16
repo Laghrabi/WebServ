@@ -32,12 +32,12 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
         return result;
     }
 
-    // if (route && !route->getRedirectUrl().empty()) {
-    //     result.action = ACTION_REDIRECT;
-    //     result.targetPath = route->getRedirectUrl();
-    //     result.statusCode = route->getRedirectStatusCode();
-    //     return result;
-    // }
+    if (route && !route->doesRedirect()) {
+        result.action = ACTION_REDIRECT;
+        result.targetPath = route->getRedirection().second;
+        result.statusCode = route->getRedirection().first;
+        return result;
+    }
 
     std::string physicalPath = _locator.resolvePath(request.getRouteUri(), route, request.getServer());
     ResourceType type = _locator.getResourceType(physicalPath);
@@ -60,12 +60,12 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
             if (request.getRouteUri()[request.getRouteUri().length() - 1] != '/') {
                 result.action = ACTION_REDIRECT;
                 result.targetPath = request.getRouteUri() + "/";
-                // result.statusCode = route->getRedirectStatusCode();;
+                result.statusCode = MOVED_PERMANENTLY;
             } 
             else if (route && route->isAutoindex()) {
                 result.action = ACTION_AUTOINDEX;
                 result.targetPath = physicalPath;
-            } 
+            }
             else {
                 result.action = ACTION_ERROR;
                 result.statusCode = FORBIDDEN;

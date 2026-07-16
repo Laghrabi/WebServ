@@ -16,7 +16,8 @@ enum RouteAction {
     ACTION_AUTOINDEX,
     ACTION_EXECUTE_CGI,
     ACTION_REDIRECT,
-    ACTION_ERROR
+    ACTION_ERROR,
+    NONE
 };
 
 /**

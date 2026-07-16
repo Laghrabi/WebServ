@@ -153,89 +153,137 @@ bool	HttpRequest::parseQueryParams() {
 //     return (true);
 // }
 
-/**
- * @brief Normalizes the request URI by resolving relative path segments and percent-encoded characters.
- * * Performs path canonicalization by resolving `.` and `..` segments. Maintains 
- * both an encoded view (preserving percent-encoding) and a decoded view (for 
- * logic/security checks). 
- * * Protects against directory traversal by ensuring that relative path navigation 
- * is resolved within the URI stack.
- * @return Always returns true (indicates successful normalization).
- */
-bool HttpRequest::normalizeUri() {
-    std::vector<std::string> encodedStack;
-    std::vector<std::string> decodedStack;
+// /**
+//  * @brief Normalizes the request URI by resolving relative path segments and percent-encoded characters.
+//  * * Performs path canonicalization by resolving `.` and `..` segments. Maintains 
+//  * both an encoded view (preserving percent-encoding) and a decoded view (for 
+//  * logic/security checks). 
+//  * * Protects against directory traversal by ensuring that relative path navigation 
+//  * is resolved within the URI stack.
+//  * @return Always returns true (indicates successful normalization).
+//  */
+// bool HttpRequest::normalizeUri() {
+//     std::vector<std::string> encodedStack;
+//     std::vector<std::string> decodedStack;
     
-    size_t start = 0;
-    size_t end = 0;
-    bool enc_is_dir = true;
-    bool dec_is_dir = true;
-    std::string rawSegment;
-    std::string decodedSegment;
+//     size_t start = 0;
+//     size_t end = 0;
+//     bool enc_is_dir = true;
+//     bool dec_is_dir = true;
+//     std::string rawSegment;
+//     std::string decodedSegment;
 
-    while (start < _routeUri.length()) {
-        end = _routeUri.find('/', start);
-        if (end == std::string::npos) {
-            end = _routeUri.length();
-            rawSegment = _routeUri.substr(start, end - start);
+//     while (start < _routeUri.length()) {
+//         end = _routeUri.find('/', start);
+//         if (end == std::string::npos) {
+//             end = _routeUri.length();
+//             rawSegment = _routeUri.substr(start, end - start);
             
-            decodedSegment = rawSegment;
-            decodeString(decodedSegment);
+//             decodedSegment = rawSegment;
+//             decodeString(decodedSegment);
             
-            // Check trailing slash requirements independently
-            if (rawSegment != "" && rawSegment != ".." && rawSegment != ".")
-                enc_is_dir = false;
-            if (decodedSegment != "" && decodedSegment != ".." && decodedSegment != ".")
-                dec_is_dir = false;
-        } else {
-            rawSegment = _routeUri.substr(start, end - start);
-            decodedSegment = rawSegment;
-            decodeString(decodedSegment);
-        }
-        start = end + 1;
+//             // Check trailing slash requirements independently
+//             if (rawSegment != "" && rawSegment != ".." && rawSegment != ".")
+//                 enc_is_dir = false;
+//             if (decodedSegment != "" && decodedSegment != ".." && decodedSegment != ".")
+//                 dec_is_dir = false;
+//         } else {
+//             rawSegment = _routeUri.substr(start, end - start);
+//             decodedSegment = rawSegment;
+//             decodeString(decodedSegment);
+//         }
+//         start = end + 1;
 
-        // 1. Process the Encoded Stack (Only pops on literal "..")
-        if (rawSegment == "" || rawSegment == ".") {
-            continue;
-        } else if (rawSegment == "..") {
-            if (!encodedStack.empty())
-                encodedStack.pop_back();
-        } else {
-            encodedStack.push_back(rawSegment); // "%2E%2E" gets pushed here!
-        }
+//         // 1. Process the Encoded Stack (Only pops on literal "..")
+//         if (rawSegment == "" || rawSegment == ".") {
+//             continue;
+//         } else if (rawSegment == "..") {
+//             if (!encodedStack.empty())
+//                 encodedStack.pop_back();
+//         } else {
+//             encodedStack.push_back(rawSegment); // "%2E%2E" gets pushed here!
+//         }
 
-        // 2. Process the Decoded Stack (Pops on decoded "..")
-        if (decodedSegment == "" || decodedSegment == ".") {
-            continue;
-        } else if (decodedSegment == "..") {
-            if (!decodedStack.empty())
-                decodedStack.pop_back(); // "%2E%2E" pops the stack here!
-        } else {
-            decodedStack.push_back(decodedSegment);
-        }
-    }
+//         // 2. Process the Decoded Stack (Pops on decoded "..")
+//         if (decodedSegment == "" || decodedSegment == ".") {
+//             continue;
+//         } else if (decodedSegment == "..") {
+//             if (!decodedStack.empty())
+//                 decodedStack.pop_back(); // "%2E%2E" pops the stack here!
+//         } else {
+//             decodedStack.push_back(decodedSegment);
+//         }
+//     }
 
-    // Clear old state and assign the generated vectors
-    _EncodedRouteUri.clear();
-    _routeUri.clear();
-    _EncodedUriSegments = encodedStack;
-    _UriSegments = decodedStack;
+//     // Clear old state and assign the generated vectors
+//     _EncodedRouteUri.clear();
+//     _routeUri.clear();
+//     _EncodedUriSegments = encodedStack;
+//     _UriSegments = decodedStack;
 
-    // Rebuild the Encoded Route URI
-    for (std::size_t i = 0; i < encodedStack.size(); ++i) {
-        _EncodedRouteUri += "/" + encodedStack[i];
-    }
-    if (_EncodedRouteUri.empty() || enc_is_dir) {
-        _EncodedRouteUri += "/";
-    }
+//     // Rebuild the Encoded Route URI
+//     for (std::size_t i = 0; i < encodedStack.size(); ++i) {
+//         _EncodedRouteUri += "/" + encodedStack[i];
+//     }
+//     if (_EncodedRouteUri.empty() || enc_is_dir) {
+//         _EncodedRouteUri += "/";
+//     }
 
-    // Rebuild the Decoded Route URI
-    for (std::size_t i = 0; i < decodedStack.size(); ++i) {
-        _routeUri += "/" + decodedStack[i];
-    }
-    if (_routeUri.empty() || dec_is_dir) {
-        _routeUri += "/";
-    }
+//     // Rebuild the Decoded Route URI
+//     for (std::size_t i = 0; i < decodedStack.size(); ++i) {
+//         _routeUri += "/" + decodedStack[i];
+//     }
+//     if (_routeUri.empty() || dec_is_dir) {
+//         _routeUri += "/";
+//     }
 
+//     return (true);
+// }
+
+bool    HttpRequest::normalizeUri() {
+    decodeString(_routeUri);
+    normalizeUriHelper(_routeUri, _UriSegments);
+	normalizeUriHelper(_EncodedRouteUri, _EncodedUriSegments);
     return (true);
 }
+
+bool    HttpRequest::normalizeUriHelper(std::string& uri,std::vector<std::string>& stack) {
+	size_t                      start = 0;
+	size_t                      end = 0;
+	bool is_dir = true;
+	std::string segment;
+
+	while (start < uri.length()) {
+		end = uri.find('/', start);
+		if (end == std::string::npos)
+		{
+			end = uri.length();
+			segment = uri.substr(start, end - start);
+			if (segment != "" && segment != ".." && segment != ".")
+				is_dir = false;
+		}
+		else {
+			segment = uri.substr(start, end - start);
+		}
+		start = end + 1;
+		if (segment == "" || segment == ".")
+			continue ;
+		else if (segment == "..") {
+			if (!stack.empty())
+				stack.pop_back();
+		}
+		else {
+			stack.push_back(segment);
+		}
+	}
+	uri.clear();
+	for (std::size_t i = 0; i < stack.size(); ++i)
+	{
+		uri += "/" + stack[i];
+	}
+	if (uri.empty() || is_dir)
+		uri += "/";
+    
+    return (true);
+}
+

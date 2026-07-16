@@ -91,3 +91,38 @@ void HttpRequest::tokenizeUri(std::vector<std::string>& segments) const {
         segments.push_back(lastSegment);
     }
 }
+
+/**
+ * @brief Resets the HTTP request state for subsequent requests on the same connection.
+ * 
+ * Clears all parsed headers, body data, and URI segments, and resets the 
+ * finite state machine back to READING_REQUEST_LINE.
+ * 
+ * Note: _savedData is intentionally NOT cleared to preserve pipelined requests 
+ * or partial data read for the next request. _serverRange is also preserved 
+ * as it represents the static server configuration for the connection.
+ */
+void HttpRequest::reset() {
+    _statusCode = OK;
+    _currentState = READING_REQUEST_LINE;
+    _bufferIndex = 0; 
+    _method.clear();
+    _uri.clear();
+    _routeUri.clear();
+    _EncodedRouteUri.clear();
+    _queryString.clear();
+    _version.clear();
+    _EncodedUriSegments.clear();
+    _UriSegments.clear();
+    _queryParams.clear();
+    _headers.clear();
+    _body.clear();
+    _contentLength = 0;
+    _chunkedSize = 0;
+    _bodyBytesWritten = 0;
+    _client_max_body_size = _DEFAULT_BODY_SIZE;
+    _server = NULL;
+    _routeResult.action = NONE;
+    _routeResult.statusCode = OK;
+    _routeResult.targetPath.clear();
+}

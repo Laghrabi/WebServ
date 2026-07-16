@@ -81,6 +81,8 @@ class HttpRequest {
         const Server*                       _server;
         Config::ServerRange                 _serverRange;
         RouteResult                         _routeResult;
+        std::ofstream _bodyStream;
+        std::string _bodyFilePath;
 
         bool	parseRequestLine();
 		bool	parseHeaders();
@@ -95,6 +97,7 @@ class HttpRequest {
 		bool	splitQueryString();
         bool    parseQueryParams();
         bool    normalizeUri();
+        bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
         const Server* findServer(const std::string& name);
         void tokenizeUri(std::vector<std::string>& segments) const;
 		
@@ -107,6 +110,7 @@ class HttpRequest {
         ~HttpRequest();
     
         void	parse(const std::vector<char>& rawBuffer);
+        void    reset();
 
         void appendData(const char* data, size_t length); // for testing
 

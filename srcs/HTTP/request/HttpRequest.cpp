@@ -97,7 +97,6 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
 					validateVersion() == false ||
 					splitQueryString() == false ||
 					parseQueryParams() == false ||
-					uriDecode() == false ||
 					normalizeUri() == false)
 						return ;
 				break ;
@@ -218,7 +217,7 @@ bool	HttpRequest::parseHeaders()
 					_currentState = ERROR;
 					return (false);
 				}
-			_headers[key] = ", " + trimSpaces(value);
+			_headers[key] += ", " + trimSpaces(value);
 		} else {
 			_headers[key] = trimSpaces(value);
 		}

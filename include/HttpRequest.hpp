@@ -40,11 +40,14 @@ enum ParseState {
  */
 enum HttpStatus {
     OK = 200,
+    MOVED_PERMANENTLY = 301,
+    FOUND = 302,
+    TEMPORARY_REDIRECT = 307,
     BAD_REQUEST = 400,
     FORBIDDEN = 403,
     NOT_FOUND = 404,
     METHOD_NOT_ALLOWED = 405,
-	BODY_LENGTH_REQUIRED = 411,
+    BODY_LENGTH_REQUIRED = 411,
     PAYLOAD_TOO_LARGE = 413,
     URI_TOO_LONG = 414,
     INTERNAL_SERVER_ERROR = 500,
@@ -59,8 +62,11 @@ class HttpRequest {
         std::vector<char>	                _savedData;
         size_t				                _bufferIndex;          
         std::string							_method;
-        std::string							_uri;
-        std::string							_routeUri;
+        std::string							_uri; // uri string with querries not narmalized and not decoded.
+        std::string							_routeUri; // uri string without querries normalized and decoded.
+        std::string                         _EncodedRouteUri; // uri string without querries normalized and not decoded.
+        std::vector<std::string>            _EncodedUriSegments; // vector of encoded and normalized uri segments.
+        std::vector<std::string>            _UriSegments; // vector of decoded and normalized uri segments.
     	std::string							_queryString;
         std::multimap<std::string, std::string> _queryParams;
         std::string							_version;
@@ -72,8 +78,11 @@ class HttpRequest {
         static const size_t                 _MAX_BODY_SIZE = 10485760;
         static const size_t                 _DEFAULT_BODY_SIZE = 1048576;
         size_t                              _client_max_body_size;
-        const Server                              *_server;
-        Config::ServerRange                  _serverRange;
+        const Server*                       _server;
+        Config::ServerRange                 _serverRange;
+        RouteResult                         _routeResult;
+        std::ofstream _bodyStream;
+        std::string _bodyFilePath;
 
         bool	parseRequestLine();
 		bool	parseHeaders();
@@ -88,7 +97,9 @@ class HttpRequest {
 		bool	splitQueryString();
         bool    parseQueryParams();
         bool    normalizeUri();
+        bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
         const Server* findServer(const std::string& name);
+        void tokenizeUri(std::vector<std::string>& segments) const;
 		
         
         public:
@@ -99,6 +110,7 @@ class HttpRequest {
         ~HttpRequest();
     
         void	parse(const std::vector<char>& rawBuffer);
+        void    reset();
 
         void appendData(const char* data, size_t length); // for testing
 
@@ -113,7 +125,10 @@ class HttpRequest {
         std::string getHeader(const std::string& key) const;
         ParseState getCurrentState() const;
 		int	getStatusCode() const;
+        const Server* getServer() const;
         const std::multimap<std::string, std::string>& getQueryParams() const;
+        const std::vector<std::string>& getUriSegments() const;
+        const std::vector<std::string>& getEncodedUriSegments() const;
 };
 
 char	safeToLower(char c);

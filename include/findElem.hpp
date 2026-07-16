@@ -8,6 +8,10 @@ template <typename T, typename ValueType> bool elemExist(const T& cont, const Va
 	return (std::find(cont.begin(), end, value) != end);
 }
 
+template <typename T, typename ValueType> bool mapElemExist(const T& map, const ValueType& value) {
+	return (map.find(value) != map.end());
+}
+
 
 template <typename T, typename ValueType> bool elemExist(const T& begin, const T& end,const ValueType& value) {
 	return (std::find(begin, end, value) != end);

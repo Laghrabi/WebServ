@@ -240,6 +240,13 @@ bool	HttpRequest::parseQueryParams() {
 //     return (true);
 // }
 
+/**
+ * @brief Normalizes the request URI and its encoded version.
+ * * Performs URI decoding on the route URI, then processes both the decoded
+ * and encoded variants into clean segment stacks (canonicalization) to
+ * ensure path safety and consistent routing.
+ * @return Returns true upon successful normalization.
+ */
 bool    HttpRequest::normalizeUri() {
     decodeString(_routeUri);
     normalizeUriHelper(_routeUri, _UriSegments);
@@ -247,6 +254,15 @@ bool    HttpRequest::normalizeUri() {
     return (true);
 }
 
+/**
+ * @brief Helper function to canonicalize URI paths and populate segment stacks.
+ * * Tokenizes the URI, resolves relative path references (`.` and `..`),
+ * and rebuilds a canonical string representation. Tracks whether the 
+ * original path was intended as a directory to maintain trailing slash integrity.
+ * @param uri The URI string to normalize (modified in place).
+ * @param stack The vector to populate with processed path segments.
+ * @return Returns true upon successful completion.
+ */
 bool    HttpRequest::normalizeUriHelper(std::string& uri,std::vector<std::string>& stack) {
 	size_t                      start = 0;
 	size_t                      end = 0;

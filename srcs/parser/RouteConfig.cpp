@@ -1,8 +1,41 @@
 #include "webserver.hpp"
-#include <cstdlib>
 
 RouteConfig::MapHandler RouteConfig::s_handlers;
 std::set<std::string> RouteConfig::s_available_methods;
+
+
+RouteConfig::RouteConfig(const RouteConfig& other) :
+	m_root(other.m_root),
+	m_upload_dir(other.m_upload_dir),
+	m_access_log(other.m_access_log),
+	m_indexes(other.m_indexes),
+	m_autoindex(other.m_autoindex),
+	m_max_body_size(other.m_max_body_size),
+	m_max_body_size_exist(other.m_max_body_size_exist),
+	m_allowed_methods(other.m_allowed_methods),
+	m_cgi_map(other.m_cgi_map),
+	m_redirect(other.m_redirect),
+	m_does_redirect(other.m_does_redirect)
+{
+
+}
+
+RouteConfig& RouteConfig::operator=(const RouteConfig& other) {
+
+	m_root = other.m_root;
+	m_upload_dir = other.m_upload_dir;
+	m_access_log = other.m_access_log;
+	m_indexes = other.m_indexes;
+	m_autoindex = other.m_autoindex;
+	m_max_body_size = other.m_max_body_size;
+	m_max_body_size_exist = other.m_max_body_size_exist;
+	m_allowed_methods = other.m_allowed_methods;
+	m_cgi_map = other.m_cgi_map;
+	m_redirect = other.m_redirect;
+	m_does_redirect = other.m_does_redirect;
+
+	return (*this);
+}
 
 void RouteConfig::init(void) {
 	if (s_handlers.empty()) {
@@ -60,9 +93,9 @@ RouteConfig::RouteConfig() :
 	m_autoindex(false),
 	m_max_body_size_exist(false),
 	m_does_redirect(false){
-	initAvailableMethods();
-	init();
-}
+		initAvailableMethods();
+		init();
+	}
 
 bool RouteConfig::validExtention(const std::string& ext, std::string& err_msg) {
 	if (ext[0] != '.')
@@ -138,8 +171,8 @@ void RouteConfig::parseUploadDir(ContIter &begin) {
 }
 
 void RouteConfig::parseAccessLog(ContIter &begin) {
-			m_access_log = begin->value;
-			++begin;
+	m_access_log = begin->value;
+	++begin;
 }
 
 
@@ -177,32 +210,35 @@ bool RouteConfig::isAllowed(const std::string& method) const{
 
 
 const std::string& RouteConfig::getRoot() const {
-    return m_root;
+	return m_root;
 }
 
 const std::string& RouteConfig::getUploadDir() const {
-    return m_upload_dir;
+	return m_upload_dir;
 }
 
 const std::string& RouteConfig::getAccessLog() const {
-    return m_access_log;
+	return m_access_log;
 }
 
 const std::list<std::string>& RouteConfig::getIndexes() const{
-    return m_indexes;
+	return m_indexes;
 }
 
 bool RouteConfig::isAutoindex() const{
-    return m_autoindex;
+	return m_autoindex;
 }
 
 std::size_t RouteConfig::getMaxBodySize() const
 {
-    return m_max_body_size;
+	return m_max_body_size;
 }
 
 bool RouteConfig::hasMaxBodySize() const
 {
-    return m_max_body_size_exist;
+	return m_max_body_size_exist;
 }
 
+RouteConfig::~RouteConfig() {
+
+}

@@ -39,6 +39,8 @@ class RouteConfig {
 
 	public:
 		RouteConfig();
+		RouteConfig(const RouteConfig& other);
+		RouteConfig& operator=(const RouteConfig& other);
 
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);
 		static void init(void);
@@ -70,7 +72,7 @@ class RouteConfig {
 		bool isAllowed(const std::string& method) const;
 		bool doesRedirect() const;
 
-
+		~RouteConfig();
 
 
 	private:

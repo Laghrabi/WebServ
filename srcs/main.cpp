@@ -24,20 +24,21 @@ int main(int argc, char **argv){
 			ConnectionManager manager(conf);
 			// print(conf);
 
-			// Config::ServerMultiMap& mymap = conf.m_iport_server;
-			// for (Config::ServerMultiMap::iterator it = mymap.begin(); it != mymap.end(); ++it) {
-			// 	it->second.buildRouteTree();
-			// }
+			Config::ServerMultiMap& mymap = conf.m_iport_server;
+			for (Config::ServerMultiMap::iterator it = mymap.begin(); it != mymap.end(); ++it) {
+				it->second.buildRouteTree();
+			}
 			const Config::ServerMultiMap& map = conf.m_iport_server;
 			Config::ServerRange range = map.equal_range(map.begin()->first);
-			std::string request_str = "GET /heys/ HTTP/1.1\r\nHOST: server3\r\n\r\n";
+
+			std::string request_str = "GET /bin/ HTTP/1.1\r\nHOST: server3\r\n\r\n";
 			HttpRequest request(range);
 			request.parse(std::vector<char>(request_str.begin(), request_str.end()));
 			std::cout << request.getStatusCode() << "\n"; 
 
 			RouteManager m;
 			std::cout << "target path == " << m.processRequest(request).targetPath << "\n";
-			std::cout << "status code = " << m.processRequest(request).statusCode << "\n";
+			// std::cout << "status code = " << m.processRequest(request).statusCode << "\n";
 
 
 			// manager.init();

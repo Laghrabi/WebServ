@@ -20,8 +20,8 @@ struct RouteNode {
 	 * @brief Constructs a new Route Node.
 	 * @param name The URI segment string this node represents.
 	 */
-	RouteNode(const std::string& name) : segmentName(name){
-		config = new RouteConfig;
+	RouteNode(const std::string& name) : segmentName(name), config(NULL){
+		// config = new RouteConfig;
 	}
 
 	/**
@@ -32,27 +32,28 @@ struct RouteNode {
 	 * @param other The RouteNode instance to copy.
 	 */
 	RouteNode(const RouteNode& other){
+		*this = other;
 		// std::cout << "RouteConfig copy constructor\n" << std::endl;
-		segmentName = other.segmentName;
-		config = new RouteConfig;
-		*config = *other.config;
-		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
-				it != other.children.end(); ++it) {
-			this->children[it->first] = new RouteNode(*(it->second));
-		}
+		// segmentName = other.segmentName;
+		// config = new RouteConfig;
+		// *config = *other.config;
+		// for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
+		// 		it != other.children.end(); ++it) {
+		// 	this->children[it->first] = new RouteNode(*(it->second));
+		// }
 	}
 
 	RouteNode& operator=(const RouteNode& other) {
 
 		// std::cout << "RouteConfig | copy constructor\n" << std::endl;
-		delete config;
-		for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
-			delete it->second;
-		}
+		// delete config;
+		// for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
+		// 	delete it->second;
+		// }
 
-		segmentName = other.segmentName;
-		config = new RouteConfig;
-		*config = *other.config;
+		// segmentName = other.segmentName;
+		// config = new RouteConfig;
+		// *config = *other.config;
 
 		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
 				it != other.children.end(); ++it) {
@@ -67,7 +68,7 @@ struct RouteNode {
 	 */
 	~RouteNode() {
 		// std::cout << "delete\n" << std::endl;
-		delete config;
+		// delete config;
 		for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
 			delete it->second;
 		}

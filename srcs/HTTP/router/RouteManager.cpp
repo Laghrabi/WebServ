@@ -111,9 +111,10 @@ const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriS
 			std::cout << "\nsegment " << *it << "\n";
         std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
         if (match != currNode->children.end()) {
-					std::cout << "i find that " << *it << "\n";
+						// std::cout << "here " << currNode->config->getRedirection().second << "\n";
+					// std::cout << "i find that " << *it << "\n";
             currNode = match->second;
-						std::cout << "here is bout " << currNode->config->getRedirection().second << "\n";
+						// std::cout << "here " << currNode->config->getRedirection().second << "\n";
             if (currNode->config)
                 bestMatch = currNode->config;
         } else {

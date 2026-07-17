@@ -14,12 +14,13 @@ class Client
         std::vector<char> m_readBuffer;
         std::vector<char> m_writeBuffer;
         ListeningSocket*    m_listener;
-        HttpRequest           m_request;
-
+        
     public:
-
+        
+        HttpRequest           m_request;
         Client() ;
-        Client(int fd, ListeningSocket* listener, const Config::ServerRange& serverRange) ;
+        Client(int fd, ListeningSocket* listener, const sockaddr_storage& address,
+                    socklen_t addressLength, const Config::ServerRange& serverRange) ;
         Client(const Client& other);
         Client& operator=(const Client& other);
         ~Client();
@@ -42,6 +43,8 @@ class Client
         ListeningSocket* getListener();
         const ListeningSocket* getListener() const;
 
+        std::string getIp() const;
+        uint16_t getPort() const;
 };
 
 #endif

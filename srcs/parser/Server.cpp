@@ -1,9 +1,26 @@
 #include "webserver.hpp"
-#include <cstring>
-#include <sys/socket.h>
 
 Server::Server() : RouteConfig(), m_route_tree("/") {
 	init();
+}
+
+Server::Server(const Server& other)
+	: RouteConfig(other),
+	m_locations(other.m_locations),
+	m_route_tree(other.m_route_tree),
+	m_addr(other.m_addr),
+	m_hosts(other.m_hosts)
+{
+}
+
+Server& Server::operator=(const Server& other)
+{
+	RouteConfig::operator=(other);
+	m_locations = other.m_locations;
+	m_route_tree = other.m_route_tree;
+	m_addr = other.m_addr;
+	m_hosts = other.m_hosts;
+	return *this;
 }
 
 void Server::parseServerName(ContIter &begin) {

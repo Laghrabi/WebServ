@@ -1,78 +1,78 @@
 #include "../../../include/webserver.hpp"
 
 HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL) {}
+	_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL) {}
+
+	/**
+	 * @brief Default constructor.
+	 * 
+	 * Initializes a new HTTP request, setting the initial parsing state 
+	 * to READING_REQUEST_LINE and the buffer index to 0.
+	 */
+	HttpRequest::HttpRequest(const Config::ServerRange& serverRange) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+	_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL), _serverRange(serverRange) {}
+
+	/**
+	 * @brief Copy constructor for HttpRequest.
+	 * Performs a member-wise copy of the request state, including buffer data,
+	 * headers, query parameters, and FSM status.
+	 * @param other The source HttpRequest object to copy.
+	 */
+	HttpRequest::HttpRequest(const HttpRequest& other) : 
+		_statusCode(other._statusCode),
+		_currentState(other._currentState),
+		_savedData(other._savedData),
+		_bufferIndex(other._bufferIndex),
+		_method(other._method),
+		_uri(other._uri),
+		_routeUri(other._routeUri),
+		_queryString(other._queryString),
+		_queryParams(other._queryParams),
+		_version(other._version),
+		_headers(other._headers),
+		_contentLength(other._contentLength),
+		_chunkedSize(other._chunkedSize),
+		_body(other._body),
+		_bodyBytesWritten(other._bodyBytesWritten),
+		_client_max_body_size(other._client_max_body_size),
+		_server(other._server),
+		_serverRange(other._serverRange) {}
+
+		/**
+		 * @brief Copy assignment operator for HttpRequest.
+		 * Safely updates the current object's state to match the source object.
+		 * Prevents self-assignment and performs a deep copy of all internal members.
+		 * @param other The source HttpRequest object to assign from.
+		 * @return A reference to the current object.
+		 */
+		HttpRequest& HttpRequest::operator=(const HttpRequest& other) {
+			if (this != &other) {
+				_statusCode = other._statusCode;
+				_currentState = other._currentState;
+				_savedData = other._savedData;
+				_bufferIndex = other._bufferIndex;
+				_method = other._method;
+				_uri = other._uri;
+				_routeUri = other._routeUri;
+				_queryString = other._queryString;
+				_queryParams = other._queryParams;
+				_version = other._version;
+				_headers = other._headers;
+				_contentLength = other._contentLength;
+				_chunkedSize = other._chunkedSize;
+				_body = other._body;
+				_bodyBytesWritten = other._bodyBytesWritten;
+				_client_max_body_size = other._client_max_body_size;
+				_server = other._server;
+				_serverRange = other._serverRange;
+			}
+			return (*this);
+		}
+
 
 /**
-  * @brief Default constructor.
-  * 
-  * Initializes a new HTTP request, setting the initial parsing state 
-  * to READING_REQUEST_LINE and the buffer index to 0.
-  */
-HttpRequest::HttpRequest(const Config::ServerRange& serverRange) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-							_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL), _serverRange(serverRange) {}
-
-							/**
- * @brief Copy constructor for HttpRequest.
- * Performs a member-wise copy of the request state, including buffer data,
- * headers, query parameters, and FSM status.
- * @param other The source HttpRequest object to copy.
+ * @brief Destructor.
  */
-HttpRequest::HttpRequest(const HttpRequest& other) : 
-    _statusCode(other._statusCode),
-    _currentState(other._currentState),
-    _savedData(other._savedData),
-    _bufferIndex(other._bufferIndex),
-    _method(other._method),
-    _uri(other._uri),
-    _routeUri(other._routeUri),
-    _queryString(other._queryString),
-    _queryParams(other._queryParams),
-    _version(other._version),
-    _headers(other._headers),
-    _contentLength(other._contentLength),
-    _chunkedSize(other._chunkedSize),
-    _body(other._body),
-    _bodyBytesWritten(other._bodyBytesWritten),
-    _client_max_body_size(other._client_max_body_size),
-    _server(other._server),
-    _serverRange(other._serverRange) {}
-
-/**
- * @brief Copy assignment operator for HttpRequest.
- * Safely updates the current object's state to match the source object.
- * Prevents self-assignment and performs a deep copy of all internal members.
- * @param other The source HttpRequest object to assign from.
- * @return A reference to the current object.
- */
-HttpRequest& HttpRequest::operator=(const HttpRequest& other) {
-	if (this != &other) {
-		_statusCode = other._statusCode;
-		_currentState = other._currentState;
-		_savedData = other._savedData;
-		_bufferIndex = other._bufferIndex;
-		_method = other._method;
-		_uri = other._uri;
-		_routeUri = other._routeUri;
-		_queryString = other._queryString;
-		_queryParams = other._queryParams;
-		_version = other._version;
-		_headers = other._headers;
-		_contentLength = other._contentLength;
-		_chunkedSize = other._chunkedSize;
-		_body = other._body;
-		_bodyBytesWritten = other._bodyBytesWritten;
-		_client_max_body_size = other._client_max_body_size;
-		_server = other._server;
-		_serverRange = other._serverRange;
-	}
-	return (*this);
-}
-
-
-/**
-  * @brief Destructor.
-  */
 HttpRequest::~HttpRequest() {}
 
 /**
@@ -84,22 +84,21 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
 {
 	if (rawBuffer.empty())
 		return ;
-	
+
 	_savedData.insert(_savedData.end(), rawBuffer.begin(), rawBuffer.end());
-	
+
 	while (_bufferIndex < _savedData.size())
 	{
 		switch (_currentState)
 		{
 			case READING_REQUEST_LINE:
 				if (parseRequestLine() == false ||
-					validateMethod() == false ||
-					validateVersion() == false ||
-					splitQueryString() == false ||
-					parseQueryParams() == false ||
-					uriDecode() == false ||
-					normalizeUri() == false)
-						return ;
+						validateMethod() == false ||
+						validateVersion() == false ||
+						splitQueryString() == false ||
+						parseQueryParams() == false ||
+						normalizeUri() == false)
+					return ;
 				break ;
 			case READING_HEADERS:
 				if (parseHeaders() == false)
@@ -139,20 +138,20 @@ bool	HttpRequest::parseRequestLine()
 	std::string			trailingGarbage;
 
 	std::vector<char>::iterator it = std::search(
-		_savedData.begin() + _bufferIndex, _savedData.end(),
-		crlf.begin(), crlf.end());
-		
+			_savedData.begin() + _bufferIndex, _savedData.end(),
+			crlf.begin(), crlf.end());
+
 	if (it == _savedData.end())
 		return (false);
 
 	std::string	requestLine(_savedData.begin() + _bufferIndex, it);
 	std::istringstream iss(requestLine);
-	
+
 	if (iss >> _method >> _uri >> _version)
 	{
 		if (iss >> trailingGarbage) {
-    		_currentState = ERROR;
-    		return (false);
+			_currentState = ERROR;
+			return (false);
 		}
 		_bufferIndex += requestLine.size() + 2;
 		_currentState = READING_HEADERS;
@@ -179,24 +178,24 @@ bool	HttpRequest::parseHeaders()
 {
 	const std::string	crlf = "\r\n";
 	std::vector<char>::iterator it = std::search(
-		_savedData.begin() + _bufferIndex, _savedData.end(),
-		crlf.begin(), crlf.end());	
+			_savedData.begin() + _bufferIndex, _savedData.end(),
+			crlf.begin(), crlf.end());	
 	if (it == _savedData.end())
 		return (false);
-	
+
 	std::string headerLine(_savedData.begin() + _bufferIndex, it);
 	if (headerLine.empty()) {
 		if (_currentState == READING_TRAILERS) {
 			_bufferIndex += 2;
- 			_savedData.erase(_savedData.begin(),
-				_savedData.begin() + _bufferIndex);
- 			_bufferIndex = 0;
+			_savedData.erase(_savedData.begin(),
+					_savedData.begin() + _bufferIndex);
+			_bufferIndex = 0;
 			_currentState = FINISHED;
 			return (true);
 		}	
 		return (validateHeaders());
 	}
-	
+
 	size_t	colonPos = headerLine.find(':');
 	if (colonPos == std::string::npos) {
 		_statusCode = BAD_REQUEST;
@@ -213,12 +212,12 @@ bool	HttpRequest::parseHeaders()
 		std::transform(key.begin(), key.end(), key.begin(), safeToLower);
 		if (_headers.find(key) != _headers.end()) {
 			if (key == "host" || key == "content-length" ||
-				key == "content-type" || key == "transfer-encoding") {
-					_statusCode = BAD_REQUEST;
-					_currentState = ERROR;
-					return (false);
-				}
-			_headers[key] = ", " + trimSpaces(value);
+					key == "content-type" || key == "transfer-encoding") {
+				_statusCode = BAD_REQUEST;
+				_currentState = ERROR;
+				return (false);
+			}
+			_headers[key] += ", " + trimSpaces(value);
 		} else {
 			_headers[key] = trimSpaces(value);
 		}
@@ -245,59 +244,60 @@ bool	HttpRequest::validateHeaders() {
 	std::map<std::string, std::string>::iterator itContentLength = _headers.find("content-length");
 	std::map<std::string, std::string>::iterator itTransferEncoding = _headers.find("transfer-encoding");
 	if (itHost == _headers.end()) {
-        _statusCode = BAD_REQUEST;
-        _currentState = ERROR;
-        return false;
-    }
-	_server = findServer(itHost->second);
-	if (_server->isAllowed(_method) == false) {
-		_statusCode = METHOD_NOT_ALLOWED;
-        _currentState = ERROR;
-        return false;
+		_statusCode = BAD_REQUEST;
+		_currentState = ERROR;
+		return false;
 	}
+	_server = findServer(itHost->second);
+	std::cout << "hex " << _server->getRedirection().second << "\n";
+	// if (_server->isAllowed(_method) == false) {
+	// 	_statusCode = METHOD_NOT_ALLOWED;
+	//        _currentState = ERROR;
+	//        return false;
+	// }
 	if (_server->hasMaxBodySize() == true) {
 		_client_max_body_size = _server->getMaxBodySize();
 		if (_client_max_body_size > _MAX_BODY_SIZE)
-     	   _client_max_body_size = _MAX_BODY_SIZE; 
+			_client_max_body_size = _MAX_BODY_SIZE; 
 	}
 	else
 		_client_max_body_size = _DEFAULT_BODY_SIZE;
 	if (_method == "POST" && itContentLength == _headers.end() && itTransferEncoding == _headers.end()) {
-        _statusCode = BODY_LENGTH_REQUIRED;
-        _currentState = ERROR;
-        return false;
-    }
+		_statusCode = BODY_LENGTH_REQUIRED;
+		_currentState = ERROR;
+		return false;
+	}
 	if (itContentLength != _headers.end() && itTransferEncoding != _headers.end()) {
 		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
-        return (false);
+		return (false);
 	}
-    else if (itContentLength != _headers.end()) {
+	else if (itContentLength != _headers.end()) {
 		std::string	clValue = itContentLength->second;
 		if (clValue.empty() || clValue.find_first_not_of("0123456789") != std::string::npos) {
 			_statusCode = BAD_REQUEST;
 			_currentState = ERROR;
 			return (false);
 		}
-        std::istringstream iss(clValue);
-        if (!(iss >> _contentLength)) {
+		std::istringstream iss(clValue);
+		if (!(iss >> _contentLength)) {
 			_statusCode = BAD_REQUEST;
 			_currentState = ERROR;
-    		return (false);
+			return (false);
 		}
 		if (_contentLength > _client_max_body_size || _contentLength > _MAX_BODY_SIZE) {
 			_statusCode = PAYLOAD_TOO_LARGE;
-        	_currentState = ERROR;
-        	return (false);
-    	}
+			_currentState = ERROR;
+			return (false);
+		}
 		_currentState = READING_BODY;
-    } 
+	} 
 	else if (itTransferEncoding != _headers.end()) {
 		std::string	teValue = itTransferEncoding->second;
 		if (teValue != "chunked") {
 			_statusCode = NOT_IMPLEMENTED;
 			_currentState = ERROR;
-        	return (false);
+			return (false);
 		}
 		_currentState = READING_CHUNK_SIZE;
 	}
@@ -305,8 +305,8 @@ bool	HttpRequest::validateHeaders() {
 	if (_currentState == READING_HEADERS) {
 		_currentState = FINISHED;
 		_savedData.erase(_savedData.begin(),
-			_savedData.begin() + _bufferIndex);
- 		_bufferIndex = 0;
+				_savedData.begin() + _bufferIndex);
+		_bufferIndex = 0;
 	}
 	return (true);
 }
@@ -320,7 +320,7 @@ bool	HttpRequest::parseBody()
 {
 	if (_contentLength == 0) {
 		_savedData.erase(_savedData.begin(), _savedData.begin() + _bufferIndex);
- 		_bufferIndex = 0;
+		_bufferIndex = 0;
 		_currentState = FINISHED;
 		return (true);
 	} else {
@@ -355,12 +355,12 @@ bool HttpRequest::parseChunkSize() {
 	const std::string	crlf = "\r\n";
 
 	std::vector<char>::iterator it = std::search(
-		_savedData.begin() + _bufferIndex, _savedData.end(),
-		crlf.begin(), crlf.end());
-		
+			_savedData.begin() + _bufferIndex, _savedData.end(),
+			crlf.begin(), crlf.end());
+
 	if (it == _savedData.end())
 		return (false);
-	
+
 	std::string	 chunkedLine(_savedData.begin() + _bufferIndex, it);
 	const size_t semiPos = chunkedLine.find(';');
 	std::string sizePart;
@@ -381,20 +381,20 @@ bool HttpRequest::parseChunkSize() {
 	} else if (_chunkedSize != 0) {
 		if (_chunkedSize > _client_max_body_size || _chunkedSize > _MAX_BODY_SIZE) {
 			_statusCode = PAYLOAD_TOO_LARGE;
-            _currentState = ERROR;
-            return (false);
-        }
+			_currentState = ERROR;
+			return (false);
+		}
 		if (_body.size() + _chunkedSize > _client_max_body_size ||
-			_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
-				_statusCode = PAYLOAD_TOO_LARGE;
-				_currentState = ERROR;
-				return (false);
+				_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
+			_statusCode = PAYLOAD_TOO_LARGE;
+			_currentState = ERROR;
+			return (false);
 		}
 		_currentState = READING_CHUNK_DATA;
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);
 	} else {
-		
+
 		_currentState = READING_TRAILERS;
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);
@@ -415,10 +415,10 @@ bool	HttpRequest::parseChunkData() {
 	if ((_savedData.size() - _bufferIndex) < (_chunkedSize + 2))
 		return (false);
 	if (_savedData[_bufferIndex + _chunkedSize] != '\r' ||
-		_savedData[_bufferIndex + _chunkedSize + 1] != '\n') {
-			_statusCode = BAD_REQUEST;
-			_currentState = ERROR;
-			return (false);
+			_savedData[_bufferIndex + _chunkedSize + 1] != '\n') {
+		_statusCode = BAD_REQUEST;
+		_currentState = ERROR;
+		return (false);
 	}
 	if (_body.size() + _chunkedSize > _client_max_body_size || _body.size() + _chunkedSize > _MAX_BODY_SIZE) {
 		_statusCode = PAYLOAD_TOO_LARGE;
@@ -426,11 +426,11 @@ bool	HttpRequest::parseChunkData() {
 		return (false);
 	}
 	_body.insert(_body.end(),
-		_savedData.begin() + _bufferIndex,
-		_savedData.begin() + _bufferIndex + _chunkedSize);
+			_savedData.begin() + _bufferIndex,
+			_savedData.begin() + _bufferIndex + _chunkedSize);
 	size_t	totalConsumedBytes = _bufferIndex + _chunkedSize + 2;
 	_savedData.erase(_savedData.begin(),
-		_savedData.begin() + totalConsumedBytes);
+			_savedData.begin() + totalConsumedBytes);
 	_bufferIndex = 0;
 	_currentState = READING_CHUNK_SIZE;
 	return (true);

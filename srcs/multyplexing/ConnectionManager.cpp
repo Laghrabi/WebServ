@@ -18,7 +18,6 @@ void ConnectionManager::createListeningSockets()
     for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = m_config.m_iport_server.begin();
     it != m_config.m_iport_server.end(); it = m_config.m_iport_server.upper_bound(it->first))
     {
-        // std::cout << "hello\n";
         ListeningSocket listener(&it->first);
         
         int fd = socket(listener.getEndpoint().getFamily(), SOCK_STREAM, 0);
@@ -36,7 +35,6 @@ void ConnectionManager::createListeningSockets()
             throw std::runtime_error("setsockopt failed");
         if (bind(fd, listener.getEndpoint().get(), listener.getEndpoint().getSize()) < 0)
         {
-
             std::cout << (listener.getEndpoint().getFamily() ) << "\n";
             perror("bind");
             throw std::runtime_error("bind failed");
@@ -52,14 +50,6 @@ void ConnectionManager::createListeningSockets()
         else 
         {
             std::cout << "socket fd = " << fd << "is listening for endpoint ";
-            listener.getEndpoint().print();
-            std::cout << "\n";
-        }
-        if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-            throw std::runtime_error("fcntl failed");
-        else
-        {
-            std::cout << "socket fd = " << fd << "is set to non-blocking for endpoint ";
             listener.getEndpoint().print();
             std::cout << "\n";
         }
@@ -118,15 +108,9 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
     }
 
     const Server::IPort& key = listener.getEndpoint();
-    const Config::ServerMultiMap map = m_config.m_iport_server;
-    Client client(clientFd, &listener,map.equal_range(key));
+    const Config::ServerMultiMap& map = m_config.m_iport_server;
+    Client client(clientFd, &listener, address, addressLength, map.equal_range(key));
     std::cout << "Accepted new client with fd: " << clientFd << "\n";
-
-		Server::IPort s(address);
-		// std::cout << s.getIpStr() << "\n";
-    client.setAddress(address);
-    client.setAddressLength(addressLength);
-
     m_clients.insert(
         std::make_pair(clientFd, client));
     
@@ -162,58 +146,90 @@ void ConnectionManager::disconnect(Client& client)
 }
 
 
-void ConnectionManager::receive(Client& client)
+int ConnectionManager::receive(Client& client)
 {
     char    buffer[4096] = {0};
     ssize_t bytes;
 
-    // while (true)
-    // {
-        bytes = recv(client.getFd(), buffer, sizeof(buffer), 0);
-
-        if (bytes > 0)
+    bytes = recv(client.getFd(), buffer, sizeof(buffer), 0);
+    
+    if (bytes > 0)
+    {
+        client.getReadBuffer().clear();
+        client.getReadBuffer().insert( client.getReadBuffer().end(),
+                buffer, buffer + bytes);
+        return (0);
+    }
+    else if (bytes == 0)
+    {
+        disconnect(client);
+        return (1);
+    }
+    else
+    {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
-            client.getReadBuffer().insert( client.getReadBuffer().end(),
-                    buffer, buffer + bytes);
+            return (1);
         }
-        else if (bytes == 0)
-        {
-            disconnect(client);
-            return;
-        }
-        else
-        {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
-                std::cout << std::string(buffer) << "\n";
-                // client.getReadBuffer.
-                return;
-            }
-            perror("recv");
-            disconnect(client);
-            return;
-        }
-    std::string hey = std::string(buffer);
-    send(client.getFd(), hey.c_str(), hey.length(), 0);
+        perror("recv");
+        disconnect(client);
+        return (1);
+    }
 }
 
-void ConnectionManager::handleClient(Client& client)
+void ConnectionManager::enablePollout(int fd)
 {
-    receive(client);
+    for (std::size_t i = 0; i < m_pollfds.size(); ++i)
+    {
+        if (m_pollfds[i].fd == fd)
+        {
+            m_pollfds[i].events = POLLOUT;
+            break;
+        }
+    }
+}
 
-    // i will use equal range and pass to it the .....
-    // HttpRequestHandler handler;
+void ConnectionManager::disablePollout(int fd)
+{
+    for (std::size_t i = 0; i < m_pollfds.size(); ++i)
+    {
+        if (m_pollfds[i].fd == fd)
+        {
+            m_pollfds[i].events &= ~POLLOUT;
+            break;
+        }
+    }
+}
 
-    
-    //i need to know what should i pass to the http request handler, 
-    //i think i should pass the second value of the unordredmultimap which is the server object,
-    //so probably i will pass config.find(client.getListener()->getEndpoint())
-    //to the http request handler to get the servers that could handle this request, 
-    //and also the readbuffer of the client and config object as i remember 
+void ConnectionManager::recieveClient(Client& client)
+{
+    if (receive(client))
+        return;
 
-    //and i still have to work on the send function to send the response back to the client
-    //one more thing , i should desable the POLLOUT flag from the client socket untile i reccieve a response from http response
-    //only then i will able that flag and disable it after i call send
+    client.m_request.parse(client.getReadBuffer());
+    // int state = client.m_request.getCurrentState(); 
+
+    // if (state == FINISHED) {
+    //     RouteResult result = routeManager.processRequest(client.m_request);
+    //     client.generateResponse(result);
+    // } 
+    // else if (state == ERROR) {
+    //     int errorCode = client.m_request.getStatusCode(); 
+    //     client.generateErrorResponse(errorCode);
+    // }
+
+    enablePollout(client.getFd());
+}
+
+void ConnectionManager::sendClient(Client& client)
+{
+    //i dont know how to catch the data that i will send to the client, i will ask chaimaa
+    // i guess it will return a vector of char
+    std::vector<char> response;// i will reciev data here
+    send(client.getFd(), &response[0], response.size(), 0);
+    disablePollout(client.getFd());
+    //anyway i still dont know if im done with the multiplexing,
+    // waiting ofr the respond to start testing
 }
 
 void ConnectionManager::run()
@@ -254,7 +270,11 @@ void ConnectionManager::run()
                 }          
                 else if (m_clients.find(fd) != m_clients.end()  && (events & POLLIN))
                 {
-                    handleClient(m_clients.find(fd)->second);
+                    recieveClient(m_clients.find(fd)->second);
+                }
+                else if (m_clients.find(fd) != m_clients.end()  && (events & POLLOUT))
+                {
+                    sendClient(m_clients.find(fd)->second);
                 }
             }
         }

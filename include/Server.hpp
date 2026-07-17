@@ -30,11 +30,18 @@ struct RouteNode {
 	 * independent of the original.
 	 * @param other The RouteNode instance to copy.
 	 */
-	RouteNode(const RouteNode& other) : segmentName(other.segmentName), config(other.config) {
+	RouteNode(const RouteNode& other){
+		*this = other;	
+	}
+
+	RouteNode& operator=(const RouteNode& other) {
+		segmentName = other.segmentName;
+		config = other.config;
 		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
 				it != other.children.end(); ++it) {
 			this->children[it->first] = new RouteNode(*(it->second));
 		}
+		return (*this);
 	}
 
 	/**
@@ -77,6 +84,9 @@ class Server : public RouteConfig {
 		struct IPortV6;
 
 		Server();
+		Server(const Server&);
+		Server& operator=(const Server&);
+
 		void parseServerName(ContIter &begin);
 		void parseIPort(ContIter &begin);
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);

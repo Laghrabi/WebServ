@@ -1,11 +1,25 @@
 #include "webserver.hpp"
+#include <cstdlib>
 
 RouteConfig::MapHandler RouteConfig::s_handlers;
 std::set<std::string> RouteConfig::s_available_methods;
 
+void RouteConfig::init(void) {
+	if (s_handlers.empty()) {
+		s_handlers["index"] = &RouteConfig::parseIndex;
+		s_handlers["autoindex"] = &RouteConfig::parseAutoIndex;
+		s_handlers["root"] = &RouteConfig::parseRoot;
+		s_handlers["upload_dir"] = &RouteConfig::parseUploadDir;
+		s_handlers["access_log"] = &RouteConfig::parseAccessLog;
+		s_handlers["max_client_body_size"] = &RouteConfig::parseMaxBodySize;
+		s_handlers["allowed_methods"] = &RouteConfig::parseAllowedMethods;
+		s_handlers["cgi"] = &RouteConfig::parseCgiConf;
+		s_handlers["redirect"] = &RouteConfig::parseRedirection;
+	}
+}
 
-RouteConfig::RouteConfig(const RouteConfig& other) :
-	m_root(other.m_root),
+RouteConfig::RouteConfig(const RouteConfig& other)
+	: m_root(other.m_root),
 	m_upload_dir(other.m_upload_dir),
 	m_access_log(other.m_access_log),
 	m_indexes(other.m_indexes),
@@ -17,11 +31,10 @@ RouteConfig::RouteConfig(const RouteConfig& other) :
 	m_redirect(other.m_redirect),
 	m_does_redirect(other.m_does_redirect)
 {
-
 }
 
-RouteConfig& RouteConfig::operator=(const RouteConfig& other) {
-
+RouteConfig& RouteConfig::operator=(const RouteConfig& other)
+{
 	m_root = other.m_root;
 	m_upload_dir = other.m_upload_dir;
 	m_access_log = other.m_access_log;
@@ -33,21 +46,7 @@ RouteConfig& RouteConfig::operator=(const RouteConfig& other) {
 	m_cgi_map = other.m_cgi_map;
 	m_redirect = other.m_redirect;
 	m_does_redirect = other.m_does_redirect;
-
-	return (*this);
-}
-
-void RouteConfig::init(void) {
-	if (s_handlers.empty()) {
-		s_handlers["index"] = &RouteConfig::parseIndex;
-		s_handlers["root"] = &RouteConfig::parseRoot;
-		s_handlers["upload_dir"] = &RouteConfig::parseUploadDir;
-		s_handlers["access_log"] = &RouteConfig::parseAccessLog;
-		s_handlers["max_client_body_size"] = &RouteConfig::parseMaxBodySize;
-		s_handlers["allowed_methods"] = &RouteConfig::parseAllowedMethods;
-		s_handlers["cgi"] = &RouteConfig::parseCgiConf;
-		s_handlers["redirect"] = &RouteConfig::parseRedirection;
-	}
+	return *this;
 }
 
 
@@ -58,7 +57,7 @@ RouteConfig::HandlerFunc RouteConfig::getDirectiveHandler(const std::string dir_
 	return (s_handlers[dir_name]);
 }
 
-bool RouteConfig::notRedirectCode(int code) const {
+bool RouteConfig::RedirectCode(int code) const {
 	return (code >= 300 && code <= 308);
 }
 
@@ -66,7 +65,8 @@ void RouteConfig::parseRedirection(ContIter& begin) {
 	std::stringstream ss;
 	ss << begin->value;
 	ss >> m_redirect.first;
-	if (notRedirectCode(m_redirect.first)) {
+	std::cout << "redirection " << m_redirect.first << "\n";
+	if (!RedirectCode(m_redirect.first)) {
 		throw (ParseConfig::ConfigExcept("invalid redirect code", begin->line));
 	}
 	++begin;
@@ -239,6 +239,3 @@ bool RouteConfig::hasMaxBodySize() const
 	return m_max_body_size_exist;
 }
 
-RouteConfig::~RouteConfig() {
-
-}

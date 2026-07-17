@@ -24,7 +24,7 @@ RouteManager::~RouteManager() {}
 RouteResult RouteManager::processRequest(const HttpRequest& request) const {
     RouteResult result;
     result.statusCode = OK;
-		std::cout << "this is very importnat " << request.getServer()->getRedirection().second << "\n";
+		// std::cout << "this is very importnat " << request.getServer()->getRedirection().second << "\n";
     const RouteConfig* route = matchRoute(request.getUriSegments(), request.getServer());
 
     if (route && !route->isAllowed(request.getMethod())) {
@@ -103,6 +103,7 @@ const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriS
     const RouteNode* currNode = &(server->m_route_tree);
     const RouteConfig* bestMatch = server;
 
+		std::cout << "server found " << server->getRedirection().second << "\n";
     if (currNode->config)
         bestMatch = currNode->config;
         
@@ -119,7 +120,7 @@ const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriS
             break;
         }
     }
-		std::cout << "this is important " << bestMatch->getRedirection().second << "\n";
+		// std::cout << "this is important " << bestMatch->getRedirection().second << "\n";
 
     return (bestMatch);
 }

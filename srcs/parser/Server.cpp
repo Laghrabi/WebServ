@@ -175,6 +175,9 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
  */
 void Server::buildRouteTree() {
 	RouteNode* currentNode = &m_route_tree; 
+	// currentNode->children["hey"] = new RouteNode("but");
+	// currentNode->children["but"] = new RouteNode("but");
+	// currentNode->children["ls"] = new RouteNode("lk");
 
 	for (size_t i = 0; i < m_locations.size(); ++i) {
 		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].getPath());

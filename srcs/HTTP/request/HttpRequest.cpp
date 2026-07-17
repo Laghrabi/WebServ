@@ -248,8 +248,9 @@ bool	HttpRequest::validateHeaders() {
 		_currentState = ERROR;
 		return false;
 	}
+	std::cout << "server fine " << "\n";
 	_server = findServer(itHost->second);
-	std::cout << "hex " << _server->getRedirection().second << "\n";
+	std::cout << "server redirection " << _server->getRedirection().second << "\n";
 	// if (_server->isAllowed(_method) == false) {
 	// 	_statusCode = METHOD_NOT_ALLOWED;
 	//        _currentState = ERROR;

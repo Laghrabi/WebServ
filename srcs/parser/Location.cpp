@@ -19,6 +19,11 @@ bool Location::hasSamePath(const Location& location) {
 }
 
 
+void Location::setPath(const std::string& path) {
+	m_path = path;
+}
+
+
 const std::string& Location::getPath(void) const {
 	return (m_path);
 }

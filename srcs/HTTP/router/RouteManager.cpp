@@ -24,6 +24,7 @@ RouteManager::~RouteManager() {}
 RouteResult RouteManager::processRequest(const HttpRequest& request) const {
     RouteResult result;
     result.statusCode = OK;
+		// std::cout << "this is very importnat " << request.getServer()->getRedirection().second << "\n";
     const RouteConfig* route = matchRoute(request.getUriSegments(), request.getServer());
 
     if (route && !route->isAllowed(request.getMethod())) {
@@ -32,7 +33,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
         return result;
     }
 
-    if (route && !route->doesRedirect()) {
+    if (route && route->doesRedirect()) {
         result.action = ACTION_REDIRECT;
         result.targetPath = route->getRedirection().second;
         result.statusCode = route->getRedirection().first;
@@ -79,6 +80,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 
         case RESOURCE_NOT_FOUND:
         default:
+						// std::cout << "resource not found\n";
             result.action = ACTION_ERROR;
             result.statusCode = NOT_FOUND;
             break;
@@ -102,19 +104,29 @@ const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriS
     const RouteNode* currNode = &(server->m_route_tree);
     const RouteConfig* bestMatch = server;
 
+		// std::cout << "server found " << server->getRedirection().second << "\n";
     if (currNode->config)
         bestMatch = currNode->config;
         
     for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
+			// std::cout << "\nsegment " << *it << "\n";
         std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
         if (match != currNode->children.end()) {
+						// std::cout << "here " << currNode->config->getRedirection().second << "\n";
+					// std::cout << "i find that " << *it << "\n";
             currNode = match->second;
+						// std::cout << "here " << currNode->config->getRedirection().second << "\n";
             if (currNode->config)
+						{
+							std::cout << "============MATCH===============\n";
                 bestMatch = currNode->config;
+							// std::cout << "best match " << bestMatch->getRedirection().second << "\n";
+						}
         } else {
             break;
         }
     }
+		// std::cout << "this is important " << bestMatch->getRedirection().second << "\n";
 
     return (bestMatch);
 }

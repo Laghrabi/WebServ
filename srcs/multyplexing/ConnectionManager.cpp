@@ -207,7 +207,7 @@ void ConnectionManager::recieveClient(Client& client)
         return;
 
     client.m_request.parse(client.getReadBuffer());
-    int state = client.m_request.getCurrentState(); 
+    // int state = client.m_request.getCurrentState(); 
 
     // if (state == FINISHED) {
     //     RouteResult result = routeManager.processRequest(client.m_request);

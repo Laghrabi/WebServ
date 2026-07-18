@@ -1,4 +1,5 @@
 #include "webserver.hpp"
+#include <cstring>
 
 Server::IPort::IPort() {
 	std::memset(&m_addr, 0, sizeof(m_addr));
@@ -17,10 +18,12 @@ Server::IPort::IPort(const Server::IPort& other) :
 Server::IPort::IPort(int family, std::size_t size) : 
 	m_size(size), 
 	m_family(family) {
+		std::memset(&m_addr, 0, sizeof(m_addr));
 	}
 
 
 Server::IPort::IPort(const sockaddr_storage& addr) {
+	std::memset(&m_addr, 0, sizeof(m_addr));
 	m_family = addr.ss_family;
 	if (m_family == AF_INET) {
 		*this = IPortV4(*reinterpret_cast<const sockaddr_in*>(&addr));

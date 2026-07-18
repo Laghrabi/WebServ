@@ -35,10 +35,12 @@ class RouteConfig {
 		const std::set<std::string>& getAllowedMethods() const;
 		void parseCgiConf(ContIter &begin);
 		bool validExtention(const std::string& ext, std::string& err_msg);
-		bool notRedirectCode(int code) const;
+		bool RedirectCode(int code) const;
 
 	public:
 		RouteConfig();
+		RouteConfig(const RouteConfig& other);
+		RouteConfig& operator=(const RouteConfig& other);
 
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);
 		static void init(void);

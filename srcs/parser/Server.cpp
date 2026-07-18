@@ -6,6 +6,25 @@ Server::Server() : RouteConfig(), m_route_tree("/") {
 	init();
 }
 
+Server::Server(const Server& other)
+	: RouteConfig(other),
+	m_locations(other.m_locations),
+	m_route_tree(other.m_route_tree),
+	m_addr(other.m_addr),
+	m_hosts(other.m_hosts)
+{
+}
+
+Server& Server::operator=(const Server& other)
+{
+	RouteConfig::operator=(other);
+	m_locations = other.m_locations;
+	m_route_tree = other.m_route_tree;
+	m_addr = other.m_addr;
+	m_hosts = other.m_hosts;
+	return *this;
+}
+
 void Server::parseServerName(ContIter &begin) {
 	while (begin->is(WORD)) {
 		m_hosts.push_back(begin->value);
@@ -168,10 +187,11 @@ void Server::buildRouteTree() {
 			const std::string& token = tokens[j];
 
 			if (currentNode->children.find(token) == currentNode->children.end()) {
-				currentNode->children[token] = new RouteNode(token);
+				currentNode->children.insert(std::make_pair(token, new RouteNode(token)));
 			}
 			currentNode = currentNode->children[token];
 		}
-		currentNode->config = &m_locations[i]; 
+		currentNode->config = new RouteConfig;
+		*currentNode->config = m_locations[i]; 
 	}
 }

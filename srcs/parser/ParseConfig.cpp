@@ -25,6 +25,7 @@ Config ParseConfig::parse(void) {
 			std::string server_name;
 			if (checkServerConflict(m_config.m_servers.begin(), m_config.m_servers.end(), server, server_name))
 				throw (ParseConfig::ConfigExcept("conflict Server Name '" + server_name + "'", server_begin_line));
+			server.buildRouteTree();
 			m_config.m_servers.push_back(server);
 			make_pair(server);
 		}
@@ -60,8 +61,6 @@ template <typename T> void ParseConfig::parseContext(T &context, void (ParseConf
 
 
 void ParseConfig::parseServer(ServerType& server) {
-	LocationType location;
-
 	while (m_it->is(WORD)) {
 		if (m_it->is("location")) {
 			std::string path;
@@ -70,6 +69,8 @@ void ParseConfig::parseServer(ServerType& server) {
 				throw (ConfigExcept("no path after location context", m_it->line));
 			}
 			path = m_it->value;
+			LocationType location;
+			location.setPath(path);
 			parseContext(location, &ParseConfig::parseServerLocation, "location");
 			server.m_locations.push_back(location);
 		}

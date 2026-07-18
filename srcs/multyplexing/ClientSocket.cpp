@@ -1,47 +1,47 @@
 #include "../../include/ClientSocket.hpp"
 
 
-static std::string extractIp(const sockaddr_storage& address)
-{
-    
-    if (address.ss_family == AF_INET)
-    {
-        char ip[INET6_ADDRSTRLEN];
-        const sockaddr_in* addr =
-            reinterpret_cast<const sockaddr_in*>(&address);
-
-        inet_ntop(AF_INET, &addr->sin_addr, ip, sizeof(ip));
-        return ip;
-    }
-    else if (address.ss_family == AF_INET6)
-    {
-        char ip[INET6_ADDRSTRLEN];
-
-        const sockaddr_in6* addr =
-            reinterpret_cast<const sockaddr_in6*>(&address);
-
-        inet_ntop(AF_INET6, &addr->sin6_addr, ip, sizeof(ip));
-        return ip;
-    }
-
-    return "";
-}
-
-static uint16_t extratPort(const sockaddr_storage& address)
-{
-    if (address.ss_family == AF_INET)
-    {
-        const sockaddr_in* addr =
-            reinterpret_cast<const sockaddr_in*>(&address);
-
-        return ntohs(addr->sin_port);
-    }
-
-    const sockaddr_in6* addr =
-        reinterpret_cast<const sockaddr_in6*>(&address);
-
-    return ntohs(addr->sin6_port);
-}
+// static std::string extractIp(const sockaddr_storage& address)
+// {
+//
+//     if (address.ss_family == AF_INET)
+//     {
+//         char ip[INET6_ADDRSTRLEN];
+//         const sockaddr_in* addr =
+//             reinterpret_cast<const sockaddr_in*>(&address);
+//
+//         inet_ntop(AF_INET, &addr->sin_addr, ip, sizeof(ip));
+//         return ip;
+//     }
+//     else if (address.ss_family == AF_INET6)
+//     {
+//         char ip[INET6_ADDRSTRLEN];
+//
+//         const sockaddr_in6* addr =
+//             reinterpret_cast<const sockaddr_in6*>(&address);
+//
+//         inet_ntop(AF_INET6, &addr->sin6_addr, ip, sizeof(ip));
+//         return ip;
+//     }
+//
+//     return "";
+// }
+//
+// static uint16_t extratPort(const sockaddr_storage& address)
+// {
+//     if (address.ss_family == AF_INET)
+//     {
+//         const sockaddr_in* addr =
+//             reinterpret_cast<const sockaddr_in*>(&address);
+//
+//         return ntohs(addr->sin_port);
+//     }
+//
+//     const sockaddr_in6* addr =
+//         reinterpret_cast<const sockaddr_in6*>(&address);
+//
+//     return ntohs(addr->sin6_port);
+// }
 
 Client::Client(): m_fd(-1),
     m_address(),

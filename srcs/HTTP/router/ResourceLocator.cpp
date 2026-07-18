@@ -53,7 +53,7 @@ ResourceType ResourceLocator::getResourceType(const std::string& physicalPath) c
     struct stat fileInfo;
 
     if (stat(physicalPath.c_str(), &fileInfo) != 0) {
-#ifdef DEBU
+#ifdef DEBUG
 			std::cout << "resource not found: " << physicalPath.c_str() << "\n";
 #endif
         if (errno == EACCES)

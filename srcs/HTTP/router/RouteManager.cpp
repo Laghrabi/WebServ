@@ -80,7 +80,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 
         case RESOURCE_NOT_FOUND:
         default:
-						std::cout << "resource not found\n";
+						// std::cout << "resource not found\n";
             result.action = ACTION_ERROR;
             result.statusCode = NOT_FOUND;
             break;

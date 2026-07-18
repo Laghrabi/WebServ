@@ -121,7 +121,7 @@ int main(int argc, char **argv){
 			//
 			const Config::ServerMultiMap& map = conf.m_iport_server;
 			Config::ServerRange range = map.equal_range(map.begin()->first);
-			std::string request_str = "GET /home/hsacr/COMMON_CORE/webserver/work/WebServer/alkasjdf/ HTTP/1.1\r\nHOST: server3\r\n\r\n";
+			std::string request_str = "GET /bin/ HTTP/1.1\r\nHOST: server3\r\n\r\n";
 			HttpRequest request(range);
 			request.parse(std::vector<char>(request_str.begin(), request_str.end()));
 			std::cout << request.getStatusCode() << "\n"; 
@@ -129,7 +129,8 @@ int main(int argc, char **argv){
 			conf.m_servers.clear();
 			RouteManager m;
 			std::cout << "target path is \"" << m.processRequest(request).targetPath << "\"\n";
-			std::cout << "target path is \"" << m.processRequest(request).action << "\"\n";
+			std::cout << "action is \"" << m.processRequest(request).action << "\"\n";
+			std::cout << "status code is \"" << m.processRequest(request).statusCode << "\"\n";
 			;
 
 			// manager.init();

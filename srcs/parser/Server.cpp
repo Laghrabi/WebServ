@@ -177,9 +177,6 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
  */
 void Server::buildRouteTree() {
 	RouteNode* currentNode = &m_route_tree; 
-	// currentNode->children["hey"] = new RouteNode("but");
-	// currentNode->children["but"] = new RouteNode("but");
-	// currentNode->children["ls"] = new RouteNode("lk");
 
 	for (size_t i = 0; i < m_locations.size(); ++i) {
 		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].getPath());
@@ -191,10 +188,10 @@ void Server::buildRouteTree() {
 
 			if (currentNode->children.find(token) == currentNode->children.end()) {
 				currentNode->children.insert(std::make_pair(token, new RouteNode(token)));
-				// currentNode->children[token] = new RouteNode(token);
 			}
 			currentNode = currentNode->children[token];
 		}
-		currentNode->config = &m_locations[i]; 
+		currentNode->config = new RouteConfig;
+		*currentNode->config = m_locations[i]; 
 	}
 }

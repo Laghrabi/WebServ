@@ -31,29 +31,32 @@ struct RouteNode {
 	 * independent of the original.
 	 * @param other The RouteNode instance to copy.
 	 */
-	RouteNode(const RouteNode& other){
-		*this = other;
-		// std::cout << "RouteConfig copy constructor\n" << std::endl;
-		// segmentName = other.segmentName;
-		// config = new RouteConfig;
-		// *config = *other.config;
-		// for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
-		// 		it != other.children.end(); ++it) {
-		// 	this->children[it->first] = new RouteNode(*(it->second));
-		// }
+	RouteNode(const RouteNode& other) : config(NULL) {
+		segmentName = other.segmentName;
+		if (other.config) {
+			config = new RouteConfig;
+
+			*config = *other.config;
+		}
+		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
+				it != other.children.end(); ++it) {
+			this->children[it->first] = new RouteNode(*(it->second));
+		}
 	}
 
 	RouteNode& operator=(const RouteNode& other) {
 
 		// std::cout << "RouteConfig | copy constructor\n" << std::endl;
-		// delete config;
-		// for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
-		// 	delete it->second;
-		// }
+		delete config;
+		for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
+			delete it->second;
+		}
 
-		// segmentName = other.segmentName;
-		// config = new RouteConfig;
-		// *config = *other.config;
+		segmentName = other.segmentName;
+		if (other.config) {
+			config = new RouteConfig;
+			*config = *other.config;
+		}
 
 		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
 				it != other.children.end(); ++it) {
@@ -68,7 +71,7 @@ struct RouteNode {
 	 */
 	~RouteNode() {
 		// std::cout << "delete\n" << std::endl;
-		// delete config;
+		delete config;
 		for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
 			delete it->second;
 		}

@@ -26,8 +26,11 @@ std::string ResourceLocator::buildPhysicalPath(const std::string& uri, const Rou
         rootPath = route->getRoot();
     if (rootPath.empty() && server)
         rootPath = server->getRoot();
-    if (rootPath.empty())
-        rootPath = ".";
+		// here we have to options
+		// option number 2(directely) if no match and server has root automatically
+		// match and root server will be added to the requested uri
+    // if (rootPath.empty())
+    //     rootPath = ".";
     
     bool rootEndsWithSlash = (rootPath[rootPath.length() - 1] == '/');
     bool uriStartsWithSlash = (!uri.empty() && uri[0] == '/');
@@ -50,6 +53,9 @@ ResourceType ResourceLocator::getResourceType(const std::string& physicalPath) c
     struct stat fileInfo;
 
     if (stat(physicalPath.c_str(), &fileInfo) != 0) {
+#ifdef DEBU
+			std::cout << "resource not found: " << physicalPath.c_str() << "\n";
+#endif
         if (errno == EACCES)
             return (RESOURCE_FORBIDDEN);
         return (RESOURCE_NOT_FOUND);

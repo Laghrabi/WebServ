@@ -1,4 +1,6 @@
 #include "webserver.hpp"
+#include <cstring>
+#include <sys/socket.h>
 
 Server::Server() : RouteConfig(), m_route_tree("/") {
 	init();

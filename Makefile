@@ -19,6 +19,9 @@ NAME = webserver
 $(NAME): $(OBJS)
 	$(CPP) $(CPP_FLAGS) -o $@ $^
 
+DEBUG: CPP_FLAGS += -D DEBUG="true"
+DEBUG: $(NAME)
+
 %.o: %.cpp
 	$(CPP) $(CPP_FLAGS) -I $(INCLUDE_DIR)  -o $@ -c $<
 

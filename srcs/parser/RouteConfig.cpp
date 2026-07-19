@@ -266,6 +266,11 @@ bool RouteConfig::isCgiScript(const std::string& file) const {
 	return (false);
 }
 
+bool RouteConfig::isCgiEnable(void) const {
+	return (!m_cgi_map.empty());
+}
+
+
 bool RouteConfig::hasNoConfig() const {
 	if (!getRoot().empty()) return (false);
 	if (!getUploadDir().empty()) return (false);

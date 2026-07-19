@@ -54,6 +54,7 @@ class RouteConfig {
 		void parseMaxBodySize(ContIter &begin);
 		void parseAllowedMethods(ContIter &begin);
 		void parseRedirection(ContIter& begin);
+		bool isCgiEnable(void) const;
 		
 		void initAvailableMethods();
 		

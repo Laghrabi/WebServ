@@ -19,7 +19,7 @@ NAME = webserver
 $(NAME): $(OBJS)
 	$(CPP) $(CPP_FLAGS) -o $@ $^
 
-DEBUG: CPP_FLAGS += -D DEBUG="true"
+DEBUG: CPP_FLAGS += -D CGI_DEBUG="true"
 DEBUG: $(NAME)
 
 %.o: %.cpp

@@ -39,7 +39,9 @@ int main(int argc, char **argv){
 			//
 			const Config::ServerMultiMap& map = conf.m_iport_server;
 			Config::ServerRange range = map.equal_range(map.begin()->first);
+
 			std::string request_str = "GET /home/hsacr/COMMON_CORE/webserver/tests/cgi/apache-cgi/cgi-bin/.something.hey.out/this/is/path/info HTTP/1.1\r\nHOST: server2\r\n\r\n";
+
 			HttpRequest request(range);
 			request.parse(std::vector<char>(request_str.begin(), request_str.end()));
 			std::cout << "STATUS CODE: " << request.getStatusCode() << "\n";

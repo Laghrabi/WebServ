@@ -81,14 +81,21 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 	std::cout << "[(ROUTEMANAGER) location is matched: " << location << "]\n";
 #endif
 
-	std::vector<std::string> vec;
 	std::string str = request.getRouteUri().substr(location.length());
+
+	// std::string physical = route->getAlias() + str;
+	if (route->isCgiEnable()) {
+	// if (route && route-> {
+	std::vector<std::string> vec;
 #ifdef DEBUG
 	std::cout << "[(CGI): file is " << str << "]\n";
 #endif
 	HttpRequest::normalizeUriHelper(str, vec);
 
 	isCgi(vec, route, location);
+
+	}
+
 	if (route && !route->isAllowed(request.getMethod())) {
 		result.action = ACTION_ERROR;
 		result.statusCode = METHOD_NOT_ALLOWED;
@@ -105,13 +112,6 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 	std::string physicalPath = _locator.resolvePath(request.getRouteUri(), route, request.getServer());
 	ResourceType type = _locator.getResourceType(physicalPath);
 
-	// if (type == RESOURCE_FILE && _locator.isCgiExtension(physicalPath)) {
-	//     if (route && route->isCgiEnabled()) {
-	//         result.action = ACTION_EXECUTE_CGI;
-	//         result.targetPath = physicalPath;
-	//         return result;
-	//     }
-	// }
 
 	switch (type) {
 		case RESOURCE_FILE:

@@ -239,3 +239,26 @@ bool RouteConfig::hasMaxBodySize() const
 	return m_max_body_size_exist;
 }
 
+const std::set<std::string>& RouteConfig::getAllowedMethods() const {
+	return m_allowed_methods;
+}
+
+const std::set<std::string>& RouteConfig::getCgiMap() const {
+	return m_cgi_map;
+}
+
+bool RouteConfig::hasNoConfig() const {
+	if (!getRoot().empty()) return (false);
+	if (!getUploadDir().empty()) return (false);
+	if (!getAccessLog().empty()) return (false);
+	if (!getIndexes().empty()) return (false);
+	if (!getAllowedMethods().empty()) return (false);
+	if (!getRoot().empty()) return (false);
+	if (!getCgiMap().empty()) return (false);
+	if (hasMaxBodySize()) return (false);
+	if (doesRedirect()) return (false);
+	if (isAutoindex()) return (false);
+
+	return (true);
+}
+

@@ -24,10 +24,12 @@ RouteManager::~RouteManager() {}
 RouteResult RouteManager::processRequest(const HttpRequest& request) const {
     RouteResult result;
     result.statusCode = OK;
+    std::string location = "";
 		// std::cout << "this is very importnat " << request.getServer()->getRedirection().second << "\n";
-    const RouteConfig* route = matchRoute(request.getUriSegments(), request.getServer());
+    const RouteConfig* route = matchRoute(request.getUriSegments(), request.getServer(), location);
 
     if (route && !route->isAllowed(request.getMethod())) {
+        // std::cout << "HELLO \n";
         result.action = ACTION_ERROR;
         result.statusCode = METHOD_NOT_ALLOWED;
         return result;
@@ -98,11 +100,12 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
  * @param server The target server configuration containing the routing tree.
  * @return A pointer to the most specific RouteConfig, or the server's default config if no match.
  */
-const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server) const {
+const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server, std::string& location) const {
     if (!server)
         return (NULL);
     const RouteNode* currNode = &(server->m_route_tree);
     const RouteConfig* bestMatch = server;
+    // std::cout << "SERVER ROOT: " << server->getRoot() << std::endl;
 
 		// std::cout << "server found " << server->getRedirection().second << "\n";
     if (currNode->config)
@@ -115,10 +118,12 @@ const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriS
 						// std::cout << "here " << currNode->config->getRedirection().second << "\n";
 					// std::cout << "i find that " << *it << "\n";
             currNode = match->second;
+
+            location += "/" + *it;
 						// std::cout << "here " << currNode->config->getRedirection().second << "\n";
             if (currNode->config)
 						{
-							std::cout << "============MATCH===============\n";
+							// std::cout << "============MATCH===============\n";
                 bestMatch = currNode->config;
 							// std::cout << "best match " << bestMatch->getRedirection().second << "\n";
 						}
@@ -126,7 +131,34 @@ const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriS
             break;
         }
     }
-		// std::cout << "this is important " << bestMatch->getRedirection().second << "\n";
+		// std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
 
     return (bestMatch);
 }
+
+// const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server) const {
+//     if (!server)
+//         return (NULL);
+//     const RouteNode* currNode = &(server->m_route_tree);
+//     const RouteConfig* bestMatch = server;
+
+//     if (currNode->config)
+//         bestMatch = currNode->config;
+        
+//     for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
+
+//         std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
+//         if (match != currNode->children.end()) {;
+//             currNode = match->second;
+
+//             if (currNode->config && (it + 1) == uriSegments.end())
+// 			{
+//                 bestMatch = currNode->config;
+// 			}
+//         } else {
+//             break;
+//         }
+//     }
+
+//     return (bestMatch);
+// }

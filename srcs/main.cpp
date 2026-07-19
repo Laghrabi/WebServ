@@ -99,6 +99,13 @@ void printRouteTree(RouteNode& route, int tabNum) {
 // 	return (m_route_tree);
 // }
 
+  void print(RouteResult result) {
+            std::cout << "target path is \"" << result.targetPath << "\"\n";
+			std::cout << "action is \"" << result.action << "\"\n";
+			std::cout << "status code is \"" << result.statusCode << "\"\n";
+        }
+
+
 int main(int argc, char **argv){
 	if (argc != 2)
 	{
@@ -121,16 +128,19 @@ int main(int argc, char **argv){
 			//
 			const Config::ServerMultiMap& map = conf.m_iport_server;
 			Config::ServerRange range = map.equal_range(map.begin()->first);
-			std::string request_str = "GET /home/hsacr/COMMON_CORE/webserver/work/WebServer/alkasjdf/ HTTP/1.1\r\nHOST: server3\r\n\r\n";
+			std::string request_str = "GET /data HTTP/1.1\r\nHOST: myapp.local\r\n\r\n";
 			HttpRequest request(range);
 			request.parse(std::vector<char>(request_str.begin(), request_str.end()));
-			std::cout << request.getStatusCode() << "\n"; 
+			std::cout << "STATUS CODE: " << request.getStatusCode() << "\n";
+			// std::cout << "SERVER ROOT: " << request
 
 			conf.m_servers.clear();
 			RouteManager m;
-			std::cout << "target path is \"" << m.processRequest(request).targetPath << "\"\n";
-			std::cout << "target path is \"" << m.processRequest(request).action << "\"\n";
-			;
+			print(m.processRequest(request));
+			// std::cout << "target path is \"" << m.processRequest(request).targetPath << "\"\n";
+			// std::cout << "action is \"" << m.processRequest(request).action << "\"\n";
+			// std::cout << "status code is \"" << m.processRequest(request).statusCode << "\"\n";
+			// ;
 
 			// manager.init();
 			// manager.run();

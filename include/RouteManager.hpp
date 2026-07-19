@@ -42,7 +42,7 @@ class RouteManager {
         ~RouteManager();
 
         RouteResult processRequest(const HttpRequest& request) const;
-        const RouteConfig* matchRoute(const std::vector<std::string>& uri, const Server* server) const;
+        const RouteConfig* matchRoute(const std::vector<std::string>& uri, const Server* server, std::string& location) const;
 };
 
 #endif

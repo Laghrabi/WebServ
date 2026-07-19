@@ -1,13 +1,45 @@
 #include "webserver.hpp"
 #include <netinet/in.h>
 
-Server::IPortV4::IPortV4() : IPort(AF_INET, sizeof(sockaddr_in), &IPortV4::create, &IPortV4::clean) {
-	m_addr = new sockaddr_in;
-	IPort::m_addr = reinterpret_cast<sockaddr *>(m_addr);
-	std::memset(m_addr->sin_zero, 0, sizeof(m_addr->sin_zero));
+Server::IPortV4::IPortV4() : IPort(AF_INET, sizeof(sockType)) {
+	m_addr = reinterpret_cast<sockType *>(&(IPort::m_addr));
 	m_addr->sin_family = m_family;
 	m_addr->sin_port = htons(DEFAULT_PORT);
 	m_addr->sin_addr.s_addr = htonl(DEFAULT_ADDR);
+	setIpString();
+	setPortString();
+}
+
+Server::IPortV4::IPortV4(const sockType& addr) : IPort(AF_INET, sizeof(sockType)) {
+	m_addr = reinterpret_cast<sockType *>(&(IPort::m_addr));
+	*m_addr = addr;
+	setIpString();
+	setPortString();
+}
+
+Server::IPortV4::IPortV4(const std::string& ip, const std::string& port) {
+	m_addr = reinterpret_cast<sockType *>(&(IPort::m_addr));
+	setIp(ip);
+	setPort(port);
+
+	setIpString();
+	setPortString();
+}
+
+void Server::IPortV4::setIpString() {
+	char buffer[INET_ADDRSTRLEN] =  {0};
+	const char *success = inet_ntop(m_family, &m_addr->sin_addr, buffer, INET_ADDRSTRLEN);
+	if (!success) {	}
+	std::cout << buffer << "hello\n";
+	m_ip_str = buffer;
+}
+
+
+void Server::IPortV4::setPortString() {
+	in_port_t port = ntohs(m_addr->sin_port);
+	std::stringstream ss;
+	ss << port;
+	m_port_str = ss.str();
 }
 
 bool Server::IPortV4::isStrictIp(const std::string& ip) {
@@ -15,8 +47,9 @@ bool Server::IPortV4::isStrictIp(const std::string& ip) {
 	return (success);
 }
 
+
 bool Server::IPortV4::operator==(const Server::IPortV4& other) const {
-	return (std::memcmp(&m_addr, &other.m_addr, sizeof(sockaddr_in)));
+	return (std::memcmp(&m_addr, &other.m_addr, m_size) == 0);
 }
 
 void Server::IPortV4::setIp(const std::string& ip) {
@@ -24,31 +57,31 @@ void Server::IPortV4::setIp(const std::string& ip) {
 	addrinfo *res;
 	addrinfo *tmp;
 
-	// std::cout << "new setIp \n";
 	if (!isStrictIp(ip))	{
-		// std::cout << "not strict " << ip << "\n";
 		int fail = getaddrinfo(ip.c_str(), NULL, &hints, &res);
 		if (fail) {
 			throw (std::runtime_error("error getaddrinfo"));
 		}
 		tmp = res;
 		for (; tmp != NULL; tmp = tmp->ai_next) {
-			sockaddr_in* hey = reinterpret_cast<sockaddr_in *>(tmp->ai_addr);
-			*m_addr = *hey;
+			sockType* addr = reinterpret_cast<sockType *>(tmp->ai_addr);
+			*m_addr = *addr;
 			break;
 		}
 		freeaddrinfo(res);
 	}
+	setIpString();
 }
 
 void Server::IPortV4::setPort(const std::string& port_str) {
 	in_port_t port;
 	std::stringstream ss(port_str);
+	m_port_str = ss.str();
 	ss >> port;
 	m_addr->sin_port = htons(port);
 }
 
-std::string Server::IPortV4::info(const sockaddr_in& addr) {
+std::string Server::IPortV4::info(const sockType& addr) {
 	char buffer[INET_ADDRSTRLEN] =  {0};
 	in_port_t port;
 	std::stringstream port_str;
@@ -65,10 +98,4 @@ std::string Server::IPortV4::info(const sockaddr_in& addr) {
 	return (res);
 }
 
-void Server::IPortV4::clean(sockaddr *addr) {
-	delete (reinterpret_cast<sockaddr_in*>(addr));
-}
-
-sockaddr* Server::IPortV4::create() {
-	return (reinterpret_cast<sockaddr*>(new sockaddr_in));
-}
+Server::IPortV4::~IPortV4() {}

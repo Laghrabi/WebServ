@@ -8,7 +8,7 @@ SRCS := $(wildcard ./srcs/parser/*.cpp) \
 			 $(wildcard ./srcs/HTTP/request/*.cpp)\
 				$(wildcard ./srcs/multyplexing/*.cpp)\
 				$(wildcard ./srcs/Utils/*.cpp)\
-				$(wildcard ./srcs/cgi/*.cpp)
+				$(wildcard ./srcs/HTTP/router/*.cpp)\
 
 INCLUDE_DIR = ./include/
 
@@ -18,6 +18,9 @@ NAME = webserver
 
 $(NAME): $(OBJS)
 	$(CPP) $(CPP_FLAGS) -o $@ $^
+
+DEBUG: CPP_FLAGS += -D DEBUG="true"
+DEBUG: $(NAME)
 
 %.o: %.cpp
 	$(CPP) $(CPP_FLAGS) -I $(INCLUDE_DIR)  -o $@ -c $<

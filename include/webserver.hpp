@@ -4,6 +4,7 @@
 /*          stl containers           */
 
 #include <cstring>
+#include <cerrno>
 
 #include <list>
 #include <map>
@@ -30,8 +31,10 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+# include <sys/stat.h>
 #include <netdb.h>
 
+#include <sys/stat.h>
 
 #include "tokenization.hpp"
 #include "findElem.hpp"
@@ -51,8 +54,11 @@ typedef std::vector<token> TokenCont;
 #include "Config.hpp"
 #include "ParseConfig.hpp"
 #include "Location.hpp"
+#include "IPort.hpp"
 #include "IPortV4.hpp"
 #include "IPortV6.hpp"
+#include "ResourceLocator.hpp"
+#include "RouteManager.hpp"
 #include "HttpRequest.hpp"
 #include "StringUtils.hpp"
 #include "CgiRequest.hpp"

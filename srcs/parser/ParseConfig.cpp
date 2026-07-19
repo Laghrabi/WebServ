@@ -1,3 +1,4 @@
+#include "tokenization.hpp"
 #include "webserver.hpp"
 
 ParseConfig::ParseConfig(Container& tokens) :
@@ -10,14 +11,13 @@ ParseConfig::ParseConfig(Container& tokens) :
 void ParseConfig::make_pair(const Server& server) {
 	const std::vector<Server::IPort>& iport = server.getAddrs();
 	for (std::vector<Server::IPort>::const_iterator it = iport.begin(); it != iport.end(); ++it) {
-		// std::cout << "iport make pair : " << *it << "\n";
 		m_config.m_iport_server.insert(*it, server);
 	}
 }
 
 Config ParseConfig::parse(void) {
 	int server_begin_line;
-	while (true) {
+	while (m_it->is(WORD)) {
 		ServerType server;
 		if (m_it->is("server")) {
 			server_begin_line = m_it->line;
@@ -25,6 +25,7 @@ Config ParseConfig::parse(void) {
 			std::string server_name;
 			if (checkServerConflict(m_config.m_servers.begin(), m_config.m_servers.end(), server, server_name))
 				throw (ParseConfig::ConfigExcept("conflict Server Name '" + server_name + "'", server_begin_line));
+			server.buildRouteTree();
 			m_config.m_servers.push_back(server);
 			make_pair(server);
 		}
@@ -35,12 +36,12 @@ Config ParseConfig::parse(void) {
 			break ;
 		}
 	}
-	return (m_config);
+ 	return (m_config);
 }
 
 template <typename T> void ParseConfig::parseContext(T &context, void (ParseConfig::*func)(T&), std::string context_name) {
 	++m_it;
-	if (m_it->is(END_OF_FILE)) {
+	if (m_it->is_eof()) {
 		throw (ConfigExcept("got" + context_name + " context witout body", m_it->line));
 	}
 	if (!m_it->is(OPEN_BRACE)) {
@@ -60,8 +61,6 @@ template <typename T> void ParseConfig::parseContext(T &context, void (ParseConf
 
 
 void ParseConfig::parseServer(ServerType& server) {
-	LocationType location;
-
 	while (m_it->is(WORD)) {
 		if (m_it->is("location")) {
 			std::string path;
@@ -70,6 +69,8 @@ void ParseConfig::parseServer(ServerType& server) {
 				throw (ConfigExcept("no path after location context", m_it->line));
 			}
 			path = m_it->value;
+			LocationType location;
+			location.setPath(path);
 			parseContext(location, &ParseConfig::parseServerLocation, "location");
 			server.m_locations.push_back(location);
 		}

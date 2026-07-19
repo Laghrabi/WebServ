@@ -1,5 +1,5 @@
 #include "webserver.hpp"
-class HttpRequest;
+#include "HttpRequest.hpp"
 
 class CString {
 	private:

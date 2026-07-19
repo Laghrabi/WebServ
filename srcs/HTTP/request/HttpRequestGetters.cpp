@@ -101,6 +101,30 @@ const std::string& HttpRequest::getQueryString() const {
 	return (_queryString);
 }
 
+/**
+ * @brief Returns the parsed HTTP query parameters as a multimap.
+ */
 const std::multimap<std::string, std::string>& HttpRequest::getQueryParams() const {
 	return (_queryParams);
+}
+
+/**
+ * @brief Returns the Server configuration associated with this request.
+ */
+const Server* HttpRequest::getServer() const {
+    return (_server);
+}
+
+/**
+ * @brief Returns the list of pre-tokenized URI segments.
+ */
+const std::vector<std::string>& HttpRequest::getUriSegments() const {
+    return (_UriSegments);
+}
+
+/**
+ * @brief Returns the list of pre-tokenized encoded URI segments.
+ */
+const std::vector<std::string>& HttpRequest::getEncodedUriSegments() const {
+    return (_EncodedUriSegments);
 }

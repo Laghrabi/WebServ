@@ -1,7 +1,28 @@
 #include "webserver.hpp"
+#include <cstring>
+#include <sys/socket.h>
 
 Server::Server() : RouteConfig(), m_route_tree("/") {
 	init();
+}
+
+Server::Server(const Server& other)
+	: RouteConfig(other),
+	m_locations(other.m_locations),
+	m_route_tree(other.m_route_tree),
+	m_addr(other.m_addr),
+	m_hosts(other.m_hosts)
+{
+}
+
+Server& Server::operator=(const Server& other)
+{
+	RouteConfig::operator=(other);
+	m_locations = other.m_locations;
+	m_route_tree = other.m_route_tree;
+	m_addr = other.m_addr;
+	m_hosts = other.m_hosts;
+	return *this;
 }
 
 void Server::parseServerName(ContIter &begin) {
@@ -108,157 +129,11 @@ void Server::init() {
 Server::MapHandler Server::s_handlers;
 
 
-Server::~Server() {}
-
-Server::IPort::IPort() {
-	m_addr = NULL;
-}
-
-Server::IPort::IPort(const Server::IPort& other) :
-	m_size(other.m_size),
-	m_family(other.m_family),
-	create(other.create),
-	clean(other.clean){
-		m_addr = create();
-		// std::cout << "copy constructor: " << m_addr << "\n";
-		*m_addr = *other.m_addr;
-	}
-
-
-Server::IPort& Server::IPort::operator=(const Server::IPort& other) {
-	if (m_family != other.m_family)
-	{
-		clean(m_addr);
-		m_family = other.m_family;
-		m_addr = other.create();
-	}
-	if (!other.m_addr)
-	{
-		std::cerr << "what is goiing on\n";
-	}
-	// std::cout << "copy assignment operator: " << m_addr << "\n";
-	*m_addr = *other.m_addr;
-	m_size = other.m_size;
-	return (*this);
-}
-
-
-Server::IPort::IPort(int family, std::size_t size, 
-		sockaddr* (*create)(void), void (*clean)(sockaddr*)) : 
-	m_size(size), 
-	m_family(family), 
-	m_addr(NULL),
-	create(create),
-	clean(clean){
-}
-
-
-	addrinfo Server::IPort::getAddrHints() const {
-		struct addrinfo hints;
-
-		std::memset(&hints, 0, sizeof(hints));
-
-		hints.ai_family = m_family;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_protocol = 0;
-		hints.ai_flags = 0; 
-		hints.ai_canonname = NULL;
-		hints.ai_addr = NULL;
-		hints.ai_next = NULL;
-
-		return (hints);
-	}
-
-const sockaddr* Server::IPort::get() const {
-	return (m_addr);
-}
-
-std::string Server::IPort::getFamilyStr(const int family) {
-	switch (family) {
-		case AF_INET:
-			return "AF_INET";
-		case AF_INET6:
-			return "AF_INET6";
-		default:
-			return "Not Known";
-	}
-}
-
-void Server::IPort::print() const {
-	std::cout << "hey";
-	if (m_family == AF_INET) {
-		std::cout << *reinterpret_cast<sockaddr_in*>(	m_addr);
-	}
-	else if (m_family == AF_INET6) {
-		std::cout << *reinterpret_cast<sockaddr_in6*>(m_addr);
-	}
-}
-
-
-bool Server::IPort::operator==(const Server::IPort& other) const {
-	if (m_family != other.m_family)
-		return (false);
-	// std::cout << "hello" << *reinterpret_cast<IPortV4*>(other.m_addr) << "\n";
-	// std::cout << "hey" << *reinterpret_cast<IPortV4*>(m_addr) << "\n";
-	// std::cout << m_addr << " " << other.m_addr << "\n";
-	return (std::memcmp(m_addr, other.m_addr, m_size) == 0);
-}
-
-
-Server::IPort::~IPort(){
-	delete m_addr;
-}
-
-int Server::IPort::getFamily() const {
-	return (m_family);
-}
-
-
-int Server::IPort::getSize() const {
-	return (m_size);
-}
-
-
 const std::vector<Server::IPort>& Server::getAddrs(void) const{
 	return (m_addr);
 }
 
 
-std::ostream& operator<<(std::ostream& out, const sockaddr_in& addr) {
-	char buffer[INET6_ADDRSTRLEN] =  {0};
-	in_port_t port;
-	const char *success = inet_ntop(AF_INET, &addr.sin_addr, buffer, INET_ADDRSTRLEN);
-	if (!success)
-	{
-
-	}
-	port = ntohs(addr.sin_port);
-	return (out << buffer << ":" << port);
-}
-
-
-std::ostream& operator<<(std::ostream& out, const sockaddr_in6& addr) {
-	char buffer[INET6_ADDRSTRLEN] =  {0};
-	in_port_t port;
-	const char *success = inet_ntop(AF_INET, &addr.sin6_addr, buffer, INET6_ADDRSTRLEN);
-	if (!success)
-	{
-
-	}
-	port = ntohs(addr.sin6_port);
-	return (out << buffer << ":" << port << " family = ");
-}
-
-
-std::ostream& operator<<(std::ostream& out, const Server::IPort& iport) {
-	if (iport.getFamily() == AF_INET) {
-		out << *reinterpret_cast<const sockaddr_in*>(iport.get());
-	}
-	else if (iport.getFamily() == AF_INET6) {
-		out << *reinterpret_cast<const sockaddr_in6*>(iport.get());
-	}
-	return (out);
-}
 // void Server::IPortV6::print() const {
 // 	char buffer[INET6_ADDRSTRLEN] =  {0};
 // 	const char *addr_str = inet_ntop(m_family, &m_addr.sin6_addr, buffer, INET6_ADDRSTRLEN);
@@ -312,10 +187,11 @@ void Server::buildRouteTree() {
 			const std::string& token = tokens[j];
 
 			if (currentNode->children.find(token) == currentNode->children.end()) {
-				currentNode->children[token] = new RouteNode(token);
+				currentNode->children.insert(std::make_pair(token, new RouteNode(token)));
 			}
 			currentNode = currentNode->children[token];
 		}
-		currentNode->config = &m_locations[i]; 
+		currentNode->config = new RouteConfig;
+		*currentNode->config = m_locations[i]; 
 	}
 }

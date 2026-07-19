@@ -97,12 +97,12 @@ class HttpRequest {
 		bool	splitQueryString();
         bool    parseQueryParams();
         bool    normalizeUri();
-        bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
         const Server* findServer(const std::string& name);
         void tokenizeUri(std::vector<std::string>& segments) const;
 		
         
         public:
+        static bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
         HttpRequest();
         HttpRequest(const Config::ServerRange& serverRange);
         HttpRequest(const HttpRequest& other);

@@ -49,6 +49,7 @@ typedef std::vector<token> TokenCont;
 #include "UnorderedMultiMap.hpp"
 
 #include "utils.tpp"
+#include "./FileStatus.hpp"
 #include "./MimeTypesExt.hpp"
 #include "Server.hpp"
 #include "Config.hpp"

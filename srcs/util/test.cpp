@@ -1,36 +1,7 @@
+
 // #include<iostream>
 // #include<sys/stat.h>
 //
-// class hey {
-// 	private:
-// 		std::string str;
-// 		bool is_dir;
-// 		bool exist;
-// 	public:
-// 		hey() {
-//
-// 		}
-// 		hey(const std::string& str) {
-// 			;
-// 		}
-// 		void set(const std::string& str) {
-// 			this->str = str;
-// 			struct stat buf;
-// 			if (stat(str.c_str(), &buf)) {
-// 				is_dir = false;
-// 				exist = false;
-// 				return ;
-// 			}
-// 			exist = true;
-// 			is_dir = S_ISDIR(buf.st_mode);
-// 		}
-// 		bool isExist() const {
-// 			return (exist);
-// 		}
-// 		bool isDir() const {
-// 			return (is_dir);
-// 		}
-// };
 //
 // enum REQUEST {
 // 	CGI,

@@ -1,3 +1,4 @@
+#include "findElem.hpp"
 #include "webserver.hpp"
 #include <cstdlib>
 
@@ -98,13 +99,11 @@ RouteConfig::RouteConfig() :
 	}
 
 bool RouteConfig::validExtention(const std::string& ext, std::string& err_msg) {
+	if (ext.empty())
+		return false;
 	if (ext[0] != '.')
 	{
 		err_msg = "extention is not valid: because it does not begin with .";
-		return (false);
-	}
-	if (ext.find('.', 1) != std::string::npos) {
-		err_msg = "extention is not valid: because it has more than a .";
 		return (false);
 	}
 	if (mapElemExist(m_cgi_map, ext)) {
@@ -237,5 +236,53 @@ std::size_t RouteConfig::getMaxBodySize() const
 bool RouteConfig::hasMaxBodySize() const
 {
 	return m_max_body_size_exist;
+}
+
+const std::set<std::string>& RouteConfig::getAllowedMethods() const {
+	return m_allowed_methods;
+}
+
+const std::set<std::string>& RouteConfig::getCgiMap() const {
+	return m_cgi_map;
+}
+
+
+
+bool RouteConfig::isCgiScript(const std::string& file) const {
+	std::size_t pos = 0;
+	std::size_t file_length = file.length();
+	std::size_t extention_length;
+
+	for (std::set<std::string>::const_iterator it = m_cgi_map.begin();
+			it != m_cgi_map.end(); ++it) {
+		extention_length = it->length();
+		if (file_length >= extention_length) {
+			pos = file_length - extention_length;
+			if (file.compare(pos,	extention_length, *it) == 0) {
+				return (true);
+			}
+		}
+	}	
+	return (false);
+}
+
+bool RouteConfig::isCgiEnable(void) const {
+	return (!m_cgi_map.empty());
+}
+
+
+bool RouteConfig::hasNoConfig() const {
+	if (!getRoot().empty()) return (false);
+	if (!getUploadDir().empty()) return (false);
+	if (!getAccessLog().empty()) return (false);
+	if (!getIndexes().empty()) return (false);
+	if (!getAllowedMethods().empty()) return (false);
+	if (!getRoot().empty()) return (false);
+	if (!getCgiMap().empty()) return (false);
+	if (hasMaxBodySize()) return (false);
+	if (doesRedirect()) return (false);
+	if (isAutoindex()) return (false);
+
+	return (true);
 }
 

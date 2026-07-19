@@ -1,5 +1,6 @@
 #ifndef _REQUESTINFO_H
 #define _REQUESTINFO_H
+
 #include "webserver.hpp"
 #include <exception>
 
@@ -32,19 +33,18 @@ class RouteConfig {
 		static MapHandler s_handlers;
 
 		void addMethod(const std::string& new_method) throw (std::exception);
-		const std::set<std::string>& getAllowedMethods() const;
 		void parseCgiConf(ContIter &begin);
 		bool validExtention(const std::string& ext, std::string& err_msg);
 		bool RedirectCode(int code) const;
-
-	public:
+		
+		public:
 		RouteConfig();
 		RouteConfig(const RouteConfig& other);
 		RouteConfig& operator=(const RouteConfig& other);
 
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);
 		static void init(void);
-
+		
 		void parseAutoIndex(ContIter &begin);
 		void parseIndex(ContIter &begin);
 		void parseRoot(ContIter &begin);
@@ -54,11 +54,14 @@ class RouteConfig {
 		void parseMaxBodySize(ContIter &begin);
 		void parseAllowedMethods(ContIter &begin);
 		void parseRedirection(ContIter& begin);
-
+		bool isCgiEnable(void) const;
+		
 		void initAvailableMethods();
-
-
+		
+		
 		// getters
+		const std::set<std::string>& getAllowedMethods() const;
+		const std::set<std::string>& getCgiMap() const;
 		const std::string& getRoot() const;
 		const std::string& getUploadDir() const;
 		const std::string& getAccessLog() const;
@@ -66,12 +69,13 @@ class RouteConfig {
 		bool isAutoindex() const;
 		std::size_t getMaxBodySize() const;
 		bool hasMaxBodySize() const;
+		bool hasNoConfig() const;
 		const std::pair<int, std::string>& getRedirection() const;
 
 		// check if the method is allowed
 		bool isAllowed(const std::string& method) const;
 		bool doesRedirect() const;
-
+		bool isCgiScript(const std::string& file) const;
 
 
 

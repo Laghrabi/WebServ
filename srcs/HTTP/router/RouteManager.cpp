@@ -112,43 +112,46 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 	std::string physicalPath = _locator.resolvePath(request.getRouteUri(), result.route, request.getServer());
 	ResourceType type = _locator.getResourceType(physicalPath);
 
+	determineResourceAction(result, type, physicalPath, request.getRouteUri());
 
-	switch (type) {
-		case RESOURCE_FILE:
-			result.action = ACTION_SERVE_FILE;
-			result.targetPath = physicalPath;
-			break;
+	return (result);
+}
 
-		case RESOURCE_DIRECTORY:
-			if (request.getRouteUri()[request.getRouteUri().length() - 1] != '/') {
-				result.action = ACTION_REDIRECT;
-				result.targetPath = request.getRouteUri() + "/";
-				result.statusCode = MOVED_PERMANENTLY;
-			} 
-			else if (result.route && result.route->isAutoindex()) {
-				result.action = ACTION_AUTOINDEX;
-				result.targetPath = physicalPath;
-			}
-			else {
-				result.action = ACTION_ERROR;
-				result.statusCode = FORBIDDEN;
-			}
-			break;
+void RouteManager::determineResourceAction(RouteResult& result, ResourceType type, const std::string& physicalPath, const std::string& routeUri) const {
+    switch (type) {
+        case RESOURCE_FILE:
+            result.action = ACTION_SERVE_FILE;
+            result.targetPath = physicalPath;
+            break;
 
-		case RESOURCE_FORBIDDEN:
-			result.action = ACTION_ERROR;
-			result.statusCode = FORBIDDEN;
-			break;
+        case RESOURCE_DIRECTORY:
+            // Check for missing trailing slash
+            if (routeUri[routeUri.length() - 1] != '/') {
+                result.action = ACTION_REDIRECT;
+                result.targetPath = routeUri + "/";
+                result.statusCode = MOVED_PERMANENTLY;
+            } 
+            else if (result.route && result.route->isAutoindex()) {
+                result.action = ACTION_AUTOINDEX;
+                result.targetPath = physicalPath;
+            }
+            else {
+                result.action = ACTION_ERROR;
+                result.statusCode = FORBIDDEN;
+            }
+            break;
 
-		case RESOURCE_NOT_FOUND:
-		default:
-			// std::cout << "resource not found\n";
-			result.action = ACTION_ERROR;
-			result.statusCode = NOT_FOUND;
-			break;
-	}
+        case RESOURCE_FORBIDDEN:
+            result.action = ACTION_ERROR;
+            result.statusCode = FORBIDDEN;
+            break;
 
-	return result;
+        case RESOURCE_NOT_FOUND:
+        default:
+            result.action = ACTION_ERROR;
+            result.statusCode = NOT_FOUND;
+            break;
+    }
 }
 
 /**

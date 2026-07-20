@@ -44,6 +44,7 @@ class RouteManager {
 
 		static void printRouteAction(RouteAction action);
 
+		void determineResourceAction(RouteResult& result, ResourceType type, const std::string& physicalPath, const std::string& routeUri) const;
 		bool isCgi(const std::vector<std::string>& script_path, const RouteConfig* route, const std::string& location) const;
 		RouteResult processRequest(const HttpRequest& request) const;
 		const RouteConfig* matchRoute(const std::vector<std::string>& uri, const Server* server, std::string& location) const;

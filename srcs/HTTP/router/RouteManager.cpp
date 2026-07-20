@@ -170,41 +170,44 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
     }
 }
 
-/**
- * @brief Matches a list of URI segments to the most specific RouteConfig in the server tree.
- * * Traverses the `m_route_tree` using the pre-tokenized URI segments. Keeps 
- * track of the deepest node that contains a valid configuration to implement 
- * longest-prefix matching.
- * @param uriSegments A vector of path segments (e.g., {"api", "v1", "users"}).
- * @param server The target server configuration containing the routing tree.
- * @return A pointer to the most specific RouteConfig, or the server's default config if no match.
- */
-const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server, std::string& location) const {
-	if (!server)
-		return (NULL);
-	const RouteNode* currNode = &(server->m_route_tree);
-	const RouteConfig* bestMatch = server;
-	// std::cout << "SERVER ROOT: " << server->getRoot() << std::endl;
+	/**
+	 * @brief Matches a list of URI segments to the most specific RouteConfig in the server tree.
+	 * * Traverses the `m_route_tree` using the pre-tokenized URI segments. Keeps 
+	 * track of the deepest node that contains a valid configuration to implement 
+	 * longest-prefix matching.
+	 * @param uriSegments A vector of path segments (e.g., {"api", "v1", "users"}).
+	 * @param server The target server configuration containing the routing tree.
+	 * @return A pointer to the most specific RouteConfig, or the server's default config if no match.
+	 */
+	const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server, std::string& location) const {
+		if (!server)
+			return (NULL);
+		const RouteNode* currNode = &(server->m_route_tree);
+		const RouteConfig* bestMatch = server;
+		// std::cout << "SERVER ROOT: " << server->getRoot() << std::endl;
 
-	// std::cout << "server found " << server->getRedirection().second << "\n";
-	if (currNode->config)
-		bestMatch = currNode->config;
+		// std::cout << "server found " << server->getRedirection().second << "\n";
+		if (currNode->config)
+			bestMatch = currNode->config;
 
-	for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
-		// std::cout << "\nsegment " << *it << "\n";
-		std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
-		if (match != currNode->children.end()) {
-			// std::cout << "here " << currNode->config->getRedirection().second << "\n";
-			// std::cout << "i find that " << *it << "\n";
-			currNode = match->second;
+		for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
+			// std::cout << "\nsegment " << *it << "\n";
+			std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
+			if (match != currNode->children.end()) {
+				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
+				// std::cout << "i find that " << *it << "\n";
+				currNode = match->second;
 
-			location += "/" + *it;
-			// std::cout << "here " << currNode->config->getRedirection().second << "\n";
-			if (currNode->config)
-			{
-				// std::cout << "============MATCH===============\n";
-				bestMatch = currNode->config;
-				// std::cout << "best match " << bestMatch->getRedirection().second << "\n";
+				location += "/" + *it;
+				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
+				if (currNode->config)
+				{
+					// std::cout << "============MATCH===============\n";
+					bestMatch = currNode->config;
+					// std::cout << "best match " << bestMatch->getRedirection().second << "\n";
+				}
+			} else {
+				break;
 			}
 		}
 		// std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
@@ -234,14 +237,14 @@ const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriS
 	//         }
 	//     }
 
-//             if (currNode->config && (it + 1) == uriSegments.end())
-// 			{
-//                 bestMatch = currNode->config;
-// 			}
-//         } else {
-//             break;
-//         }
-//     }
+	//             if (currNode->config && (it + 1) == uriSegments.end())
+	// 			{
+	//                 bestMatch = currNode->config;
+	// 			}
+	//         } else {
+	//             break;
+	//         }
+	//     }
 
 //     return (bestMatch);
 // }

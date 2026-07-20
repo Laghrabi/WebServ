@@ -76,7 +76,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 	result.statusCode = OK;
 	std::string location;
 
-	const RouteConfig* route = matchRoute(request.getUriSegments(), request.getServer(), location);
+	result.route = matchRoute(request.getUriSegments(), request.getServer(), location);
 #ifdef DBUG
 	std::cout << "[(ROUTEMANAGER) location is matched: " << location << "]\n";
 #endif
@@ -84,7 +84,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 	std::string str = request.getRouteUri().substr(location.length());
 
 	// std::string physical = route->getAlias() + str;
-	if (route->isCgiEnable()) {
+	if (result.route->isCgiEnable()) {
 	// if (route && route-> {
 	std::vector<std::string> vec;
 #ifdef DEBUG
@@ -92,24 +92,24 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 #endif
 	HttpRequest::normalizeUriHelper(str, vec);
 
-	isCgi(vec, route, location);
+	isCgi(vec, result.route, location);
 
 	}
 
-	if (route && !route->isAllowed(request.getMethod())) {
+	if (result.route && !result.route->isAllowed(request.getMethod())) {
 		result.action = ACTION_ERROR;
 		result.statusCode = METHOD_NOT_ALLOWED;
 		return result;
 	}
 
-	if (route && route->doesRedirect()) {
+	if (result.route && result.route->doesRedirect()) {
 		result.action = ACTION_REDIRECT;
-		result.targetPath = route->getRedirection().second;
-		result.statusCode = route->getRedirection().first;
+		result.targetPath = result.route->getRedirection().second;
+		result.statusCode = result.route->getRedirection().first;
 		return result;
 	}
 
-	std::string physicalPath = _locator.resolvePath(request.getRouteUri(), route, request.getServer());
+	std::string physicalPath = _locator.resolvePath(request.getRouteUri(), result.route, request.getServer());
 	ResourceType type = _locator.getResourceType(physicalPath);
 
 
@@ -125,7 +125,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 				result.targetPath = request.getRouteUri() + "/";
 				result.statusCode = MOVED_PERMANENTLY;
 			} 
-			else if (route && route->isAutoindex()) {
+			else if (result.route && result.route->isAutoindex()) {
 				result.action = ACTION_AUTOINDEX;
 				result.targetPath = physicalPath;
 			}
@@ -221,3 +221,34 @@ const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriS
 
 //     return (bestMatch);
 // }
+
+#include <iostream>
+
+void RouteManager::printRouteAction(RouteAction action) {
+    switch (action) {
+        case ACTION_SERVE_FILE:
+            std::cout << "Action: Serving static file.\n";
+            break;
+        case ACTION_SERVE_INDEX:
+            std::cout << "Action: Serving directory index file.\n";
+            break;
+        case ACTION_AUTOINDEX:
+            std::cout << "Action: Generating autoindex directory listing.\n";
+            break;
+        case ACTION_EXECUTE_CGI:
+            std::cout << "Action: Executing CGI script.\n";
+            break;
+        case ACTION_REDIRECT:
+            std::cout << "Action: Performing HTTP redirection.\n";
+            break;
+        case ACTION_ERROR:
+            std::cout << "Action: Handling route error state.\n";
+            break;
+        case NONE:
+            std::cout << "Action: No action specified.\n";
+            break;
+        default:
+            std::cout << "Action: Unknown route action.\n";
+            break;
+    }
+}

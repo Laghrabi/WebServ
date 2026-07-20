@@ -126,3 +126,54 @@ void HttpRequest::reset() {
     _routeResult.statusCode = OK;
     _routeResult.targetPath.clear();
 }
+
+void HttpRequest::printHttpStatus(HttpStatus status) {
+    switch (status) {
+        case OK:
+            std::cout << "Status [200]: OK\n";
+            break;
+        case MOVED_PERMANENTLY:
+            std::cout << "Status [301]: Moved Permanently\n";
+            break;
+        case FOUND:
+            std::cout << "Status [302]: Found\n";
+            break;
+        case TEMPORARY_REDIRECT:
+            std::cout << "Status [307]: Temporary Redirect\n";
+            break;
+        case BAD_REQUEST:
+            std::cerr << "Error [400]: Bad Request\n";
+            break;
+        case FORBIDDEN:
+            std::cerr << "Error [403]: Forbidden\n";
+            break;
+        case NOT_FOUND:
+            std::cerr << "Error [404]: Not Found\n";
+            break;
+        case METHOD_NOT_ALLOWED:
+            std::cerr << "Error [405]: Method Not Allowed\n";
+            break;
+        case BODY_LENGTH_REQUIRED:
+            std::cerr << "Error [411]: Length Required\n";
+            break;
+        case PAYLOAD_TOO_LARGE:
+            std::cerr << "Error [413]: Payload Too Large\n";
+            break;
+        case URI_TOO_LONG:
+            std::cerr << "Error [414]: URI Too Long\n";
+            break;
+        case INTERNAL_SERVER_ERROR:
+            std::cerr << "Error [500]: Internal Server Error\n";
+            break;
+        case NOT_IMPLEMENTED:
+            std::cerr << "Error [501]: Not Implemented\n";
+            break;
+        case HTTP_VERSION_NOT_SUPPORTED:
+            std::cerr << "Error [505]: HTTP Version Not Supported\n";
+            break;
+            
+        default:
+            std::cerr << "Error: Unknown HTTP Status Code (" << status << ")\n";
+            break;
+    }
+}

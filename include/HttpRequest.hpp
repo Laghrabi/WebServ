@@ -57,7 +57,7 @@ enum HttpStatus {
 
 class HttpRequest {
     private:
-        int									_statusCode;
+        HttpStatus							_statusCode;
         ParseState                      	_currentState;
         std::vector<char>	                _savedData;
         size_t				                _bufferIndex;          
@@ -112,7 +112,7 @@ class HttpRequest {
         void	parse(const std::vector<char>& rawBuffer);
         void    reset();
 
-        void appendData(const char* data, size_t length); // for testing
+        void printHttpStatus(HttpStatus status);
 
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;

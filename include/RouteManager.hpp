@@ -29,6 +29,7 @@ struct RouteResult {
 	RouteAction action;
 	std::string targetPath;
 	int         statusCode;
+	const RouteConfig *route;
 };
 
 class RouteManager {
@@ -41,6 +42,7 @@ class RouteManager {
 		RouteManager& operator=(const RouteManager& other);
 		~RouteManager();
 
+		static void printRouteAction(RouteAction action);
 
 		bool isCgi(const std::vector<std::string>& script_path, const RouteConfig* route, const std::string& location) const;
 		RouteResult processRequest(const HttpRequest& request) const;

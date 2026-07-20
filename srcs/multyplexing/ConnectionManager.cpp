@@ -84,6 +84,14 @@ void ConnectionManager::createListeningSockets()
             listener.getEndpoint().print();
             std::cout << "\n";
         }
+        if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+            throw std::runtime_error("fcntl failed");
+        else
+        {
+            std::cout << "socket fd = " << fd << "is set to non-blocking for endpoint ";
+            listener.getEndpoint().print();
+            std::cout << "\n";
+        }
         listener.setFd(fd);
         m_listeners.insert(
         std::make_pair(fd, listener));

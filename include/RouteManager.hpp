@@ -42,7 +42,7 @@ class RouteManager {
 		~RouteManager();
 
 
-		bool isCgi(const std::vector<std::string>& script_path, const RouteConfig* route, const std::string& location) const;
+		bool isCgi(const std::vector<std::string>& script_path, const RouteConfig* route, RouteResult& result,const std::string& location) const;
 		RouteResult processRequest(const HttpRequest& request) const;
 		const RouteConfig* matchRoute(const std::vector<std::string>& uri, const Server* server, std::string& location) const;
 };

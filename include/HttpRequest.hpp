@@ -128,7 +128,9 @@ class HttpRequest {
         const Server* getServer() const;
         const std::multimap<std::string, std::string>& getQueryParams() const;
         const std::vector<std::string>& getUriSegments() const;
+        const std::string& getEncodedUri() const;
         const std::vector<std::string>& getEncodedUriSegments() const;
+				const Server::IPort& getServerIPort() const;
 };
 
 char	safeToLower(char c);

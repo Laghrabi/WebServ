@@ -9,8 +9,8 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 	 * Initializes a new HTTP request, setting the initial parsing state 
 	 * to READING_REQUEST_LINE and the buffer index to 0.
 	 */
-	HttpRequest::HttpRequest(const Config::ServerRange& serverRange) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-	_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL), _serverRange(serverRange) {}
+	HttpRequest::HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
+	_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL), _serverRange(serverRange), _clientEndPoint(clientEndPoint) {}
 
 	/**
 	 * @brief Copy constructor for HttpRequest.
@@ -36,7 +36,8 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 		_bodyBytesWritten(other._bodyBytesWritten),
 		_client_max_body_size(other._client_max_body_size),
 		_server(other._server),
-		_serverRange(other._serverRange) {}
+		_serverRange(other._serverRange),
+		_clientEndPoint(other._clientEndPoint) {}
 
 		/**
 		 * @brief Copy assignment operator for HttpRequest.
@@ -65,6 +66,7 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 				_client_max_body_size = other._client_max_body_size;
 				_server = other._server;
 				_serverRange = other._serverRange;
+				_clientEndPoint = other._clientEndPoint;
 			}
 			return (*this);
 		}

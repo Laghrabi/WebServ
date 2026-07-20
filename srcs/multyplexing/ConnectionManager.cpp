@@ -109,7 +109,7 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 
     const Server::IPort& key = listener.getEndpoint();
     const Config::ServerMultiMap& map = m_config.m_iport_server;
-    Client client(clientFd, &listener, address, addressLength, map.equal_range(key));
+    Client client(clientFd, &listener, Server::IPort(address), map.equal_range(key));
     std::cout << "Accepted new client with fd: " << clientFd << "\n";
     m_clients.insert(
         std::make_pair(clientFd, client));
@@ -206,7 +206,7 @@ void ConnectionManager::recieveClient(Client& client)
     if (receive(client))
         return;
 
-    client.m_request.parse(client.getReadBuffer());
+    client.getRequest().parse(client.getReadBuffer());
     // int state = client.m_request.getCurrentState(); 
 
     // if (state == FINISHED) {

@@ -3,7 +3,7 @@
 
 # include "webserver.hpp"
 
- class HttpRequest;
+class HttpRequest;
 
 /**
  * @brief Defines the set of possible actions for the request handler.
@@ -11,13 +11,13 @@
  * ranging from file serving to CGI execution or error reporting.
  */
 enum RouteAction {
-    ACTION_SERVE_FILE,
-    ACTION_SERVE_INDEX,
-    ACTION_AUTOINDEX,
-    ACTION_EXECUTE_CGI,
-    ACTION_REDIRECT,
-    ACTION_ERROR,
-    NONE
+	ACTION_SERVE_FILE,
+	ACTION_SERVE_INDEX,
+	ACTION_AUTOINDEX,
+	ACTION_EXECUTE_CGI,
+	ACTION_REDIRECT,
+	ACTION_ERROR,
+	NONE
 };
 
 /**
@@ -26,23 +26,25 @@ enum RouteAction {
  * and the HTTP status code for the final response.
  */
 struct RouteResult {
-    RouteAction action;
-    std::string targetPath;
-    int         statusCode;
+	RouteAction action;
+	std::string targetPath;
+	int         statusCode;
 };
 
 class RouteManager {
-    private:
-        ResourceLocator _locator;
+	private:
+		ResourceLocator _locator;
 
-    public:
-        RouteManager();
-        RouteManager(const RouteManager& other);
-        RouteManager& operator=(const RouteManager& other);
-        ~RouteManager();
+	public:
+		RouteManager();
+		RouteManager(const RouteManager& other);
+		RouteManager& operator=(const RouteManager& other);
+		~RouteManager();
 
-        RouteResult processRequest(const HttpRequest& request) const;
-        const RouteConfig* matchRoute(const std::vector<std::string>& uri, const Server* server, std::string& location) const;
+
+		bool isCgi(const std::vector<std::string>& script_path, const RouteConfig* route, const std::string& location) const;
+		RouteResult processRequest(const HttpRequest& request) const;
+		const RouteConfig* matchRoute(const std::vector<std::string>& uri, const Server* server, std::string& location) const;
 };
 
 #endif

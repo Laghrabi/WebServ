@@ -1,5 +1,6 @@
 #ifndef _REQUESTINFO_H
 #define _REQUESTINFO_H
+
 #include "webserver.hpp"
 #include <exception>
 
@@ -53,6 +54,7 @@ class RouteConfig {
 		void parseMaxBodySize(ContIter &begin);
 		void parseAllowedMethods(ContIter &begin);
 		void parseRedirection(ContIter& begin);
+		bool isCgiEnable(void) const;
 		
 		void initAvailableMethods();
 		
@@ -73,7 +75,7 @@ class RouteConfig {
 		// check if the method is allowed
 		bool isAllowed(const std::string& method) const;
 		bool doesRedirect() const;
-
+		bool isCgiScript(const std::string& file) const;
 
 
 	private:

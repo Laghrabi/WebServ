@@ -57,7 +57,7 @@ enum HttpStatus {
 
 class HttpRequest {
     private:
-        int									_statusCode;
+        HttpStatus							_statusCode;
         ParseState                      	_currentState;
         std::vector<char>	                _savedData;
         size_t				                _bufferIndex;          
@@ -83,6 +83,7 @@ class HttpRequest {
         RouteResult                         _routeResult;
         std::ofstream _bodyStream;
         std::string _bodyFilePath;
+        Server::IPort                       _clientEndPoint;
 
         bool	parseRequestLine();
 		bool	parseHeaders();
@@ -104,7 +105,7 @@ class HttpRequest {
         public:
         static bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
         HttpRequest();
-        HttpRequest(const Config::ServerRange& serverRange);
+        HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint);
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
         ~HttpRequest();
@@ -112,7 +113,7 @@ class HttpRequest {
         void	parse(const std::vector<char>& rawBuffer);
         void    reset();
 
-        void appendData(const char* data, size_t length); // for testing
+        static void printHttpStatus(HttpStatus status);
 
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;
@@ -124,7 +125,7 @@ class HttpRequest {
     	const std::string& getQueryString() const;
         std::string getHeader(const std::string& key) const;
         ParseState getCurrentState() const;
-		int	getStatusCode() const;
+		HttpStatus	getStatusCode() const;
         const Server* getServer() const;
         const std::multimap<std::string, std::string>& getQueryParams() const;
         const std::vector<std::string>& getUriSegments() const;

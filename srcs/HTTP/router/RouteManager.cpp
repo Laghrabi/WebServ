@@ -88,7 +88,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 	result.statusCode = OK;
 	std::string location;
 
-	const RouteConfig* route = matchRoute(request.getUriSegments(), request.getServer(), location);
+	result.route = matchRoute(request.getUriSegments(), request.getServer(), location);
 #ifdef DBUG
 	std::cout << "[(ROUTEMANAGER) location is matched: " << location << "]\n";
 #endif
@@ -96,122 +96,122 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 	std::string str = request.getRouteUri().substr(location.length());
 
 	// std::string physical = route->getAlias() + str;
-	if (route->isCgiEnable()) {
-		// if (route && route-> {
-		std::vector<std::string> vec;
+	if (result.route->isCgiEnable()) {
+	// if (route && route-> {
+	std::vector<std::string> vec;
 #ifdef DEBUG
 		std::cout << "[(CGI): file is " << str << "]\n";
 #endif
 
 		HttpRequest::normalizeUriHelper(str, vec);
 
-		if (isCgi(vec, route, result, location)) {
+
+		if (isCgi(vec, result.route, result, location)) {
 			return (result);
 		}
 	}
 
-	if (route && !route->isAllowed(request.getMethod())) {
+	if (result.route && !result.route->isAllowed(request.getMethod())) {
 		result.action = ACTION_ERROR;
 		result.statusCode = METHOD_NOT_ALLOWED;
 		return result;
 	}
 
-	if (route && route->doesRedirect()) {
+	if (result.route && result.route->doesRedirect()) {
 		result.action = ACTION_REDIRECT;
-		result.targetPath = route->getRedirection().second;
-		result.statusCode = route->getRedirection().first;
+		result.targetPath = result.route->getRedirection().second;
+		result.statusCode = result.route->getRedirection().first;
 		return result;
 	}
 
-	std::string physicalPath = _locator.resolvePath(request.getRouteUri(), route, request.getServer());
-	std::cout << "physicalPath = " << physicalPath << "\n";
+	std::string physicalPath = _locator.resolvePath(request.getRouteUri(), result.route, request.getServer());
 	ResourceType type = _locator.getResourceType(physicalPath);
 	std::cout << "type is " << type << "\n";
 
+	determineResourceAction(result, type, physicalPath, request.getRouteUri());
 
-	switch (type) {
-		case RESOURCE_FILE:
-			result.action = ACTION_SERVE_FILE;
-			result.targetPath = physicalPath;
-			break;
+	return (result);
+}
 
-		case RESOURCE_DIRECTORY:
-			if (request.getRouteUri()[request.getRouteUri().length() - 1] != '/') {
-				result.action = ACTION_REDIRECT;
-				result.targetPath = request.getRouteUri() + "/";
-				result.statusCode = MOVED_PERMANENTLY;
-			} 
-			else if (route && route->isAutoindex()) {
-				result.action = ACTION_AUTOINDEX;
-				result.targetPath = physicalPath;
-			}
-			else {
-				result.action = ACTION_ERROR;
-				result.statusCode = FORBIDDEN;
-			}
-			break;
+void RouteManager::determineResourceAction(RouteResult& result, ResourceType type, const std::string& physicalPath, const std::string& routeUri) const {
+    switch (type) {
+        case RESOURCE_FILE:
+            result.action = ACTION_SERVE_FILE;
+            result.targetPath = physicalPath;
+            break;
 
-		case RESOURCE_FORBIDDEN:
-			result.action = ACTION_ERROR;
-			result.statusCode = FORBIDDEN;
-			break;
+        case RESOURCE_DIRECTORY:
+            // Check for missing trailing slash
+            if (routeUri[routeUri.length() - 1] != '/') {
+                result.action = ACTION_REDIRECT;
+                result.targetPath = routeUri + "/";
+                result.statusCode = MOVED_PERMANENTLY;
+            } 
+            else if (result.route && result.route->isAutoindex()) {
+                result.action = ACTION_AUTOINDEX;
+                result.targetPath = physicalPath;
+            }
+            else {
+                result.action = ACTION_ERROR;
+                result.statusCode = FORBIDDEN;
+            }
+            break;
 
-		case RESOURCE_NOT_FOUND:
-		default:
-			// std::cout << "resource not found\n";
-			result.action = ACTION_ERROR;
-			result.statusCode = NOT_FOUND;
-			break;
-	}
+        case RESOURCE_FORBIDDEN:
+            result.action = ACTION_ERROR;
+            result.statusCode = FORBIDDEN;
+            break;
 
-	return result;
-	}
+        case RESOURCE_NOT_FOUND:
+        default:
+            result.action = ACTION_ERROR;
+            result.statusCode = NOT_FOUND;
+            break;
+    }
+}
 
-	/**
-	 * @brief Matches a list of URI segments to the most specific RouteConfig in the server tree.
-	 * * Traverses the `m_route_tree` using the pre-tokenized URI segments. Keeps 
-	 * track of the deepest node that contains a valid configuration to implement 
-	 * longest-prefix matching.
-	 * @param uriSegments A vector of path segments (e.g., {"api", "v1", "users"}).
-	 * @param server The target server configuration containing the routing tree.
-	 * @return A pointer to the most specific RouteConfig, or the server's default config if no match.
-	 */
-	const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server, std::string& location) const {
-		if (!server)
-			return (NULL);
-		const RouteNode* currNode = &(server->m_route_tree);
-		const RouteConfig* bestMatch = server;
-		// std::cout << "SERVER ROOT: " << server->getRoot() << std::endl;
+/**
+ * @brief Matches a list of URI segments to the most specific RouteConfig in the server tree.
+ * * Traverses the `m_route_tree` using the pre-tokenized URI segments. Keeps 
+ * track of the deepest node that contains a valid configuration to implement 
+ * longest-prefix matching.
+ * @param uriSegments A vector of path segments (e.g., {"api", "v1", "users"}).
+ * @param server The target server configuration containing the routing tree.
+ * @return A pointer to the most specific RouteConfig, or the server's default config if no match.
+ */
+const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server, std::string& location) const {
+	if (!server)
+		return (NULL);
+	const RouteNode* currNode = &(server->m_route_tree);
+	const RouteConfig* bestMatch = server;
+	// std::cout << "SERVER ROOT: " << server->getRoot() << std::endl;
 
-		// std::cout << "server found " << server->getRedirection().second << "\n";
-		if (currNode->config)
-			bestMatch = currNode->config;
+	// std::cout << "server found " << server->getRedirection().second << "\n";
+	if (currNode->config)
+		bestMatch = currNode->config;
 
-		for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
-			// std::cout << "\nsegment " << *it << "\n";
-			std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
-			if (match != currNode->children.end()) {
-				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
-				// std::cout << "i find that " << *it << "\n";
-				currNode = match->second;
+	for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
+		// std::cout << "\nsegment " << *it << "\n";
+		std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
+		if (match != currNode->children.end()) {
+			// std::cout << "here " << currNode->config->getRedirection().second << "\n";
+			// std::cout << "i find that " << *it << "\n";
+			currNode = match->second;
 
-				location += "/" + *it;
-				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
-				if (currNode->config)
-				{
-					// std::cout << "============MATCH===============\n";
-					bestMatch = currNode->config;
-					// std::cout << "best match " << bestMatch->getRedirection().second << "\n";
-				}
-			} else {
-				break;
+			location += "/" + *it;
+			// std::cout << "here " << currNode->config->getRedirection().second << "\n";
+			if (currNode->config)
+			{
+				// std::cout << "============MATCH===============\n";
+				bestMatch = currNode->config;
+				// std::cout << "best match " << bestMatch->getRedirection().second << "\n";
 			}
 		}
 		// std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
 
-		return (bestMatch);
 	}
-
+	return (bestMatch);
+}
 	// const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server) const {
 	//     if (!server)
 	//         return (NULL);
@@ -221,11 +221,9 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 	//     if (currNode->config)
 	//         bestMatch = currNode->config;
 
-	//     for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
-
-	//         std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
-	//         if (match != currNode->children.end()) {;
-	//             currNode = match->second;
+//     if (currNode->config)
+//         bestMatch = currNode->config;
+//     for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
 
 	//             if (currNode->config && (it + 1) == uriSegments.end())
 	// 			{
@@ -236,5 +234,44 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 	//         }
 	//     }
 
-	//     return (bestMatch);
-	// }
+//             if (currNode->config && (it + 1) == uriSegments.end())
+// 			{
+//                 bestMatch = currNode->config;
+// 			}
+//         } else {
+//             break;
+//         }
+//     }
+
+//     return (bestMatch);
+// }
+
+
+void RouteManager::printRouteAction(RouteAction action) {
+    switch (action) {
+        case ACTION_SERVE_FILE:
+            std::cout << "Action: Serving static file.\n";
+            break;
+        case ACTION_SERVE_INDEX:
+            std::cout << "Action: Serving directory index file.\n";
+            break;
+        case ACTION_AUTOINDEX:
+            std::cout << "Action: Generating autoindex directory listing.\n";
+            break;
+        case ACTION_EXECUTE_CGI:
+            std::cout << "Action: Executing CGI script.\n";
+            break;
+        case ACTION_REDIRECT:
+            std::cout << "Action: Performing HTTP redirection.\n";
+            break;
+        case ACTION_ERROR:
+            std::cout << "Action: Handling route error state.\n";
+            break;
+        case NONE:
+            std::cout << "Action: No action specified.\n";
+            break;
+        default:
+            std::cout << "Action: Unknown route action.\n";
+            break;
+    }
+}

@@ -83,7 +83,7 @@ std::vector<char>	HttpRequest::getLeftoverData() const {
  * request failed during parsing (e.g., 400 Bad Request, 501 Not Implemented).
  * @return The HTTP status code as an integer.
  */
-int	HttpRequest::getStatusCode() const {
+HttpStatus	HttpRequest::getStatusCode() const {
 	return( _statusCode);
 }
 

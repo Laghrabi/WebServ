@@ -40,14 +40,14 @@ int main(int argc, char **argv){
 			const Config::ServerMultiMap& map = conf.m_iport_server;
 			Config::ServerRange range = map.equal_range(map.begin()->first);
 
-			std::string request_str = "GET /home/hsacr/COMMON_CORE/webserver/tests/cgi/apache-cgi/cgi-bin/b.out/a.out HTTP/1.1\r\nHOST: server2\r\n\r\n";
+			std::string request_str = "GET /home/zfarouk/Desktop/projects/WebServ/hey.out?hey=but&but=hey HTTP/1.1\r\nHOST: server2\r\n\r\n";
 
-			HttpRequest request(range);
+			HttpRequest request(range, Server::IPort());
 			request.parse(std::vector<char>(request_str.begin(), request_str.end()));
 			std::cout << "STATUS CODE: " << request.getStatusCode() << "\n";
 			// std::cout << "SERVER ROOT: " << request
 
-			if (request.getStatusCode() == OK) {
+			if (request.getCurrentState() == FINISHED) {
 				std::cout << "===================this is routing phase=======================\n";
 				conf.m_servers.clear();
 
@@ -57,16 +57,21 @@ int main(int argc, char **argv){
 				if (result.action != ACTION_ERROR) {
 					std::cout << "target path = " << result.targetPath << "\n";
 					std::cout << "action = " << result.action << "\n";
+
 					CgiRequest cgi(request);
 					cgi.printEnv();
 				}
 				else {
+					HttpRequest::printHttpStatus(request.getStatusCode());
 					std::cout << "error\n";
-					exit (5);
+					// exit (5);
 				}
 				// manager.init();
 				// manager.run();
 
+			}
+			else {
+std::cout << "error request\n";
 			}
 		}
 		catch (const ParseConfig::ConfigExcept& e) {

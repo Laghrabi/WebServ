@@ -1,71 +1,17 @@
 #include "../../include/ClientSocket.hpp"
 
 
-// static std::string extractIp(const sockaddr_storage& address)
-// {
-//
-//     if (address.ss_family == AF_INET)
-//     {
-//         char ip[INET6_ADDRSTRLEN];
-//         const sockaddr_in* addr =
-//             reinterpret_cast<const sockaddr_in*>(&address);
-//
-//         inet_ntop(AF_INET, &addr->sin_addr, ip, sizeof(ip));
-//         return ip;
-//     }
-//     else if (address.ss_family == AF_INET6)
-//     {
-//         char ip[INET6_ADDRSTRLEN];
-//
-//         const sockaddr_in6* addr =
-//             reinterpret_cast<const sockaddr_in6*>(&address);
-//
-//         inet_ntop(AF_INET6, &addr->sin6_addr, ip, sizeof(ip));
-//         return ip;
-//     }
-//
-//     return "";
-// }
-//
-// static uint16_t extratPort(const sockaddr_storage& address)
-// {
-//     if (address.ss_family == AF_INET)
-//     {
-//         const sockaddr_in* addr =
-//             reinterpret_cast<const sockaddr_in*>(&address);
-//
-//         return ntohs(addr->sin_port);
-//     }
-//
-//     const sockaddr_in6* addr =
-//         reinterpret_cast<const sockaddr_in6*>(&address);
-//
-//     return ntohs(addr->sin6_port);
-// }
-
-Client::Client(): m_fd(-1),
-    m_address(),
-    m_addressLength(sizeof(sockaddr_storage)),
-    m_readBuffer(),
-    m_writeBuffer(),
-    m_listener(NULL)
-{
-}
-
 Client::Client(
     int fd,
     ListeningSocket* listener,
-    const sockaddr_storage& address,
-    socklen_t addressLength,
+    Server::IPort iport,
     const Config::ServerRange& serverRange)
     :
     m_fd(fd),
-    m_address(address),
-    m_addressLength(addressLength),
     m_readBuffer(),
     m_writeBuffer(),
     m_listener(listener),
-    m_request(serverRange)
+    m_request(serverRange, iport)
     
     {
     }
@@ -73,8 +19,6 @@ Client::Client(
 
 Client::Client(const Client& other):
     m_fd(other.m_fd),
-    m_address(other.m_address),
-    m_addressLength(other.m_addressLength),
     m_readBuffer(other.m_readBuffer),
     m_writeBuffer(other.m_writeBuffer),
     m_listener(other.m_listener),
@@ -87,8 +31,6 @@ Client& Client::operator=(const Client& other)
     if (this != &other)
     {
         m_fd = other.m_fd;
-        m_address = other.m_address;
-        m_addressLength = other.m_addressLength;
         m_readBuffer = other.m_readBuffer;
         m_writeBuffer = other.m_writeBuffer;
         m_listener = other.m_listener;
@@ -101,29 +43,10 @@ Client::~Client()
 {
 }
 
-void Client::setAddress(const sockaddr_storage& address)
-{
-    m_address = address;
-}
-
-void Client::setAddressLength(socklen_t length)
-{
-    m_addressLength = length;
-}
 
 void Client::setListener(ListeningSocket* listener)
 {
     m_listener = listener;
-}
-
-const sockaddr_storage& Client::getAddress() const
-{
-    return (m_address);
-}
-
-socklen_t Client::getAddressLength() const
-{
-    return (m_addressLength);
 }
 
 int Client::getFd() const
@@ -159,4 +82,9 @@ ListeningSocket* Client::getListener()
 const ListeningSocket* Client::getListener() const
 {
     return (m_listener);
+}
+
+HttpRequest& Client::getRequest()
+{
+    return (m_request);
 }

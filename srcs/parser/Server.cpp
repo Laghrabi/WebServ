@@ -6,6 +6,25 @@ Server::Server() : RouteConfig(), m_route_tree("/") {
 	init();
 }
 
+Server::Server(const Server& other)
+	: RouteConfig(other),
+	m_locations(other.m_locations),
+	m_route_tree(other.m_route_tree),
+	m_addr(other.m_addr),
+	m_hosts(other.m_hosts)
+{
+}
+
+Server& Server::operator=(const Server& other)
+{
+	RouteConfig::operator=(other);
+	m_locations = other.m_locations;
+	m_route_tree = other.m_route_tree;
+	m_addr = other.m_addr;
+	m_hosts = other.m_hosts;
+	return *this;
+}
+
 void Server::parseServerName(ContIter &begin) {
 	while (begin->is(WORD)) {
 		m_hosts.push_back(begin->value);
@@ -133,6 +152,11 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
 	std::vector<std::string> tokens;
 	std::string current = "";
 
+	if (path.length() == 1 && path[0] == '/') {
+		tokens.push_back(path);
+		return (tokens);
+	}
+
 	for (size_t i = 0; i < path.length(); ++i) {
 		if (path[i] == '/') {
 			if (!current.empty()) {
@@ -146,7 +170,7 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
 	if (!current.empty()) {
 		tokens.push_back(current);
 	}
-	return tokens;
+	return (tokens);
 }
 
 /**
@@ -159,19 +183,35 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
 void Server::buildRouteTree() {
 	RouteNode* currentNode = &m_route_tree; 
 
+	// std::cout << "SERVER ROOT " << this->getRoot() << std::endl;
 	for (size_t i = 0; i < m_locations.size(); ++i) {
 		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].getPath());
-
 		currentNode = &m_route_tree; 
-
+		
 		for (size_t j = 0; j < tokens.size(); ++j) {
 			const std::string& token = tokens[j];
+			// std::cout << "LEN: " << tokens.size() << std::endl;
 
 			if (currentNode->children.find(token) == currentNode->children.end()) {
-				currentNode->children[token] = new RouteNode(token);
+				currentNode->children.insert(std::make_pair(token, new RouteNode(token)));
 			}
 			currentNode = currentNode->children[token];
+
+			if (currentNode->config == NULL) {
+                currentNode->config = new RouteConfig;
+                *currentNode->config = *this;
+            }
 		}
-		currentNode->config = &m_locations[i]; 
+		if (m_locations[i].hasNoConfig()) {
+			// std::cout << "PATH: " << m_locations[i].getPath() << std::endl;
+			*currentNode->config = *this;
+		}
+		else {
+			// std::cout << "PATH: " << m_locations[i].getPath() << std::endl;
+			*currentNode->config = m_locations[i]; 
+		}
+
+		// currentNode->config = new RouteConfig;
+		// *currentNode->config = m_locations[i]; 
 	}
 }

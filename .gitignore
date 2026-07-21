@@ -1,6 +1,7 @@
 **/*.o
 **/*.swp
 TODO/
+NOTES/
 **/webserver
 tests/
 **/EXE_FILE

@@ -4,7 +4,6 @@
 #include "webserver.hpp"
 #include "RouteConfig.hpp"
 #include "Location.hpp"
-#include <sys/socket.h>
 
 /**
  * @brief A node within the routing tree representing a single URI segment.
@@ -21,7 +20,9 @@ struct RouteNode {
 	 * @brief Constructs a new Route Node.
 	 * @param name The URI segment string this node represents.
 	 */
-	RouteNode(const std::string& name) : segmentName(name), config(NULL) {}
+	RouteNode(const std::string& name) : segmentName(name), config(NULL){
+		// config = new RouteConfig;
+	}
 
 	/**
 	 * @brief Copy constructor for RouteNode, performing a deep copy of the tree.
@@ -30,11 +31,38 @@ struct RouteNode {
 	 * independent of the original.
 	 * @param other The RouteNode instance to copy.
 	 */
-	RouteNode(const RouteNode& other) : segmentName(other.segmentName), config(other.config) {
+	RouteNode(const RouteNode& other) : config(NULL) {
+		segmentName = other.segmentName;
+		if (other.config) {
+			config = new RouteConfig;
+
+			*config = *other.config;
+		}
 		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
 				it != other.children.end(); ++it) {
 			this->children[it->first] = new RouteNode(*(it->second));
 		}
+	}
+
+	RouteNode& operator=(const RouteNode& other) {
+
+		// std::cout << "RouteConfig | copy constructor\n" << std::endl;
+		delete config;
+		for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
+			delete it->second;
+		}
+
+		segmentName = other.segmentName;
+		if (other.config) {
+			config = new RouteConfig;
+			*config = *other.config;
+		}
+
+		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
+				it != other.children.end(); ++it) {
+			this->children[it->first] = new RouteNode(*(it->second));
+		}
+		return (*this);
 	}
 
 	/**
@@ -42,6 +70,8 @@ struct RouteNode {
 	 * C++98 compliant deletion iterator for safely freeing all allocated child nodes.
 	 */
 	~RouteNode() {
+		// std::cout << "delete\n" << std::endl;
+		delete config;
 		for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
 			delete it->second;
 		}
@@ -77,6 +107,9 @@ class Server : public RouteConfig {
 		struct IPortV6;
 
 		Server();
+		Server(const Server&);
+		Server& operator=(const Server&);
+
 		void parseServerName(ContIter &begin);
 		void parseIPort(ContIter &begin);
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);

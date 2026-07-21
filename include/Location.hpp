@@ -14,6 +14,7 @@ class Location : public RouteConfig {
 		static void init(void);
 		bool hasSamePath(const Location& other);
 		const std::string& getPath(void) const;
+		void setPath(const std::string& path);
 		~Location();
 
 	private:

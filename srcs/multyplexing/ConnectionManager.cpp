@@ -84,19 +84,11 @@ void ConnectionManager::createListeningSockets()
             listener.getEndpoint().print();
             std::cout << "\n";
         }
-        if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-            throw std::runtime_error("fcntl failed");
-        else
-        {
-            std::cout << "socket fd = " << fd << "is set to non-blocking for endpoint ";
-            listener.getEndpoint().print();
-            std::cout << "\n";
-        }
         listener.setFd(fd);
         m_listeners.insert(
         std::make_pair(fd, listener));
         std::cout << "listener added for endpoint " << std::endl;
-        AddSocketToEpfd(listener.getFd(), LISTENER_SOCK, POLLIN);
+        AddSocketToEpfd(listener.getFd(), LISTENER_SOCK, EPOLLIN);
     }
 }
 
@@ -126,7 +118,7 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
     m_clients.insert(
         std::make_pair(clientFd, client));
     
-    AddSocketToEpfd(clientFd, CLIENT_SOCK, POLLIN);
+    AddSocketToEpfd(clientFd, CLIENT_SOCK, EPOLLIN);
 }
 
 
@@ -174,18 +166,6 @@ int ConnectionManager::receive(Client& client)
     }
 }
 
-// void ConnectionManager::enablePollout(int fd)
-// {
-//     struct epoll_event ev;
-//     ev.events = POLLIN | POLLOUT;
-//     ev.data.fd = fd;
-//     ev.data.u32 = CLIENT_SOCK;
-//     if (epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev))
-//     {
-//         perror("epoll_ctl failed");
-//     }
-// }
-
 void ConnectionManager::ChangeClientEvent(int fd, uint32_t event)
 {
     struct epoll_event ev;
@@ -218,16 +198,32 @@ void ConnectionManager::recieveClient(Client& client)
     //     int errorCode = client.m_request.getStatusCode(); 
     //     client.generateErrorResponse(errorCode);
     // }
-    ChangeClientEvent(client.getFd(), POLLIN | POLLOUT);
+    ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
 
 void ConnectionManager::sendClient(Client& client)
 {
+
     //i dont know how to catch the data that i will send to the client, i will ask chaimaa
-    // i guess it will return a vector of char
-    std::vector<char> response;// i will reciev data here
-    send(client.getFd(), &response[0], response.size(), 0);
-    ChangeClientEvent(client.getFd(), POLLIN);
+    // and i need to ask someone how much byte normaly i need to pass on a single send()
+    size_t remaining = client.getWriteBuffer().size() - client.getBytesSent();
+
+    ssize_t n = send(client.getFd(), &client.getWriteBuffer()[client.getBytesSent()],
+        std::min(remaining, static_cast<size_t>(4096)), MSG_NOSIGNAL);        
+    if (n > 0)
+    {
+        client.setByteSent(client.getBytesSent() + n);
+    }
+    else if (n == -1)
+    {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            return;
+        }
+        disconnect(client);
+    }
+    if (client.getBytesSent() >= client.getWriteBuffer().size())
+        ChangeClientEvent(client.getFd(), POLLIN);
     //anyway i still dont know if im done with the multiplexing,
     // waiting ofr the respond to start testing
 }
@@ -257,18 +253,18 @@ void ConnectionManager::run()
             //i need to handle the cgi fd here...
 
 
-            if (events & (POLLERR | POLLHUP) && type == CLIENT_SOCK)
+            if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)// should do the same fo the cgi  because it will be type  CGI_SOCK
             {
                 disconnect(m_clients.find(fd)->second);
                 continue;
             }
-            else if(events & (POLLIN | POLLOUT))
+            else if(events & (EPOLLIN | EPOLLOUT))
             {
-                if (type == LISTENER_SOCK && (events & POLLIN))
+                if (type == LISTENER_SOCK && (events & EPOLLIN))
                     acceptClient(m_listeners.find(fd)->second);
-                else if (type == CLIENT_SOCK && (events & POLLIN))
+                else if (type == CLIENT_SOCK && (events & EPOLLIN))
                     recieveClient(m_clients.find(fd)->second);
-                else if (type == CLIENT_SOCK && (events & POLLOUT))
+                else if (type == CLIENT_SOCK && (events & EPOLLOUT))
                     sendClient(m_clients.find(fd)->second);
             }
             --ready;

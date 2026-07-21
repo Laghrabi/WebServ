@@ -9,10 +9,11 @@ class Client
     private:
     
         int                 m_fd;
-        std::vector<char> m_readBuffer;
-        std::vector<char> m_writeBuffer;
+        std::vector<char>   m_readBuffer;
+        std::vector<char>   m_writeBuffer;
+        int                 bytesSent;
         ListeningSocket*    m_listener;
-        HttpRequest           m_request;
+        HttpRequest         m_request;
         
     public:
         
@@ -25,22 +26,17 @@ class Client
 
         std::vector<char>& getReadBuffer();
         std::vector<char>& getWriteBuffer();
+        int getBytesSent();
 
         const std::vector<char>& getReadBuffer() const;
         const std::vector<char>& getWriteBuffer() const;
 
-        void setAddress(const sockaddr_storage& address);
-        void setAddressLength(socklen_t length);
         void setListener(ListeningSocket* listener);
-
-        const sockaddr_storage& getAddress() const;
-        socklen_t getAddressLength() const;
+        void setByteSent(int total);
 
         ListeningSocket* getListener();
         const ListeningSocket* getListener() const;
 
-        std::string getIp() const;
-        uint16_t getPort() const;
         HttpRequest& getRequest();
 };
 

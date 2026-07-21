@@ -16,10 +16,12 @@ ConnectionManager::~ConnectionManager()
     {
         close (it->first);
     }
-    for(EventContainer::iterator it = m_events.begin(); it != m_events.end(); it++)
+    for (EventContainer::iterator it = m_events.begin(); it != m_events.end(); ++it)
     {
-        delete (it->second);
+        delete it->second;
     }
+    if (epfd != -1)
+        close(epfd);
 }
 
 void ConnectionManager::AddSocketToEpfd(int fd, SockType type, uint32_t event)

@@ -29,7 +29,7 @@ const std::string& HttpRequest::getVersion() const {
  * * @return A constant reference to the byte vector containing the request body.
  */
 const std::vector<char>& HttpRequest::getBody() const {
-    return _body;
+	return _body;
 }
 
 /**
@@ -50,7 +50,7 @@ const std::map<std::string, std::string>& HttpRequest::getHeaders() const {
  */
 std::string HttpRequest::getHeader(const std::string& key) const {
 	std::string normalized = key;
- 	std::transform(normalized.begin(), normalized.end(), normalized.begin(), safeToLower);
+	std::transform(normalized.begin(), normalized.end(), normalized.begin(), safeToLower);
 	std::map<std::string, std::string>::const_iterator it = _headers.find(normalized);
 	if (it != _headers.end())
 		return (it->second);
@@ -74,7 +74,7 @@ ParseState HttpRequest::getCurrentState() const {
  */
 std::vector<char>	HttpRequest::getLeftoverData() const {
 	return (std::vector<char>(_savedData.begin() + _bufferIndex,
-			_savedData.end()));
+				_savedData.end()));
 }
 
 /**
@@ -83,8 +83,8 @@ std::vector<char>	HttpRequest::getLeftoverData() const {
  * request failed during parsing (e.g., 400 Bad Request, 501 Not Implemented).
  * @return The HTTP status code as an integer.
  */
-int	HttpRequest::getStatusCode() const {
-    return( _statusCode);
+HttpStatus	HttpRequest::getStatusCode() const {
+	return( _statusCode);
 }
 
 /**
@@ -112,19 +112,28 @@ const std::multimap<std::string, std::string>& HttpRequest::getQueryParams() con
  * @brief Returns the Server configuration associated with this request.
  */
 const Server* HttpRequest::getServer() const {
-    return (_server);
+	return (_server);
 }
 
 /**
  * @brief Returns the list of pre-tokenized URI segments.
  */
 const std::vector<std::string>& HttpRequest::getUriSegments() const {
-    return (_UriSegments);
+	return (_UriSegments);
 }
 
 /**
  * @brief Returns the list of pre-tokenized encoded URI segments.
  */
 const std::vector<std::string>& HttpRequest::getEncodedUriSegments() const {
-    return (_EncodedUriSegments);
+	return (_EncodedUriSegments);
 }
+
+const Server::IPort& HttpRequest::getServerIPort() const {
+	return (_serverRange.first->first);
+}
+
+const std::string& HttpRequest::getEncodedUri() const {
+	return (_EncodedRouteUri);
+}
+

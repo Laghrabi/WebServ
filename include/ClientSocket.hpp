@@ -9,18 +9,14 @@ class Client
     private:
     
         int                 m_fd;
-        sockaddr_storage    m_address;
-        socklen_t           m_addressLength;
         std::vector<char> m_readBuffer;
         std::vector<char> m_writeBuffer;
         ListeningSocket*    m_listener;
+        HttpRequest           m_request;
         
     public:
         
-        HttpRequest           m_request;
-        Client() ;
-        Client(int fd, ListeningSocket* listener, const sockaddr_storage& address,
-                    socklen_t addressLength, const Config::ServerRange& serverRange) ;
+        Client(int fd, ListeningSocket* listener, Server::IPort ClientEndPoint, const Config::ServerRange& serverRange) ;
         Client(const Client& other);
         Client& operator=(const Client& other);
         ~Client();
@@ -45,6 +41,7 @@ class Client
 
         std::string getIp() const;
         uint16_t getPort() const;
+        HttpRequest& getRequest();
 };
 
 #endif

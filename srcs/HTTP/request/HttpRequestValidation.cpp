@@ -248,8 +248,8 @@ bool	HttpRequest::parseQueryParams() {
  * @return Returns true upon successful normalization.
  */
 bool    HttpRequest::normalizeUri() {
-    decodeString(_routeUri);
-    normalizeUriHelper(_routeUri, _UriSegments);
+  decodeString(_routeUri);
+  normalizeUriHelper(_routeUri, _UriSegments);
 	normalizeUriHelper(_EncodedRouteUri, _EncodedUriSegments);
     return (true);
 }

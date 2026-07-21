@@ -250,7 +250,7 @@ template <class Key, class Value> struct UnorderedMultiMap {
 				++m_cont_iter;
 				m_pair_iter = m_cont_iter->m_values.begin();
 			}
-			const pair* operator->() {
+			const pair* operator->() const{
 				return (&*m_pair_iter);
 			}
 		};

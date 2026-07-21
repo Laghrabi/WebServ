@@ -9,7 +9,7 @@ CgiRequest::CgiRequest(const HttpRequest& request) : m_request(request),
 void CgiRequest::setRequestEnv() {
 	m_env_vec.push_back("REQUEST_URI=" + m_request.getEncodedUri());
 	m_env_vec.push_back("REQUEST_METHOD=" + m_request.getMethod());
-	m_env_vec.push_back("QUERY_STRING=" + m_request.getUri());
+	m_env_vec.push_back("QUERY_STRING=" + m_request.getQueryString());
 	if (m_request.getHeader("Content-Length") != "")
 	{
 

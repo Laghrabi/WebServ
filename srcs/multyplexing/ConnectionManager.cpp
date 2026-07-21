@@ -206,24 +206,37 @@ void ConnectionManager::sendClient(Client& client)
 
     //i dont know how to catch the data that i will send to the client, i will ask chaimaa
     // and i need to ask someone how much byte normaly i need to pass on a single send()
-    size_t remaining = client.getWriteBuffer().size() - client.getBytesSent();
+    const std::vector<char>& buf = client.getWriteBuffer();
+    size_t sent = static_cast<size_t>(client.getBytesSent());
 
-    ssize_t n = send(client.getFd(), &client.getWriteBuffer()[client.getBytesSent()],
-        std::min(remaining, static_cast<size_t>(4096)), MSG_NOSIGNAL);        
-    if (n > 0)
+    if (buf.empty() || sent >= buf.size())
     {
-        client.setByteSent(client.getBytesSent() + n);
+        client.setByteSent(0);
+        client.getWriteBuffer().clear();
+        ChangeClientEvent(client.getFd(), EPOLLIN);
+        return;
     }
+
+    size_t remaining = buf.size() - sent;
+
+    ssize_t n = send(client.getFd(), &buf[sent],
+        std::min(remaining, static_cast<size_t>(4096)), MSG_NOSIGNAL);
+    if (n > 0)
+        client.setByteSent(static_cast<int>(sent + static_cast<size_t>(n)));
     else if (n == -1)
     {
         if (errno == EAGAIN || errno == EWOULDBLOCK)
-        {
             return;
-        }
         disconnect(client);
+        return;
     }
-    if (client.getBytesSent() >= client.getWriteBuffer().size())
-        ChangeClientEvent(client.getFd(), POLLIN);
+
+    if (static_cast<size_t>(client.getBytesSent()) >= client.getWriteBuffer().size())
+    {
+        client.setByteSent(0);
+        client.getWriteBuffer().clear();
+        ChangeClientEvent(client.getFd(), EPOLLIN);
+    }
     //anyway i still dont know if im done with the multiplexing,
     // waiting ofr the respond to start testing
 }

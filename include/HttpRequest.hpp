@@ -113,7 +113,7 @@ class HttpRequest {
         void	parse(const std::vector<char>& rawBuffer);
         void    reset();
 
-        static void printHttpStatus(HttpStatus status);
+        static void printHttpStatus(int status);
 
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;

@@ -127,7 +127,7 @@ void HttpRequest::reset() {
     _routeResult.targetPath.clear();
 }
 
-void HttpRequest::printHttpStatus(HttpStatus status) {
+void HttpRequest::printHttpStatus(int status) {
     switch (status) {
         case OK:
             std::cout << "Status [200]: OK\n";

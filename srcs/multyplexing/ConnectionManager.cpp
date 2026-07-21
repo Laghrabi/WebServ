@@ -269,6 +269,7 @@ void ConnectionManager::run()
             if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)// should do the same fo the cgi  because it will be type  CGI_SOCK
             {
                 disconnect(m_clients.find(fd)->second);
+                --ready;
                 continue;
             }
             else if(events & (EPOLLIN | EPOLLOUT))

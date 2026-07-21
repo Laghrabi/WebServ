@@ -44,11 +44,9 @@ void ConnectionManager::AddSocketToEpfd(int fd, SockType type, uint32_t event)
 void ConnectionManager::createListeningSockets()
 {
     m_events.clear();
-    epfd = epoll_create(30);
+    epfd = epoll_create1(0);
     if (epfd == -1)
-    {
-        perror("epoll creat failed");
-    }
+        throw std::runtime_error("epoll_create1 failed");
     for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = m_config.m_iport_server.begin();
     it != m_config.m_iport_server.end(); it = m_config.m_iport_server.upper_bound(it->first))
     {

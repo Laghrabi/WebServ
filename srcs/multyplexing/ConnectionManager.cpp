@@ -33,13 +33,13 @@ void ConnectionManager::AddSocketToEpfd(int fd, SockType type, uint32_t event)
     evdata->type = type;
     ev.events = event;
     ev.data.ptr = evdata;
-    if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev))
+    if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1)
     {
-        delete(evdata);
         perror("epoll_ctl failed");
+        delete evdata;
+        return;
     }
     m_events.insert(std::make_pair(fd, evdata));
-}
 
 void ConnectionManager::createListeningSockets()
 {

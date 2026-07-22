@@ -40,7 +40,7 @@ int main(int argc, char **argv){
 			const Config::ServerMultiMap& map = conf.m_iport_server;
 			Config::ServerRange range = map.equal_range(map.begin()->first);
 
-			std::string request_str = "GET /home/zfarouk/Desktop/projects/WebServ/hey.out?hey=but&but=hey HTTP/1.1\r\nHOST: server2\r\n\r\n";
+			std::string request_str = "GET /home/zfarouk/Desktop/projects/WebServ/hey.out?hey=but&but=hey HTTP/1.1\r\nHOST: server2\r\nTransfer-Encoding: chunked\r\n\r\nb\r\nHello World\r\n0\r\n\r\n";
 
 			HttpRequest request(range, Server::IPort());
 			request.parse(std::vector<char>(request_str.begin(), request_str.end()));
@@ -48,6 +48,7 @@ int main(int argc, char **argv){
 			// std::cout << "SERVER ROOT: " << request
 
 			if (request.getCurrentState() == FINISHED) {
+				request.printBodyContent();
 				std::cout << "===================this is routing phase=======================\n";
 				conf.m_servers.clear();
 

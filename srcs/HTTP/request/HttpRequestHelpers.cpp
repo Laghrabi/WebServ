@@ -1,4 +1,4 @@
-#include "../../../include/webserver.hpp"
+#include "webserver.hpp"
 
 /**
  * @brief Safely converts a given character to lowercase.
@@ -176,4 +176,93 @@ void HttpRequest::printHttpStatus(HttpStatus status) {
             std::cerr << "Error: Unknown HTTP Status Code (" << status << ")\n";
             break;
     }
+}
+
+/**
+ * @brief Generates a unique secure file path using 16 bytes from /dev/urandom.
+ * 
+ * @param directory The target directory (e.g., "/tmp/").
+ * @param extension The file extension (e.g., ".bin").
+ * @return A securely randomized file path string, or an empty string if it fails.
+ */
+std::string HttpRequest::generateSecureFileName(const std::string& directory, const std::string& extension) {
+    std::ifstream urandom("/dev/urandom", std::ios_base::in | std::ios_base::binary);
+    if (!urandom.is_open())
+        return ("");
+
+    char buffer[16];
+    urandom.read(buffer, 16);
+    urandom.close();
+
+    std::ostringstream oss;
+    oss << directory;
+
+    for (int i = 0; i < 16; ++i) {
+        oss << std::hex << std::setfill('0') << std::setw(2)
+            << static_cast<int>(static_cast<unsigned char>(buffer[i]));
+    }
+
+    oss << extension;
+    return (oss.str());
+}
+
+/**
+ * @brief Lazy-initializes the file stream for buffering the request body.
+ * * Generates a unique, secure temporary file path and opens the stream in binary mode.
+ * If initialization fails (due to filename generation errors or filesystem issues), 
+ * it updates the request state to ERROR and sets the internal server error status code.
+ * @return true if the stream is open or successfully opened, false otherwise.
+ */
+bool HttpRequest::openBodyStream() {
+    if (!_bodyStream.is_open()) {
+        _bodyFilePath = generateSecureFileName("/tmp/", ".bin");
+        
+        if (_bodyFilePath.empty()) {
+            _statusCode = INTERNAL_SERVER_ERROR;
+            _currentState = ERROR;
+            return false;
+        }
+
+        _bodyStream.open(_bodyFilePath.c_str(), std::ios::binary);
+        
+        if (!_bodyStream.is_open()) {
+            _statusCode = INTERNAL_SERVER_ERROR;
+            _currentState = ERROR;
+            return false;
+        }
+    }
+    
+    return (true);
+}
+
+void HttpRequest::printBodyContent() const {
+    if (_bodyFilePath.empty()) {
+        std::cout << "[Debug] No body file generated for this request." << std::endl;
+        return;
+    }
+
+    std::ifstream inFile(_bodyFilePath.c_str(), std::ios::binary);
+    
+    if (!inFile.is_open()) {
+        std::cerr << "[Error] Could not open " << _bodyFilePath << " to print." << std::endl;
+        return;
+    }
+
+    std::cout << "========== BODY CONTENT START (" << _bodyFilePath << ") ==========\n";
+
+    char buffer[8192]; 
+    while (inFile.read(buffer, sizeof(buffer))) {
+        // std::cout.write is used instead of '<<' because the body might contain 
+        // binary data (like an image) with null terminators that would truncate '<<'.
+        std::cout.write(buffer, inFile.gcount());
+    }
+
+    // Print the final remaining bytes (if any)
+    if (inFile.gcount() > 0) {
+        std::cout.write(buffer, inFile.gcount());
+    }
+
+    std::cout << "\n=========== BODY CONTENT END ===========\n";
+    
+    inFile.close();
 }

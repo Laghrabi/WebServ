@@ -137,3 +137,10 @@ const std::string& HttpRequest::getEncodedUri() const {
 	return (_EncodedRouteUri);
 }
 
+const std::string& HttpRequest::getBodyFilePath() const {
+	return (_bodyFilePath);
+}
+
+const std::ofstream& HttpRequest::getBodyStream() const {
+	return (_bodyStream);
+}

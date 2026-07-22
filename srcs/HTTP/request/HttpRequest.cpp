@@ -210,8 +210,17 @@ bool	HttpRequest::parseHeaders()
 			_currentState = ERROR;
 			return (false);
 		}
+
 		std::string	value = headerLine.substr(colonPos + 1);
 		std::transform(key.begin(), key.end(), key.begin(), safeToLower);
+
+		if (_currentState == READING_TRAILERS) {
+            if (key == "host" || key == "content-length" || key == "transfer-encoding") {
+                _statusCode = BAD_REQUEST;
+                _currentState = ERROR;
+                return (false);
+            }
+        }
 		if (_headers.find(key) != _headers.end()) {
 			if (key == "host" || key == "content-length" ||
 					key == "content-type" || key == "transfer-encoding") {
@@ -251,16 +260,8 @@ bool	HttpRequest::validateHeaders() {
 		return false;
 	}
 	_server = findServer(itHost->second);
-	// if (_server->isAllowed(_method) == false) {
-	// 	_statusCode = METHOD_NOT_ALLOWED;
-	//        _currentState = ERROR;
-	//        return false;
-	// }
-	if (_server->hasMaxBodySize() == true) {
-		_client_max_body_size = _server->getMaxBodySize();
-		if (_client_max_body_size > _MAX_BODY_SIZE)
-			_client_max_body_size = _MAX_BODY_SIZE; 
-	}
+	if (_server->hasMaxBodySize() == true)
+		_client_max_body_size = _server->getMaxBodySize(); 
 	else
 		_client_max_body_size = _DEFAULT_BODY_SIZE;
 	if (_method == "POST" && itContentLength == _headers.end() && itTransferEncoding == _headers.end()) {
@@ -286,7 +287,7 @@ bool	HttpRequest::validateHeaders() {
 			_currentState = ERROR;
 			return (false);
 		}
-		if (_contentLength > _client_max_body_size || _contentLength > _MAX_BODY_SIZE) {
+		if (_contentLength > _client_max_body_size) {
 			_statusCode = PAYLOAD_TOO_LARGE;
 			_currentState = ERROR;
 			return (false);
@@ -313,9 +314,11 @@ bool	HttpRequest::validateHeaders() {
 }
 
 /**
- * @brief Appends available body bytes into the in-memory `_body` buffer.
- * 
- * @return true if the entire body has been received; false if waiting for more data.
+ * @brief Processes a fixed-length HTTP request body.
+ * * Reads data from the internal buffer and streams it to the designated file.
+ * Handles the logic of consuming specific byte ranges, managing memory cleanup 
+ * after consumption, and transitioning the request state to FINISHED.
+ * @return true if the body is fully parsed, false if more data is required or an error occurs.
  */
 bool	HttpRequest::parseBody()
 {
@@ -325,15 +328,28 @@ bool	HttpRequest::parseBody()
 		_currentState = FINISHED;
 		return (true);
 	} else {
+		if (!openBodyStream())
+        	return (false); 
+
 		size_t	avaiBytes = _savedData.size() - _bufferIndex;
 		size_t	bytesNeeded = _contentLength - _bodyBytesWritten;
 		size_t bytesToWrite = std::min(avaiBytes, bytesNeeded);
-		_body.insert(_body.end(), _savedData.begin() + _bufferIndex, _savedData.begin() + _bufferIndex + bytesToWrite);
+
+		_bodyStream.write(_savedData.data() + _bufferIndex, bytesToWrite);
+		if (_bodyStream.fail()) {
+			_bodyStream.close();
+			std::remove(_bodyFilePath.c_str());
+            _statusCode = INTERNAL_SERVER_ERROR;
+            _currentState = ERROR;
+            return (false);
+        }
+
 		_bodyBytesWritten += bytesToWrite;
 		size_t	totalConsumedBytes = _bufferIndex + bytesToWrite;
 		_savedData.erase(_savedData.begin(), _savedData.begin() + totalConsumedBytes);
 		_bufferIndex = 0;
 		if (_bodyBytesWritten == _contentLength) {
+			_bodyStream.close();
 			_currentState = FINISHED;
 			return (true);
 		} else
@@ -342,15 +358,11 @@ bool	HttpRequest::parseBody()
 }
 
 /**
- * @brief Parses the hexadecimal chunk size line for a chunked transfer encoding request.
- * * Extracts the chunk size from the current buffer position up to the next CRLF boundary. 
- * Validates that the extracted line contains only valid hexadecimal characters to prevent 
- * parsing errors. If a size of 0 is read, it marks the end of the chunked body and 
- * transitions the state machine to FINISHED. Otherwise, it updates the internal 
- * `_chunkedSize` and transitions to READING_CHUNK_DATA.
- * * @return true if the chunk size was successfully extracted and the state advanced; 
- * false if waiting for more network data or if malformed hex is detected 
- * (which forces an ERROR state).
+ * @brief Parses the size header for a chunked transfer-encoding request.
+ * * Searches for the CRLF-delimited chunk size line, validates that the size
+ * is a valid hexadecimal value, and enforces payload size limits. 
+ * Transitions the parser state to READING_CHUNK_DATA or READING_TRAILERS.
+ * @return true if the size was successfully parsed, false otherwise (or if data is incomplete).
  */
 bool HttpRequest::parseChunkSize() {
 	const std::string	crlf = "\r\n";
@@ -370,23 +382,38 @@ bool HttpRequest::parseChunkSize() {
 	else
 		sizePart = chunkedLine;
 	if (sizePart.empty() || sizePart.find_first_not_of("0123456789ABCDEFabcdef") != std::string::npos) {
+		if (_bodyStream.is_open()) {
+            _bodyStream.close();
+            std::remove(_bodyFilePath.c_str());
+		}
 		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
 		return (false);
 	}
 	std::istringstream iss(sizePart);
 	if (!(iss >> std::hex >> _chunkedSize)) {
+		if (_bodyStream.is_open()) {
+            _bodyStream.close();
+            std::remove(_bodyFilePath.c_str());
+		}
 		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
 		return (false);
 	} else if (_chunkedSize != 0) {
-		if (_chunkedSize > _client_max_body_size || _chunkedSize > _MAX_BODY_SIZE) {
+		if (_chunkedSize > _client_max_body_size) {
+			if (_bodyStream.is_open()) {
+                _bodyStream.close();
+                std::remove(_bodyFilePath.c_str());
+            }
 			_statusCode = PAYLOAD_TOO_LARGE;
 			_currentState = ERROR;
 			return (false);
 		}
-		if (_body.size() + _chunkedSize > _client_max_body_size ||
-				_body.size() + _chunkedSize > _MAX_BODY_SIZE) {
+		if (_bodyBytesWritten + _chunkedSize > _client_max_body_size) {
+			if (_bodyStream.is_open()) {
+                _bodyStream.close();
+                std::remove(_bodyFilePath.c_str());
+            }
 			_statusCode = PAYLOAD_TOO_LARGE;
 			_currentState = ERROR;
 			return (false);
@@ -395,7 +422,9 @@ bool HttpRequest::parseChunkSize() {
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);
 	} else {
-
+		if (_bodyStream.is_open()) {
+            _bodyStream.close();
+        }
 		_currentState = READING_TRAILERS;
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);
@@ -403,32 +432,48 @@ bool HttpRequest::parseChunkSize() {
 }
 
 /**
- * @brief Extracts the payload of a single chunk and appends it to the request body.
- * * Checks if the buffer contains the full chunk payload (based on `_chunkedSize`) plus 
- * its mandatory trailing CRLF sequence. Once the data is fully available, it verifies 
- * the CRLF boundary, appends the payload bytes to the in-memory `_body` vector, and 
- * transitions the finite state machine back to READING_CHUNK_SIZE for the next iteration.
- * * @return true if the entire chunk was successfully consumed and appended to the body; 
- * false if the buffer does not yet contain the full chunk, or if the trailing 
- * CRLF boundary is missing/malformed (which forces an ERROR state).
+ * @brief Parses and writes the actual data payload for a chunked request.
+ * * Verifies that the full chunk (including trailing CRLF) is available in the buffer.
+ * Performs error checking on chunk integrity and payload size limits before
+ * streaming data to the destination file.
+ * @return true if the chunk was processed successfully, false if incomplete or in error.
  */
 bool	HttpRequest::parseChunkData() {
 	if ((_savedData.size() - _bufferIndex) < (_chunkedSize + 2))
 		return (false);
 	if (_savedData[_bufferIndex + _chunkedSize] != '\r' ||
 			_savedData[_bufferIndex + _chunkedSize + 1] != '\n') {
+		if (_bodyStream.is_open()) {
+            _bodyStream.close();
+            std::remove(_bodyFilePath.c_str());
+        }
 		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
 		return (false);
 	}
-	if (_body.size() + _chunkedSize > _client_max_body_size || _body.size() + _chunkedSize > _MAX_BODY_SIZE) {
+	if (_bodyBytesWritten + _chunkedSize > _client_max_body_size) {
+		if (_bodyStream.is_open()) {
+            _bodyStream.close();
+            std::remove(_bodyFilePath.c_str());
+        }
 		_statusCode = PAYLOAD_TOO_LARGE;
 		_currentState = ERROR;
 		return (false);
 	}
-	_body.insert(_body.end(),
-			_savedData.begin() + _bufferIndex,
-			_savedData.begin() + _bufferIndex + _chunkedSize);
+
+	if (!openBodyStream())
+        return false;
+		
+	_bodyStream.write(_savedData.data() + _bufferIndex, _chunkedSize);
+	if (_bodyStream.fail()) {
+        _bodyStream.close();
+        std::remove(_bodyFilePath.c_str());
+        _statusCode = INTERNAL_SERVER_ERROR;
+        _currentState = ERROR;
+        return (false);
+    }
+
+	_bodyBytesWritten += _chunkedSize;
 	size_t	totalConsumedBytes = _bufferIndex + _chunkedSize + 2;
 	_savedData.erase(_savedData.begin(),
 			_savedData.begin() + totalConsumedBytes);

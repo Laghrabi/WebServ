@@ -52,6 +52,8 @@ typedef std::vector<token> TokenCont;
 #include "utils.tpp"
 #include "./FileStatus.hpp"
 #include "./MimeTypesExt.hpp"
+#include "RouteConfig.hpp"
+#include "RouteNode.hpp"
 #include "Server.hpp"
 #include "Config.hpp"
 #include "ParseConfig.hpp"

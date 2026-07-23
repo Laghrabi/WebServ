@@ -18,26 +18,31 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 	 * headers, query parameters, and FSM status.
 	 * @param other The source HttpRequest object to copy.
 	 */
-	HttpRequest::HttpRequest(const HttpRequest& other) : 
-		_statusCode(other._statusCode),
-		_currentState(other._currentState),
-		_savedData(other._savedData),
-		_bufferIndex(other._bufferIndex),
-		_method(other._method),
-		_uri(other._uri),
-		_routeUri(other._routeUri),
-		_queryString(other._queryString),
-		_queryParams(other._queryParams),
-		_version(other._version),
-		_headers(other._headers),
-		_contentLength(other._contentLength),
-		_chunkedSize(other._chunkedSize),
-		_body(other._body),
-		_bodyBytesWritten(other._bodyBytesWritten),
-		_client_max_body_size(other._client_max_body_size),
-		_server(other._server),
-		_serverRange(other._serverRange),
-		_clientEndPoint(other._clientEndPoint) {}
+	HttpRequest::HttpRequest(const HttpRequest& other) 
+  : _statusCode(other._statusCode),
+      _currentState(other._currentState),
+      _savedData(other._savedData),
+      _bufferIndex(other._bufferIndex),
+      _method(other._method),
+      _uri(other._uri),
+      _routeUri(other._routeUri),
+      _EncodedRouteUri(other._EncodedRouteUri),
+      _EncodedUriSegments(other._EncodedUriSegments),
+      _UriSegments(other._UriSegments),
+      _queryString(other._queryString),
+      _queryParams(other._queryParams),
+      _version(other._version),
+      _headers(other._headers),
+      _contentLength(other._contentLength),
+      _chunkedSize(other._chunkedSize),
+      _body(other._body),
+      _bodyBytesWritten(other._bodyBytesWritten),
+      _client_max_body_size(other._client_max_body_size),
+      _server(other._server),
+      _serverRange(other._serverRange),
+      _routeResult(other._routeResult),
+      _bodyFilePath(other._bodyFilePath),
+      _clientEndPoint(other._clientEndPoint) {}
 
 		/**
 		 * @brief Copy assignment operator for HttpRequest.
@@ -48,24 +53,28 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 		 */
 		HttpRequest& HttpRequest::operator=(const HttpRequest& other) {
 			if (this != &other) {
-				_statusCode = other._statusCode;
-				_currentState = other._currentState;
-				_savedData = other._savedData;
-				_bufferIndex = other._bufferIndex;
-				_method = other._method;
-				_uri = other._uri;
-				_routeUri = other._routeUri;
-				_queryString = other._queryString;
-				_queryParams = other._queryParams;
-				_version = other._version;
-				_headers = other._headers;
-				_contentLength = other._contentLength;
-				_chunkedSize = other._chunkedSize;
-				_body = other._body;
-				_bodyBytesWritten = other._bodyBytesWritten;
-				_client_max_body_size = other._client_max_body_size;
-				_server = other._server;
-				_serverRange = other._serverRange;
+ _statusCode = other._statusCode;
+        _currentState = other._currentState;
+        _savedData = other._savedData;
+        _bufferIndex = other._bufferIndex;
+        _method = other._method;
+        _uri = other._uri;
+        _routeUri = other._routeUri;
+        _EncodedRouteUri = other._EncodedRouteUri;
+        _EncodedUriSegments = other._EncodedUriSegments;
+        _UriSegments = other._UriSegments;
+        _queryString = other._queryString;
+        _queryParams = other._queryParams;
+        _version = other._version;
+        _headers = other._headers;
+        _contentLength = other._contentLength;
+        _chunkedSize = other._chunkedSize;
+        _body = other._body;
+        _bodyBytesWritten = other._bodyBytesWritten;
+        _client_max_body_size = other._client_max_body_size;
+        _server = other._server;
+        _serverRange = other._serverRange;
+        _routeResult = other._routeResult;
 				_clientEndPoint = other._clientEndPoint;
 			}
 			return (*this);

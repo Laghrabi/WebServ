@@ -137,3 +137,7 @@ const std::string& HttpRequest::getEncodedUri() const {
 	return (_EncodedRouteUri);
 }
 
+
+const Server::IPort& HttpRequest::getClientIPort() const {
+	return (_clientEndPoint);
+}

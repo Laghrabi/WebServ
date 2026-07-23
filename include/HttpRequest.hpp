@@ -132,6 +132,7 @@ class HttpRequest {
         const std::string& getEncodedUri() const;
         const std::vector<std::string>& getEncodedUriSegments() const;
 				const Server::IPort& getServerIPort() const;
+				const Server::IPort& getClientIPort() const;
 };
 
 char	safeToLower(char c);

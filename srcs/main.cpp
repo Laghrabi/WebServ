@@ -1,6 +1,7 @@
 
 #include "webserver.hpp"
 #include "ConnectionManager.hpp"
+#include "CgiHandler.hpp"
 
 void printRouteTree(RouteNode& route, int tabNum) {
 
@@ -40,7 +41,7 @@ int main(int argc, char **argv){
 			const Config::ServerMultiMap& map = conf.m_iport_server;
 			Config::ServerRange range = map.equal_range(map.begin()->first);
 
-			std::string request_str = "GET /home/zfarouk/Desktop/projects/WebServ/hey.out?hey=but&but=hey HTTP/1.1\r\nHOST: server2\r\n\r\n";
+			std::string request_str = "GET /home/hsacr/COMMON_CORE/webserver/tests/cgi/apache-cgi/cgi-bin/a.out?lkajsdlkfa=aljsdflasj HTTP/1.1\r\nHOST: server2\r\n\r\n";
 
 			HttpRequest request(range, Server::IPort());
 			request.parse(std::vector<char>(request_str.begin(), request_str.end()));
@@ -60,6 +61,8 @@ int main(int argc, char **argv){
 
 					CgiRequest cgi(request);
 					cgi.printEnv();
+					CgiHandler handler(request);
+					handler.execute();
 				}
 				else {
 					HttpRequest::printHttpStatus(request.getStatusCode());

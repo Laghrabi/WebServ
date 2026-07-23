@@ -8,13 +8,45 @@ ConnectionManager::ConnectionManager(const Config& config)
 
 ConnectionManager::~ConnectionManager()
 {
+    for (ListenerContainer::iterator it = m_listeners.begin(); it != m_listeners.end(); it ++)
+    {
+        close (it->first);
+    }
+    for (ClientContainer::iterator it = m_clients.begin(); it != m_clients.end(); it ++)
+    {
+        close (it->first);
+    }
+    for (EventContainer::iterator it = m_events.begin(); it != m_events.end(); ++it)
+    {
+        delete it->second;
+    }
+    if (epfd != -1)
+        close(epfd);
 }
 
+void ConnectionManager::AddSocketToEpfd(int fd, SockType type, uint32_t event)
+{
+    struct epoll_event ev;
+    struct EventData* evdata = new EventData;
 
+    evdata->fd = fd;
+    evdata->type = type;
+    ev.events = event;
+    ev.data.ptr = evdata;
+    if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1)
+    {
+        perror("epoll_ctl failed");
+        delete evdata;
+        return;
+    }
+    m_events.insert(std::make_pair(fd, evdata));
 
 void ConnectionManager::createListeningSockets()
 {
-    
+    m_events.clear();
+    epfd = epoll_create1(0);
+    if (epfd == -1)
+        throw std::runtime_error("epoll_create1 failed");
     for (UnorderedMultiMap<Server::IPort, Server>::const_iterator it = m_config.m_iport_server.begin();
     it != m_config.m_iport_server.end(); it = m_config.m_iport_server.upper_bound(it->first))
     {
@@ -25,7 +57,6 @@ void ConnectionManager::createListeningSockets()
             throw std::runtime_error("socket failed");
         else
         {
-            //test
             std::cout << "creat socket fd = " << fd << "for endpoint ";
             listener.getEndpoint().print();
             std::cout << "\n";
@@ -57,32 +88,13 @@ void ConnectionManager::createListeningSockets()
         m_listeners.insert(
         std::make_pair(fd, listener));
         std::cout << "listener added for endpoint " << std::endl;
-    }
-}
-
-
-void ConnectionManager::buildPollFds()
-{
-    m_pollfds.clear();
-    
-    ListenerContainer::const_iterator it;
-    
-    for (it = m_listeners.begin(); it != m_listeners.end(); ++it)
-    {
-        struct pollfd pfd;
-        
-        pfd.fd = it->first;
-        pfd.events = POLLIN;
-        pfd.revents = 0;
-        
-        m_pollfds.push_back(pfd);
+        AddSocketToEpfd(listener.getFd(), LISTENER_SOCK, EPOLLIN);
     }
 }
 
 void ConnectionManager::init()
 {
     createListeningSockets();
-    buildPollFds();
 }
 
 void ConnectionManager::acceptClient(ListeningSocket& listener)
@@ -92,18 +104,10 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 
     int clientFd = accept(listener.getFd(), reinterpret_cast<sockaddr*>(&address),
         &addressLength);
-
     if (clientFd < 0)
     {
         if (errno != EAGAIN && errno != EWOULDBLOCK)
             perror("accept");
-        return;
-    }
-
-    if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
-    {
-        perror("fcntl");
-        close(clientFd);
         return;
     }
 
@@ -114,35 +118,20 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
     m_clients.insert(
         std::make_pair(clientFd, client));
     
-    struct pollfd pfd;
-        
-    pfd.fd = clientFd;
-    pfd.events = POLLIN | POLLOUT;
-    pfd.revents = 0;
-    
-    m_pollfds.push_back(pfd);
+    AddSocketToEpfd(clientFd, CLIENT_SOCK, EPOLLIN);
 }
 
 
 void ConnectionManager::disconnect(Client& client)
 {
-    int fd = client.getFd();
-    std::cout << "Disconnecting client with fd: " << fd << "\n";
-
-    close(fd);
-
-    m_clients.erase(fd);
-    std::vector<struct pollfd>::iterator it;
-
-    for (it = m_pollfds.begin(); it != m_pollfds.end(); ++it)
+    if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
     {
-        if (it->fd == fd)
-        {
-            m_pollfds.erase(it);
-            break;
-        }
+        perror("epoll_ctl failed to delete");
     }
-
+    close(client.getFd());
+    m_clients.erase(client.getFd());
+    delete (m_events.find(client.getFd())->second);
+    m_events.erase(client.getFd());
 }
 
 
@@ -177,27 +166,19 @@ int ConnectionManager::receive(Client& client)
     }
 }
 
-void ConnectionManager::enablePollout(int fd)
+void ConnectionManager::ChangeClientEvent(int fd, uint32_t event)
 {
-    for (std::size_t i = 0; i < m_pollfds.size(); ++i)
+    struct epoll_event ev;
+    EventContainer::iterator it = m_events.find(fd);
+    if (it == m_events.end())
     {
-        if (m_pollfds[i].fd == fd)
-        {
-            m_pollfds[i].events = POLLOUT;
-            break;
-        }
+        throw std::runtime_error("Fd doesnt exist in epoll");
     }
-}
-
-void ConnectionManager::disablePollout(int fd)
-{
-    for (std::size_t i = 0; i < m_pollfds.size(); ++i)
+    ev.events = event;
+    ev.data.ptr = it->second;
+    if (epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev))
     {
-        if (m_pollfds[i].fd == fd)
-        {
-            m_pollfds[i].events &= ~POLLOUT;
-            break;
-        }
+        perror("epoll_ctl failed");
     }
 }
 
@@ -217,66 +198,91 @@ void ConnectionManager::recieveClient(Client& client)
     //     int errorCode = client.m_request.getStatusCode(); 
     //     client.generateErrorResponse(errorCode);
     // }
-
-    enablePollout(client.getFd());
+    ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
 
 void ConnectionManager::sendClient(Client& client)
 {
+
     //i dont know how to catch the data that i will send to the client, i will ask chaimaa
-    // i guess it will return a vector of char
-    std::vector<char> response;// i will reciev data here
-    send(client.getFd(), &response[0], response.size(), 0);
-    disablePollout(client.getFd());
+    // and i need to ask someone how much byte normaly i need to pass on a single send()
+    const std::vector<char>& buf = client.getWriteBuffer();
+    size_t sent = static_cast<size_t>(client.getBytesSent());
+
+    if (buf.empty() || sent >= buf.size())
+    {
+        client.setByteSent(0);
+        client.getWriteBuffer().clear();
+        ChangeClientEvent(client.getFd(), EPOLLIN);
+        return;
+    }
+
+    size_t remaining = buf.size() - sent;
+
+    ssize_t n = send(client.getFd(), &buf[sent],
+        std::min(remaining, static_cast<size_t>(4096)), MSG_NOSIGNAL);
+    if (n > 0)
+        client.setByteSent(static_cast<int>(sent + static_cast<size_t>(n)));
+    else if (n == -1)
+    {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return;
+        disconnect(client);
+        return;
+    }
+
+    if (static_cast<size_t>(client.getBytesSent()) >= client.getWriteBuffer().size())
+    {
+        client.setByteSent(0);
+        client.getWriteBuffer().clear();
+        ChangeClientEvent(client.getFd(), EPOLLIN);
+    }
     //anyway i still dont know if im done with the multiplexing,
     // waiting ofr the respond to start testing
 }
 
 void ConnectionManager::run()
 {
+    struct epoll_event evlist[MAX_EVENTS];
     while (true)
     {
         int ready;
-        ready = poll(&m_pollfds[0], m_pollfds.size(), -1);
 
+        ready = epoll_wait(epfd, evlist, MAX_EVENTS, -1);
         if (ready < 0)
         {
             if (errno == EINTR)
                 continue;
-            throw std::runtime_error("poll() failed");
+            throw std::runtime_error("epoll() failed");
         }
 
-        for (std::size_t i = 0; i < m_pollfds.size() && ready > 0; ++i)
+        for (std::size_t i = 0; i < MAX_EVENTS && ready > 0; ++i)
         {
-            short events = m_pollfds[i].revents;
+            short events = evlist[i].events;
+            EventData *data = static_cast<EventData *>(evlist[i].data.ptr);
+            int fd = data->fd;
+            int type = data->type;
 
-            if (m_pollfds[i].revents == 0)
-                continue;
-            --ready;
+            //i need to handle the cgi fd here...
 
-            int fd = m_pollfds[i].fd;
 
-            if (events & (POLLERR | POLLHUP))
+            if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)// should do the same fo the cgi  because it will be type  CGI_SOCK
             {
                 disconnect(m_clients.find(fd)->second);
+                --ready;
                 continue;
             }
-
-            if (events & (POLLIN | POLLOUT))
+            else if(events & (EPOLLIN | EPOLLOUT))
             {
-                if (m_listeners.find(fd) != m_listeners.end() && (events & POLLIN))
-                {
+                if (type == LISTENER_SOCK && (events & EPOLLIN))
                     acceptClient(m_listeners.find(fd)->second);
-                }          
-                else if (m_clients.find(fd) != m_clients.end()  && (events & POLLIN))
-                {
+                else if (type == CLIENT_SOCK && (events & EPOLLIN))
                     recieveClient(m_clients.find(fd)->second);
-                }
-                else if (m_clients.find(fd) != m_clients.end()  && (events & POLLOUT))
-                {
+                else if (type == CLIENT_SOCK && (events & EPOLLOUT))
                     sendClient(m_clients.find(fd)->second);
-                }
             }
+            --ready;
         }
     }
 }
+

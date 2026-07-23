@@ -34,6 +34,7 @@
 #include <sys/socket.h>
 # include <sys/stat.h>
 #include <netdb.h>
+#include <sys/epoll.h>
 
 #include <sys/stat.h>
 

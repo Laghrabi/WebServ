@@ -80,7 +80,6 @@ class HttpRequest {
         size_t                              _client_max_body_size;
         const Server*                       _server;
         Config::ServerRange                 _serverRange;
-        RouteResult                         _routeResult;
         std::ofstream                       _bodyStream;
         std::string                         _bodyFilePath;
         Server::IPort                       _clientEndPoint;
@@ -115,6 +114,8 @@ class HttpRequest {
         void    reset();
 
         static void printHttpStatus(HttpStatus status);
+        
+        RouteResult                         _routeResult;
 
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;

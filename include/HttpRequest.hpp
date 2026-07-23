@@ -80,8 +80,8 @@ class HttpRequest {
         size_t                              _client_max_body_size;
         const Server*                       _server;
         Config::ServerRange                 _serverRange;
-        std::ofstream                       _bodyStream;
-        std::string                         _bodyFilePath;
+        std::ofstream _bodyStream;
+        std::string _bodyFilePath;
         Server::IPort                       _clientEndPoint;
 
         bool	parseRequestLine();
@@ -133,10 +133,11 @@ class HttpRequest {
         const std::vector<std::string>& getUriSegments() const;
         const std::string& getEncodedUri() const;
         const std::vector<std::string>& getEncodedUriSegments() const;
-		const Server::IPort& getServerIPort() const;
         const std::string& getBodyFilePath() const;
         const std::ofstream& getBodyStream() const;
         void printBodyContent() const;
+		const Server::IPort& getServerIPort() const;
+		const Server::IPort& getClientIPort() const;
 };
 
 char	safeToLower(char c);

@@ -125,6 +125,7 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 
 void ConnectionManager::disconnect(Client& client)
 {
+    std::cout << "client" << client.getFd() << "disconnect"<< std::endl;
     if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
     {
         perror("epoll_ctl failed to delete");
@@ -189,9 +190,32 @@ void ConnectionManager::recieveClient(Client& client)
         return;
 
     client.getRequest().parse(client.getReadBuffer());
-    // int state = client.m_request.getCurrentState(); 
+    int state = client.getRequest().getCurrentState(); 
 
-    // if (state == FINISHED) {
+    HttpRequest& request = client.getRequest();
+    if (state == FINISHED) {
+        // routing to find resources to provide
+        RouteManager route_manager;
+        route_manager.processRequest(request);
+        RouteResult result = request._routeResult;
+
+            std::cout << "status Code = " << result.statusCode << "\n";
+        if (result.action != ACTION_ERROR) {
+            std::cout << "target path = " << result.targetPath << "\n";
+         
+            HttpRequest::printHttpStatus(request.getStatusCode());
+            RouteManager::printRouteAction(result.action);
+        }
+        else {
+            HttpRequest::printHttpStatus(request.getStatusCode());
+            RouteManager::printRouteAction(result.action);
+            std::cout << "error\n";
+            // exit (5);
+        }
+        
+    } else {
+        request.printHttpStatus(request.getStatusCode());
+    }
     //     RouteResult result = routeManager.processRequest(client.m_request);
     //     client.generateResponse(result);
     // } 

@@ -25,7 +25,7 @@ std::string toPath(std::vector<std::string>::const_iterator begin, const std::ve
 	return result;
 }
 
-bool RouteManager::isCgi(const std::vector<std::string>& script_path, const RouteConfig* route, RouteResult &result, const std::string& location) const{
+bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResult &result, const std::string& location) const{
 
 	typedef std::vector<std::string> UriCont;
 	typedef UriCont::const_iterator UriContConstIter;
@@ -47,7 +47,7 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, const Rout
 #endif
 				continue ;
 			}
-			else if (route->isCgiScript(*it)) {
+			else if (result.route->isCgiScript(*it)) {
 				result.action = ACTION_EXECUTE_CGI;
 				result.targetPath = *it;
 				result.statusCode = 200;
@@ -83,8 +83,8 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, const Rout
  * @param request The validated HttpRequest object.
  * @return A RouteResult containing the determined action, target path, and status code.
  */
-RouteResult RouteManager::processRequest(const HttpRequest& request) const {
-	RouteResult result;
+void RouteManager::processRequest(HttpRequest& request) const {
+	RouteResult& result = request._routeResult;
 	result.statusCode = OK;
 	std::string location;
 
@@ -106,22 +106,22 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 		HttpRequest::normalizeUriHelper(str, vec);
 
 
-		if (isCgi(vec, result.route, result, location)) {
-			return (result);
+		if (isCgi(vec, result, location)) {
+			return ;
 		}
 	}
 
 	if (result.route && !result.route->isAllowed(request.getMethod())) {
 		result.action = ACTION_ERROR;
 		result.statusCode = METHOD_NOT_ALLOWED;
-		return result;
+		return ;
 	}
 
 	if (result.route && result.route->doesRedirect()) {
 		result.action = ACTION_REDIRECT;
 		result.targetPath = result.route->getRedirection().second;
 		result.statusCode = result.route->getRedirection().first;
-		return result;
+		return ;
 	}
 
 	std::string physicalPath = _locator.resolvePath(request.getRouteUri(), result.route, request.getServer());
@@ -130,7 +130,7 @@ RouteResult RouteManager::processRequest(const HttpRequest& request) const {
 
 	determineResourceAction(result, type, physicalPath, request.getRouteUri());
 
-	return (result);
+	return ;
 }
 
 void RouteManager::determineResourceAction(RouteResult& result, ResourceType type, const std::string& physicalPath, const std::string& routeUri) const {
@@ -212,9 +212,8 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 		}
 		// std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
 
-		return (bestMatch);
-	}
-
+	return (bestMatch);
+}
 	// const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server) const {
 	//     if (!server)
 	//         return (NULL);

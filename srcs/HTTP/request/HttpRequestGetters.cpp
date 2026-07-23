@@ -144,3 +144,7 @@ const std::string& HttpRequest::getBodyFilePath() const {
 const std::ofstream& HttpRequest::getBodyStream() const {
 	return (_bodyStream);
 }
+
+const Server::IPort& HttpRequest::getClientIPort() const {
+	return (_clientEndPoint);
+}

@@ -25,10 +25,17 @@ enum RouteAction {
  * * Contains the determined action, the physical target path (if applicable),
  * and the HTTP status code for the final response.
  */
+
+ struct CgiInfo {
+	std::string pathInfo;
+	std::string scriptName;
+ };
+
 struct RouteResult {
 	RouteAction action;
 	std::string targetPath;
 	int         statusCode;
+	CgiInfo cgiInfo;
 	const RouteConfig *route;
 };
 
@@ -43,11 +50,11 @@ class RouteManager {
 		~RouteManager();
 
 
-		bool isCgi(const std::vector<std::string>& script_path, const RouteConfig* route, RouteResult& result,const std::string& location) const;
+		bool isCgi(const std::vector<std::string>& script_path, RouteResult& result,const std::string& location) const;
 		static void printRouteAction(RouteAction action);
 
 		void determineResourceAction(RouteResult& result, ResourceType type, const std::string& physicalPath, const std::string& routeUri) const;
-		RouteResult processRequest(const HttpRequest& request) const;
+		void processRequest(HttpRequest& request) const;
 		const RouteConfig* matchRoute(const std::vector<std::string>& uri, const Server* server, std::string& location) const;
 };
 

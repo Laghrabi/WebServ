@@ -190,10 +190,10 @@ void Server::buildRouteTree() {
 		
 		for (size_t j = 0; j < tokens.size(); ++j) {
 			const std::string& token = tokens[j];
-			// std::cout << "LEN: " << tokens.size() << std::endl;
 
 			if (currentNode->children.find(token) == currentNode->children.end()) {
 				currentNode->children.insert(std::make_pair(token, new RouteNode(token)));
+			// std::cout << "LEN: " << tokens.size() << std::endl;
 			}
 			currentNode = currentNode->children[token];
 

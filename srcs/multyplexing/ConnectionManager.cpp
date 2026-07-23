@@ -205,6 +205,7 @@ void ConnectionManager::recieveClient(Client& client)
          
             HttpRequest::printHttpStatus(request.getStatusCode());
             RouteManager::printRouteAction(result.action);
+            request.printBodyContent();
         }
         else {
             HttpRequest::printHttpStatus(request.getStatusCode());
@@ -213,9 +214,10 @@ void ConnectionManager::recieveClient(Client& client)
             // exit (5);
         }
         
-    } else {
+    } else if (state == ERROR) {
         request.printHttpStatus(request.getStatusCode());
     }
+        ChangeClientEvent(client.getFd(), EPOLLOUT);
     //     RouteResult result = routeManager.processRequest(client.m_request);
     //     client.generateResponse(result);
     // } 
@@ -223,7 +225,6 @@ void ConnectionManager::recieveClient(Client& client)
     //     int errorCode = client.m_request.getStatusCode(); 
     //     client.generateErrorResponse(errorCode);
     // }
-    ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
 
 void ConnectionManager::sendClient(Client& client)

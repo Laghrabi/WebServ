@@ -49,6 +49,16 @@ void Client::setListener(ListeningSocket* listener)
     m_listener = listener;
 }
 
+void Client::setByteSent(int total)
+{
+    bytesSent = total;
+}
+
+int Client::getBytesSent()
+{
+    return (bytesSent);
+}
+
 int Client::getFd() const
 {
     return (m_fd);

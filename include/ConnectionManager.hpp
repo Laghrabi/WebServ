@@ -10,23 +10,34 @@
 #include <vector>
 #include <poll.h>
 
+#define MAX_EVENTS 500
+
+enum SockType {
+    LISTENER_SOCK,
+    CLIENT_SOCK
+};
+
+struct EventData {
+    SockType type;
+    int      fd;
+};
+
 class ConnectionManager
 {
 public:
 
     typedef std::map<int, ListeningSocket> ListenerContainer;
     typedef std::map<int, Client> ClientContainer;
-    typedef std::vector<struct pollfd> PollContainer;
+    typedef std::map<int, EventData*> EventContainer;
 
     const Config&       m_config;
     ListenerContainer   m_listeners;
     ClientContainer     m_clients;
-    PollContainer       m_pollfds;
+    EventContainer      m_events;
+    int epfd;
 
     void createListeningSockets();
-    
-    void buildPollFds();
-    
+
     void acceptClient(ListeningSocket& listener);
     
     void recieveClient(Client& client);
@@ -39,9 +50,12 @@ public:
     
     void disconnect(Client& client);
 
-    void enablePollout(int fd);
+    void ChangeClientEvent(int fd, uint32_t event);
+    // void enablePollout(int fd);
 
-    void disablePollout(int fd);
+    // void disablePollout(int fd);
+
+    void AddSocketToEpfd(int fd, SockType type, uint32_t event);
 
 public:
 

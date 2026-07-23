@@ -212,9 +212,9 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 		}
 		// std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
 
+		return (bestMatch);
 	}
-	return (bestMatch);
-}
+
 	// const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server) const {
 	//     if (!server)
 	//         return (NULL);

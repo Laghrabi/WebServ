@@ -40,7 +40,7 @@ void ConnectionManager::AddSocketToEpfd(int fd, SockType type, uint32_t event)
         return;
     }
     m_events.insert(std::make_pair(fd, evdata));
-
+}
 void ConnectionManager::createListeningSockets()
 {
     m_events.clear();
@@ -91,6 +91,7 @@ void ConnectionManager::createListeningSockets()
         AddSocketToEpfd(listener.getFd(), LISTENER_SOCK, EPOLLIN);
     }
 }
+
 
 void ConnectionManager::init()
 {

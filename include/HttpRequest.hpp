@@ -80,9 +80,8 @@ class HttpRequest {
         size_t                              _client_max_body_size;
         const Server*                       _server;
         Config::ServerRange                 _serverRange;
-        RouteResult                         _routeResult;
-        std::ofstream _bodyStream;
-        std::string _bodyFilePath;
+        std::ofstream                       _bodyStream;
+        std::string                         _bodyFilePath;
         Server::IPort                       _clientEndPoint;
 
         bool	parseRequestLine();
@@ -100,7 +99,8 @@ class HttpRequest {
         bool    normalizeUri();
         const Server* findServer(const std::string& name);
         void tokenizeUri(std::vector<std::string>& segments) const;
-		
+        std::string generateSecureFileName(const std::string& directory, const std::string& extension);
+        bool openBodyStream();
         
         public:
         static bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
@@ -114,6 +114,8 @@ class HttpRequest {
         void    reset();
 
         static void printHttpStatus(HttpStatus status);
+        
+        RouteResult                         _routeResult;
 
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;
@@ -131,7 +133,10 @@ class HttpRequest {
         const std::vector<std::string>& getUriSegments() const;
         const std::string& getEncodedUri() const;
         const std::vector<std::string>& getEncodedUriSegments() const;
-				const Server::IPort& getServerIPort() const;
+		const Server::IPort& getServerIPort() const;
+        const std::string& getBodyFilePath() const;
+        const std::ofstream& getBodyStream() const;
+        void printBodyContent() const;
 };
 
 char	safeToLower(char c);

@@ -37,7 +37,9 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 		_client_max_body_size(other._client_max_body_size),
 		_server(other._server),
 		_serverRange(other._serverRange),
-		_clientEndPoint(other._clientEndPoint) {}
+		_clientEndPoint(other._clientEndPoint),
+		_bodyFilePath(other._bodyFilePath),
+		_bodyStream(other._bodyStream) {}
 
 		/**
 		 * @brief Copy assignment operator for HttpRequest.
@@ -67,6 +69,7 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 				_server = other._server;
 				_serverRange = other._serverRange;
 				_clientEndPoint = other._clientEndPoint;
+				_bodyFilePath = other._bodyFilePath;
 			}
 			return (*this);
 		}

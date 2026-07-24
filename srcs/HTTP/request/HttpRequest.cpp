@@ -26,6 +26,9 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 		_method(other._method),
 		_uri(other._uri),
 		_routeUri(other._routeUri),
+		_EncodedRouteUri(other._EncodedRouteUri),
+      	_EncodedUriSegments(other._EncodedUriSegments),
+      	_UriSegments(other._UriSegments),
 		_queryString(other._queryString),
 		_queryParams(other._queryParams),
 		_version(other._version),
@@ -56,6 +59,9 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 				_method = other._method;
 				_uri = other._uri;
 				_routeUri = other._routeUri;
+				_EncodedRouteUri = other._EncodedRouteUri;
+        		_EncodedUriSegments = other._EncodedUriSegments;
+        		_UriSegments = other._UriSegments;
 				_queryString = other._queryString;
 				_queryParams = other._queryParams;
 				_version = other._version;

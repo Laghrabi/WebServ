@@ -1,4 +1,3 @@
-#include "webserver.hpp"
 #include "HttpRequest.hpp"
 #include "CString.hpp"
 
@@ -18,10 +17,15 @@ class CgiRequest {
 		void setEnv();
 		void setEnvp(void);
 		void detectEnterp(void);
+		void setHttpEnvs(void);
+		std::string toCgiEnvName(const std::string& name);
 	public:
 		CgiRequest(const HttpRequest& request);
+		CgiRequest(const CgiRequest& other);
+		const CgiRequest& operator=(const CgiRequest& other);
 		void printEnv() const;
 		char** getEnvp() const;
+		const HttpRequest& getHttpRequest(void) const;
 		~CgiRequest();
 
 };

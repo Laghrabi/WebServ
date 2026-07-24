@@ -9,7 +9,8 @@ SRCS := $(wildcard ./srcs/parser/*.cpp) \
 				$(wildcard ./srcs/multyplexing/*.cpp)\
 				$(wildcard ./srcs/Utils/*.cpp)\
 				$(wildcard ./srcs/HTTP/router/*.cpp)\
-				$(wildcard ./srcs/cgi/*.cpp)\
+				$(wildcard ./srcs/cgi/request/*.cpp)\
+				$(wildcard ./srcs/cgi/execution/*.cpp)\
 
 INCLUDE_DIR = ./include/
 

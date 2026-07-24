@@ -68,7 +68,7 @@ class RouteConfig {
 		const std::list<std::string>& getIndexes() const;
 		bool isAutoindex() const;
 		std::size_t getMaxBodySize() const;
-		bool hasMaxBodySize() const;
+		bool hasMaxBodYSize() const;
 		bool hasNoConfig() const;
 		const std::pair<int, std::string>& getRedirection() const;
 
@@ -77,7 +77,7 @@ class RouteConfig {
 		bool doesRedirect() const;
 		bool isCgiScript(const std::string& file) const;
 
-
+virtual ~RouteConfig();
 
 	private:
 		std::string m_root;

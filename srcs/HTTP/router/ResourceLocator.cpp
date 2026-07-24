@@ -22,6 +22,9 @@ ResourceLocator::~ResourceLocator() {}
 std::string ResourceLocator::buildPhysicalPath(const std::string& uri, const RouteConfig* route, const Server* server) const {
    std::string rootPath = "";
     
+	 std::string str;
+	 
+
     if (route)
         rootPath = route->getRoot();
     if (rootPath.empty() && server)
@@ -39,7 +42,15 @@ std::string ResourceLocator::buildPhysicalPath(const std::string& uri, const Rou
         return (rootPath + uri.substr(1));
     else if (!rootEndsWithSlash && !uriStartsWithSlash)
         return (rootPath + "/" + uri);
-    
+
+
+	 // const Location* test = dynamic_cast<const Location*>(route);
+	 // if (test) {
+	 //  if (!test->getAlias().empty()) {
+	 // 	 return ();
+	 //  }
+	 // }
+	 //
     return (rootPath + uri);
 }
 

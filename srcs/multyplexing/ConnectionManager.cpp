@@ -199,13 +199,15 @@ void ConnectionManager::recieveClient(Client& client)
         route_manager.processRequest(request);
         RouteResult result = request._routeResult;
 
-            std::cout << "status Code = " << result.statusCode << "\n";
+        std::cout << "status Code = " << result.statusCode << "\n";
         if (result.action != ACTION_ERROR) {
             std::cout << "target path = " << result.targetPath << "\n";
+						std::string buff = result.targetPath;
+						send(client.getFd(), buff.c_str(), buff.length(), 0);
          
-            HttpRequest::printHttpStatus(request.getStatusCode());
-            RouteManager::printRouteAction(result.action);
-            request.printBodyContent();
+            // HttpRequest::printHttpStatus(request.getStatusCode());
+            // RouteManager::printRouteAction(result.action);
+            // request.printBodyContent();
         }
         else {
             HttpRequest::printHttpStatus(request.getStatusCode());

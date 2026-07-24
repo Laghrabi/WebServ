@@ -1,5 +1,6 @@
 #include "webserver.hpp"
 #include <cstring>
+#include <sstream>
 #include <sys/socket.h>
 
 Server::Server() : RouteConfig(), m_route_tree("/") {
@@ -69,8 +70,50 @@ void Server::parseIPort(ContIter &begin) {
 	++begin;
 }
 
+bool toInt(int &num, const std::string& str) {
+	size_t found = str.find_first_not_of("0123456789");
+	if (found != std::string::npos) {
+		return (false);
+	}
+	std::stringstream ss;
+
+	ss << str;
+
+	if (!(ss >> num)) {
+		return false;
+	}
+	return true;
+}
+
+void Server::parseErrorPage(ContIter &begin) {
+	int code = 0;
+	if (!toInt(code, begin->value)) {
+		throw(ParseConfigType::ConfigExcept("not valid code: \"" + begin->value + "\"", begin->line));
+	}
+
+	// check if there is duplicate
+	// check here if error code is valid or not
+	if (code < 300 || code > 599) {
+		throw (ParseConfigType::ConfigExcept("error page code must be between 300 and 599", begin->line));
+	}
+	++begin;
+	if (!begin->is(WORD)) {
+		throw (ParseConfigType::ConfigExcept("expection error page", begin->line));
+	}
+	
+	std::map<int, std::string>::const_iterator it = m_error_pages.find(code);
+	if (it == m_error_pages.end()) {
+		m_error_pages[code] = begin->value;
+	}
+	else {
+		throw (ParseConfigType::ConfigExcept("duplicate error page in the same server is not allowed", begin->line));
+	}
+	++begin;
+}
+
 
 Server::HandlerFunc Server::getDirectiveHandler(const std::string dir_name) {
+	init();
 	if (s_handlers.find(dir_name) == s_handlers.end()) {
 		return (NULL);
 	}
@@ -121,7 +164,7 @@ void Server::init() {
 		s_handlers["access_log"] = &Server::parseAccessLog;
 		s_handlers["server_name"] = &Server::parseServerName;
 		s_handlers["listen"] = &Server::parseIPort;
-		s_handlers["autoindex"] = &Server::parseAutoIndex;
+		s_handlers["error_page"] = &Server::parseErrorPage;
 	}
 }
 

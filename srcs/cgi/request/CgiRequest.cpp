@@ -50,7 +50,7 @@ void CgiRequest::setRequestEnv() {
 	m_env_vec.push_back("REQUEST_URI=" + m_request.getEncodedUri());
 	m_env_vec.push_back("REQUEST_METHOD=" + m_request.getMethod());
 	m_env_vec.push_back("QUERY_STRING=" + m_request.getQueryString());
-	// m_env_vec.push_back("PATH_INFO=" + m_request.getPathInfo());
+	m_env_vec.push_back("PATH_INFO=" + m_request._routeResult.cgiInfo.pathInfo);
 	if (m_request.getHeader("Content-Length") != "")
 	{
 

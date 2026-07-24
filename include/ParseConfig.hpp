@@ -34,7 +34,7 @@ class ParseConfig {
 
 		void parseServer(ServerType& server);
 
-		class ConfigExcept : std::runtime_error
+		class ConfigExcept : public std::runtime_error
 	{
 		private:
 			std::string msg;

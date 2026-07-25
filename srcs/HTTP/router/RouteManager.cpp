@@ -49,9 +49,11 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 			}
 			else if (result.route->isCgiScript(*it)) {
 				result.action = ACTION_EXECUTE_CGI;
-				result.targetPath = *it;
+				result.targetPath = test_path;
 				result.statusCode = 200;
 				path_info = toPath(++it, script_path.end(), false);
+				result.cgiInfo.pathInfo = path_info;
+				
 #ifdef CGI_DEBUG
 				std::cout << "[CGI i found it ext = " << test_path << "]" << "\n";
 				std::cout << "[CGI path info = " << path_info << "\n";

@@ -6,15 +6,20 @@
 class ParseConfig;
 
 class Location : public RouteConfig {
+	private:
+		std::string m_alias;
 	public:
 		typedef void (Location::*HandlerFunc)(ContIter&);
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
 
 		Location();
+		static Location::HandlerFunc getDirectiveHandler(const std::string dir_name);
 		static void init(void);
 		bool hasSamePath(const Location& other);
 		const std::string& getPath(void) const;
 		void setPath(const std::string& path);
+		void parseAlias(ContIter& begin);
+		const std::string& getAlias(void) const;
 		~Location();
 
 	private:

@@ -40,6 +40,7 @@ class Server : public RouteConfig {
 
 		void parseServerName(ContIter &begin);
 		void parseIPort(ContIter &begin);
+		void parseErrorPage(ContIter &begin);
 		static HandlerFunc getDirectiveHandler(const std::string dir_name);
 
 		const std::vector<std::string>& getServerNames(void) const;
@@ -57,6 +58,7 @@ class Server : public RouteConfig {
 		std::vector<LocationType> m_locations;
 		RouteNode m_route_tree;
 	private:	
+		std::map<int, std::string> m_error_pages;
 		std::vector<IPort> m_addr;
 		std::vector<std::string> m_hosts;
 };

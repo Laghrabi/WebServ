@@ -77,7 +77,7 @@ class RouteConfig {
 		bool doesRedirect() const;
 		bool isCgiScript(const std::string& file) const;
 
-
+		virtual ~RouteConfig();
 
 	private:
 		std::string m_root;

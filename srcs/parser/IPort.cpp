@@ -1,5 +1,4 @@
 #include "webserver.hpp"
-#include <cstring>
 
 Server::IPort::IPort() {
 	std::memset(&m_addr, 0, sizeof(m_addr));

@@ -249,9 +249,9 @@ bool	HttpRequest::parseQueryParams() {
  */
 bool    HttpRequest::normalizeUri() {
 _EncodedRouteUri = _routeUri;
-  decodeString(_routeUri);
-  normalizeUriHelper(_routeUri, _UriSegments);
-  _UriSegments.insert(_UriSegments.begin(), "/");
+	decodeString(_routeUri);
+	normalizeUriHelper(_routeUri, _UriSegments);
+	// _UriSegments.insert(_UriSegments.begin(), "/");
 	normalizeUriHelper(_EncodedRouteUri, _EncodedUriSegments);
 	std::cout << "encoded route uri: " << _EncodedRouteUri  << "\n";
     return (true);

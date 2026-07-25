@@ -193,10 +193,11 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 		for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
 		std::cout << "hello\n";
 			std::cout << "\nsegment " << *it << "\n";
+			std::cout << "SIZE= " << uriSegments.size() << std::endl;
 			std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
 			if (match != currNode->children.end()) {
-				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
 				std::cout << "i find that " << *it << "\n";
+				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
 				currNode = match->second;
 
 				location += "/" + *it;
@@ -211,7 +212,7 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 				break;
 			}
 		}
-		// std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
+		std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
 
 	return (bestMatch);
 }

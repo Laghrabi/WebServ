@@ -251,8 +251,8 @@ bool    HttpRequest::normalizeUri() {
 // _EncodedRouteUri = _routeUri;
 	decodeString(_routeUri);
 	normalizeUriHelper(_routeUri, _UriSegments);
-	if (_UriSegments.empty())
-		_UriSegments.push_back("/");
+	// if (_UriSegments.empty())
+	// 	_UriSegments.push_back("/");
 	// _UriSegments.insert(_UriSegments.begin(), "/");
 	normalizeUriHelper(_EncodedRouteUri, _EncodedUriSegments);
 	std::cout << "encoded route uri: " << _EncodedRouteUri  << "\n";
@@ -302,6 +302,10 @@ bool    HttpRequest::normalizeUriHelper(std::string& uri,std::vector<std::string
 	{
 		uri += "/" + stack[i];
 	}
+
+	if (stack.empty())
+        stack.push_back("/");
+
 	if (uri.empty() || is_dir)
 		uri += "/";
     

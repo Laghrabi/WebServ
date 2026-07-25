@@ -100,7 +100,7 @@ void Server::parseErrorPage(ContIter &begin) {
 	if (!begin->is(WORD)) {
 		throw (ParseConfigType::ConfigExcept("expection error page", begin->line));
 	}
-	
+
 	std::map<int, std::string>::const_iterator it = m_error_pages.find(code);
 	if (it == m_error_pages.end()) {
 		m_error_pages[code] = begin->value;
@@ -199,6 +199,9 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
 		tokens.push_back(path);
 		return (tokens);
 	}
+	else {
+		tokens.push_back("/");
+	}
 
 	for (size_t i = 0; i < path.length(); ++i) {
 		if (path[i] == '/') {
@@ -211,6 +214,7 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
 		}
 	}
 	if (!current.empty()) {
+		std::cout <<  "current "<<current << "\n";
 		tokens.push_back(current);
 	}
 	return (tokens);
@@ -230,26 +234,32 @@ void Server::buildRouteTree() {
 	for (size_t i = 0; i < m_locations.size(); ++i) {
 		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].getPath());
 		currentNode = &m_route_tree; 
-		
+
+		std::cout << " hey " << m_locations[i].getPath() << tokens.size() << "\n";
 		for (size_t j = 0; j < tokens.size(); ++j) {
 			const std::string& token = tokens[j];
+			std::cout << "token = " << j << token << "\n";
 
 			if (currentNode->children.find(token) == currentNode->children.end()) {
 				currentNode->children.insert(std::make_pair(token, new RouteNode(token)));
-			// std::cout << "LEN: " << tokens.size() << std::endl;
+				// std::cout << "LEN: " << tokens.size() << std::endl;
 			}
 			currentNode = currentNode->children[token];
 
-			if (currentNode->config == NULL) {
-                currentNode->config = new RouteConfig;
-                *currentNode->config = *this;
-            }
+			// if (currentNode->config == NULL) {
+			// 	currentNode->config = new RouteConfig;
+			// 	*currentNode->config = *this;
+			// }
 		}
 		if (m_locations[i].hasNoConfig()) {
+			currentNode->config = new RouteConfig;
+			// 	*currentNode->config = *this;
 			// std::cout << "PATH: " << m_locations[i].getPath() << std::endl;
 			*currentNode->config = *this;
 		}
 		else {
+			currentNode->config = new Location;
+			std::cout << "config is alive\n";
 			// std::cout << "PATH: " << m_locations[i].getPath() << std::endl;
 			*currentNode->config = m_locations[i]; 
 		}

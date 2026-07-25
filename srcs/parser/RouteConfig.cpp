@@ -286,3 +286,6 @@ bool RouteConfig::hasNoConfig() const {
 	return (true);
 }
 
+RouteConfig::~RouteConfig() {
+
+}

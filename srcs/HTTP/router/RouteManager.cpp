@@ -127,8 +127,10 @@ void RouteManager::processRequest(HttpRequest& request) const {
 	}
 
 	std::string physicalPath = _locator.resolvePath(request.getRouteUri(), result.route, request.getServer());
+	// std::cout << "PHYSICAL_PATH= " << physicalPath << std::endl;
 	ResourceType type = _locator.getResourceType(physicalPath);
 	std::cout << "type is " << type << "\n";
+	// std::cout << "HELLO\n";
 
 	determineResourceAction(result, type, physicalPath, request.getRouteUri());
 
@@ -193,15 +195,20 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 			bestMatch = currNode->config;
 
 		for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
-		std::cout << "hello\n";
+			// std::cout << "hello\n";
+			std::string segment = *it;
 			std::cout << "\nsegment " << *it << "\n";
+			std::cout << "SIZE= " << uriSegments.size() << std::endl;
 			std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
 			if (match != currNode->children.end()) {
-				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
 				std::cout << "i find that " << *it << "\n";
+				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
 				currNode = match->second;
-
-				location += "/" + *it;
+				if ((!location.empty() && location[location.length() - 1] == '/') ||
+					(location.empty() && segment == "/"))
+						location += segment;
+				else
+					location += "/" + segment;
 				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
 				if (currNode->config)
 				{
@@ -213,7 +220,7 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 				break;
 			}
 		}
-		// std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
+		std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
 
 	return (bestMatch);
 }

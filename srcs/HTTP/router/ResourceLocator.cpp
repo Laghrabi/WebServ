@@ -97,6 +97,7 @@ ResourceType ResourceLocator::getResourceType(const std::string& physicalPath) c
 std::string ResourceLocator::resolvePath(const std::string& uri, const RouteConfig* route, const Server* server) const {
     std::string basePath = buildPhysicalPath(uri, route, server);
 
+    // std::cout << "BASE_PATH= " << basePath << std::endl;
     if (route && getResourceType(basePath) == RESOURCE_DIRECTORY) {
         const std::list<std::string>& indexFiles = route->getIndexes();
 

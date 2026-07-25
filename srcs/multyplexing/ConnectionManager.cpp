@@ -199,7 +199,7 @@ void ConnectionManager::recieveClient(Client& client)
         route_manager.processRequest(request);
         RouteResult result = request._routeResult;
 
-            std::cout << "status Code = " << result.statusCode << "\n";
+            std::cout << "result status Code = " << result.statusCode << "\n";
         if (result.action != ACTION_ERROR) {
             std::cout << "target path = " << result.targetPath << "\n";
          

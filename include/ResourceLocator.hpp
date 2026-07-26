@@ -22,12 +22,12 @@ class ResourceLocator {
         ResourceLocator& operator=(const ResourceLocator& other);
         ~ResourceLocator();
 
-        std::string     resolvePath(const std::string& uri, const RouteConfig* route, const Server* server) const;
+        std::string     resolvePath(const std::string& basePath, const RouteConfig* route) const;
         ResourceType    getResourceType(const std::string& physicalPath) const;
         bool            isCgiExtension(const std::string& physicalPath) const;
 
-    private:
-        std::string     buildPhysicalPath(const std::string& uri, const RouteConfig* route, const Server* server) const;
+
+std::string buildPhysicalPath(const HttpRequest& request, std::string& base_path, std::string& resource) const ;
 };
 
 #endif

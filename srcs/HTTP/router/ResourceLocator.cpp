@@ -1,14 +1,14 @@
-#include "../../../include/webserver.hpp"
+#include "ResourceLocator.hpp"
 
 ResourceLocator::ResourceLocator() {}
 
 ResourceLocator::ResourceLocator(const ResourceLocator& other) {
-    *this = other;
+	*this = other;
 }
 
 ResourceLocator& ResourceLocator::operator=(const ResourceLocator& other) {
-    (void)other;
-    return (*this);
+	(void)other;
+	return (*this);
 }
 
 ResourceLocator::~ResourceLocator() {}
@@ -19,39 +19,59 @@ ResourceLocator::~ResourceLocator() {}
  * falling back to the server `root`, or defaulting to the current directory.
  * * Ensures proper concatenation of the root and URI segments.
  */
-std::string ResourceLocator::buildPhysicalPath(const std::string& uri, const RouteConfig* route, const Server* server) const {
-   std::string rootPath = "";
-    
-	 std::string str;
-	 
 
-    if (route)
-        rootPath = route->getRoot();
-    if (rootPath.empty() && server)
-        rootPath = server->getRoot();
-		// here we have to options
-		// option number 2(directely) if no match and server has root automatically
-		// match and root server will be added to the requested uri
-    // if (rootPath.empty())
-    //     rootPath = ".";
-    
-    bool rootEndsWithSlash = (rootPath[rootPath.length() - 1] == '/');
-    bool uriStartsWithSlash = (!uri.empty() && uri[0] == '/');
+// void buildRoot(std::string& path, const std::string& root) {
+// 	;
+// }
+//
+// void buildAlias(std::string& path, const std::string& location, const std::string& alias) {
+// 	;
+// }
 
-    if (rootEndsWithSlash && uriStartsWithSlash)
-        return (rootPath + uri.substr(1));
-    else if (!rootEndsWithSlash && !uriStartsWithSlash)
-        return (rootPath + "/" + uri);
+std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::string& base_path, std::string& resource) const {
+	std::string rootPath = "";
+
+	const RouteConfig* route = request._routeResult.route;
+	std::string uri = request.getRouteUri();
+
+	bool base_path_slash = false;
+
+	const Location* test = dynamic_cast<const Location*>(route);
+	std::cout << test->getAlias() << "lkajsdklfjalskdjflkasjdlfkj\n";
+	resource = uri.substr(base_path.length() + 1);
+	if (test) {
+		std::cout << "this is location\n";
+		if (!test->getAlias().empty()) {
+			base_path = test->getAlias();
+			base_path_slash = base_path.at(base_path.length() - 1) == '/';
+			if (base_path_slash)
+				return (base_path + resource);
+			return (base_path + "/" + resource);
+		}
+		else {
+			rootPath = route->getRoot();
+		}
+	}
+	else {
+		std::cout << "using root\n";
+		// NOTE: if (route->getRoot().empty()) error
+		rootPath = route->getRoot();
+	}
 
 
-	 // const Location* test = dynamic_cast<const Location*>(route);
-	 // if (test) {
-	 //  if (!test->getAlias().empty()) {
-	 // 	 return ();
-	 //  }
-	 // }
-	 //
-    return (rootPath + uri);
+	bool rootEndsWithSlash = (rootPath[rootPath.length() - 1] == '/');
+	bool uriStartsWithSlash = (!uri.empty() && uri[0] == '/');
+
+	if (rootEndsWithSlash && uriStartsWithSlash)
+	{
+		return (rootPath + uri.substr(1));
+	}
+	else if (!rootEndsWithSlash && !uriStartsWithSlash) {
+		base_path = rootPath;
+		return (rootPath + "/" + uri);
+	}
+
+	return (rootPath + uri);
 }
 
 /**
@@ -61,32 +81,32 @@ std::string ResourceLocator::buildPhysicalPath(const std::string& uri, const Rou
  * @return RESOURCE_DIRECTORY, RESOURCE_FILE, RESOURCE_FORBIDDEN, or RESOURCE_NOT_FOUND.
  */
 ResourceType ResourceLocator::getResourceType(const std::string& physicalPath) const {
-    struct stat fileInfo;
+	struct stat fileInfo;
 
-    if (stat(physicalPath.c_str(), &fileInfo) != 0) {
+	if (stat(physicalPath.c_str(), &fileInfo) != 0) {
 #ifdef DEBUG
-			std::cout << "resource not found: " << physicalPath.c_str() << "\n";
+		std::cout << "resource not found: " << physicalPath.c_str() << "\n";
 #endif
 
-        if (errno == EACCES)
-				{
+		if (errno == EACCES)
+		{
 #ifdef DEBUG
-					std::cout << "[(ROUTING) this resource is forbidden]\n" << "\n";
+			std::cout << "[(ROUTING) this resource is forbidden]\n" << "\n";
 #endif
-            return (RESOURCE_FORBIDDEN);
-				}
-        return (RESOURCE_NOT_FOUND);
-    }
+	return (RESOURCE_FORBIDDEN);
+		}
+		return (RESOURCE_NOT_FOUND);
+	}
 
-    if (S_ISDIR(fileInfo.st_mode))
-        return (RESOURCE_DIRECTORY);
-    if (S_ISREG(fileInfo.st_mode))
-        return (RESOURCE_FILE);
-    
+	if (S_ISDIR(fileInfo.st_mode))
+		return (RESOURCE_DIRECTORY);
+	if (S_ISREG(fileInfo.st_mode))
+		return (RESOURCE_FILE);
+
 #ifdef DEBUG
-			std::cout << "forbidden: " << physicalPath.c_str() << "\n";
+	std::cout << "forbidden: " << physicalPath.c_str() << "\n";
 #endif
-    return (RESOURCE_FORBIDDEN);
+	return (RESOURCE_FORBIDDEN);
 }
 
 /**
@@ -94,23 +114,21 @@ ResourceType ResourceLocator::getResourceType(const std::string& physicalPath) c
  * * If the resolved path is a directory, it iterates through the configured 
  * index files (e.g., "index.html") to find an existing file match.
  */
-std::string ResourceLocator::resolvePath(const std::string& uri, const RouteConfig* route, const Server* server) const {
-    std::string basePath = buildPhysicalPath(uri, route, server);
+std::string ResourceLocator::resolvePath(const std::string& basePath, const RouteConfig* route) const {
 
-    // std::cout << "BASE_PATH= " << basePath << std::endl;
-    if (route && getResourceType(basePath) == RESOURCE_DIRECTORY) {
-        const std::list<std::string>& indexFiles = route->getIndexes();
+	if (getResourceType(basePath) == RESOURCE_DIRECTORY) {
+		const std::list<std::string>& indexFiles = route->getIndexes();
 
-        for (std::list<std::string>::const_iterator it = indexFiles.begin(); it != indexFiles.end(); ++it) {
-            std::string indexPath = basePath;
+		for (std::list<std::string>::const_iterator it = indexFiles.begin(); it != indexFiles.end(); ++it) {
+			std::string indexPath = basePath;
 
-            if (!basePath.empty() && basePath[basePath.length() - 1] != '/')
-                indexPath += "/";
-            indexPath += *it;
+			if (!basePath.empty() && basePath[basePath.length() - 1] != '/')
+				indexPath += "/";
+			indexPath += *it;
 
-            if (getResourceType(indexPath) == RESOURCE_FILE)
-                return (indexPath);
-        }
-    }
-    return (basePath);
+			if (getResourceType(indexPath) == RESOURCE_FILE)
+				return (indexPath);
+		}
+	}
+	return (basePath);
 }

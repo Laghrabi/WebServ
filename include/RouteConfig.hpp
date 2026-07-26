@@ -67,9 +67,11 @@ class RouteConfig {
 		const std::string& getAccessLog() const;
 		const std::list<std::string>& getIndexes() const;
 		bool isAutoindex() const;
+		const std::pair<bool, bool>& getAutoIndex() const;
 		std::size_t getMaxBodySize() const;
 		bool hasMaxBodySize() const;
 		bool hasNoConfig() const;
+
 		const std::pair<int, std::string>& getRedirection() const;
 
 		// check if the method is allowed
@@ -79,18 +81,19 @@ class RouteConfig {
 
 		virtual ~RouteConfig();
 
-	private:
+	protected:
 		std::string m_root;
 		std::string m_upload_dir;
 		std::string m_access_log;
 		std::list<std::string> m_indexes;
-		bool m_autoindex;
-		std::size_t m_max_body_size;
-		bool m_max_body_size_exist;
+		std::pair<bool, bool> m_autoindex; // first is auto index directive found
+																			 // second is it on or off
+
+		std::pair<bool, std::size_t> m_max_body_size;
 		std::set<std::string> m_allowed_methods;
 		std::set<std::string> m_cgi_map;
-		std::pair<int, std::string> m_redirect;
-		bool m_does_redirect;
+
+		std::pair <bool, std::pair<int, std::string> > m_redirect;
 
 		static std::set<std::string> s_available_methods;
 };

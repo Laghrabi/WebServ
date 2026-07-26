@@ -18,9 +18,9 @@
 	RouteNode::RouteNode(const RouteNode& other) : config(NULL) {
 		segmentName = other.segmentName;
 		if (other.config) {
-			config = new RouteConfig;
+			config = new Location;
 
-			*config = *other.config;
+			*((Location*)config) = *(Location*)other.config;
 		}
 		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
 				it != other.children.end(); ++it) {
@@ -38,8 +38,8 @@
 
 		segmentName = other.segmentName;
 		if (other.config) {
-			config = new RouteConfig;
-			*config = *other.config;
+			config = new Location;
+			*((Location*)config) = *(Location*)other.config;
 		}
 
 		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 

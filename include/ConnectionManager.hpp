@@ -5,6 +5,7 @@
 #include "Config.hpp"
 #include "ListeningSocket.hpp"
 #include "ClientSocket.hpp"
+#include "RouteManager.hpp"
 
 #include <map>
 #include <vector>

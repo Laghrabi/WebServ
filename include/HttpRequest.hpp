@@ -12,6 +12,7 @@
 # include <cstdio>
 #include <cctype>
 #include "webserver.hpp"
+#include "RouteResult.hpp"
 
 
 /**

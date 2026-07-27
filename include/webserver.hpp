@@ -62,8 +62,6 @@ typedef std::vector<token> TokenCont;
 #include "IPort.hpp"
 #include "IPortV4.hpp"
 #include "IPortV6.hpp"
-#include "ResourceLocator.hpp"
-#include "RouteManager.hpp"
 #include "HttpRequest.hpp"
 #include "StringUtils.hpp"
 // #include "CgiRequest.hpp"

@@ -230,7 +230,6 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
 void Server::buildRouteTree() {
 	RouteNode* currentNode = &m_route_tree; 
 
-	// std::cout << "SERVER ROOT " << this->getRoot() << std::endl;
 	for (size_t i = 0; i < m_locations.size(); ++i) {
 		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].getPath());
 		currentNode = &m_route_tree; 
@@ -242,29 +241,12 @@ void Server::buildRouteTree() {
 
 			if (currentNode->children.find(token) == currentNode->children.end()) {
 				currentNode->children.insert(std::make_pair(token, new RouteNode(token)));
-				// std::cout << "LEN: " << tokens.size() << std::endl;
 			}
 			currentNode = currentNode->children[token];
-
-			// if (currentNode->config == NULL) {
-			// 	currentNode->config = new RouteConfig;
-			// 	*currentNode->config = *this;
-			// }
 		}
-		if (m_locations[i].hasNoConfig()) {
-			currentNode->config = new RouteConfig;
-			// 	*currentNode->config = *this;
-			// std::cout << "PATH: " << m_locations[i].getPath() << std::endl;
-			*currentNode->config = *this;
-		}
-		else {
-			currentNode->config = new Location;
-			std::cout << "config is alive\n";
-			// std::cout << "PATH: " << m_locations[i].getPath() << std::endl;
-			*currentNode->config = m_locations[i]; 
-		}
-
-		// currentNode->config = new RouteConfig;
-		// *currentNode->config = m_locations[i]; 
+		m_locations[i].copyServerRouteConfig(*this);
+		currentNode->config = new Location;
+		*((Location*)currentNode->config) = m_locations[i]; 
+		// std::cout << ((Location*)currentNode->config)->getAlias() << "aklsdflkajsldkfjalsdkjflkj";
 	}
 }

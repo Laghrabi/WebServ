@@ -11,12 +11,12 @@ Location::Location() : RouteConfig() {
 
 void Location::init() {
 	if (s_handlers.empty()) {
-	RouteConfig::init();
-	for (RouteConfig::MapHandler::const_iterator it = RouteConfig::s_handlers.begin();
-			it != RouteConfig::s_handlers.end(); ++it) {
-		s_handlers[it->first] = it->second;
-	}
-	s_handlers["alias"] = &Location::parseAlias;
+		RouteConfig::init();
+		for (RouteConfig::MapHandler::const_iterator it = RouteConfig::s_handlers.begin();
+				it != RouteConfig::s_handlers.end(); ++it) {
+			s_handlers[it->first] = it->second;
+		}
+		s_handlers["alias"] = &Location::parseAlias;
 	}
 }
 
@@ -46,6 +46,31 @@ Location::HandlerFunc Location::getDirectiveHandler(const std::string dir_name) 
 
 void Location::setPath(const std::string& path) {
 	m_path = path;
+}
+
+
+template <typename T> void Location::copyDirectiveInfo(T& var, const T& new_val) {
+	if (var.empty()) {
+		if (!new_val.empty())
+			var = new_val;
+	}
+}
+
+
+void Location::copyServerRouteConfig(const RouteConfig& route_conf) {
+	copyDirectiveInfo(m_root, route_conf.getRoot());
+	copyDirectiveInfo(m_upload_dir, route_conf.getUploadDir());
+	copyDirectiveInfo(m_access_log, route_conf.getAccessLog());
+	copyDirectiveInfo(m_indexes, route_conf.getIndexes());
+	if (!m_autoindex.first) {
+		m_autoindex = route_conf.getAutoIndex();
+	}
+	if (!m_max_body_size.first) {
+		m_max_body_size.first = route_conf.hasMaxBodySize();
+		m_max_body_size.second = route_conf.getMaxBodySize();
+	}
+	copyDirectiveInfo(m_allowed_methods, route_conf.getAllowedMethods());
+	copyDirectiveInfo(m_cgi_map, route_conf.getCgiMap());
 }
 
 

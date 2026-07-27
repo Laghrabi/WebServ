@@ -20,6 +20,8 @@ class Location : public RouteConfig {
 		void setPath(const std::string& path);
 		void parseAlias(ContIter& begin);
 		const std::string& getAlias(void) const;
+		void copyServerRouteConfig(const RouteConfig& route_conf);
+		template <typename T> void copyDirectiveInfo(T& var, const T& new_val);
 		~Location();
 
 	private:

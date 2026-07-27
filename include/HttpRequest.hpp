@@ -41,9 +41,13 @@ enum ParseState {
  */
 enum HttpStatus {
     OK = 200,
+    MULTIPLE_CHOICES = 300,
     MOVED_PERMANENTLY = 301,
     FOUND = 302,
+    SEE_OTHER = 303,
+    NOT_MODIFIED = 304,
     TEMPORARY_REDIRECT = 307,
+    PERMANENT_REDIRECT = 308,
     BAD_REQUEST = 400,
     FORBIDDEN = 403,
     NOT_FOUND = 404,

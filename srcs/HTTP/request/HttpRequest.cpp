@@ -177,6 +177,7 @@ bool	HttpRequest::parseRequestLine()
 	}
 	else
 	{
+		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
 		return (false);
 	}

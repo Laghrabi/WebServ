@@ -266,7 +266,7 @@ void ConnectionManager::sendClient(Client& client)
     //anyway i still dont know if im done with the multiplexing,
     // waiting ofr the respond to start testing
     HttpRequest& request = client.getRequest();
-    HttpResponse response;
+    HttpResponse& response = client.getResponse();
     HttpRequestHandler handler(request, response);
     handler.handleRequest();
     if (response.getHeadersSent() == false) {
@@ -295,7 +295,7 @@ void ConnectionManager::sendClient(Client& client)
         }
     
     } else if (response.getBodySource() == BODY_FILE) {
-        std::ifstream file(response.getFilePath(), std::ios::binary);
+        std::ifstream file(response.getFilePath().c_str(), std::ios::binary);
         // AAAAAAAAAAAAAAAAAAAAAAAAAAAa rabani ana mgwania,
         //  fuck i forgot to check the permissions of the file, i will do it in the handler tomorow
         // bacause 39li w9af fhad lil

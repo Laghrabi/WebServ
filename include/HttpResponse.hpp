@@ -41,8 +41,10 @@ class HttpResponse
 	    size_t								contentLength;
 		size_t								bytesSent;
 		bool 								headersSent;
+		static std::map<int, std::string> statusCodeMap;
 
 	public:
+		static void init();
 		HttpResponse();
 		HttpResponse(const HttpResponse& other);
 		HttpResponse& operator=(const HttpResponse& other);
@@ -68,6 +70,10 @@ class HttpResponse
 		const std::vector<char>& getBufferBody() const;
 		size_t getContentLength() const;
 		size_t getBytesSent() const;
+		std::map<int, std::string>& const getStatusCodeMap();
+
 	};
+
+
 
 #endif

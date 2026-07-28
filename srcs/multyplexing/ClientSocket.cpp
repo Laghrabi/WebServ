@@ -11,7 +11,8 @@ Client::Client(
     m_readBuffer(),
     m_writeBuffer(),
     m_listener(listener),
-    m_request(serverRange, iport)
+    m_request(serverRange, iport),
+    m_response()
     
     {
     }
@@ -22,7 +23,8 @@ Client::Client(const Client& other):
     m_readBuffer(other.m_readBuffer),
     m_writeBuffer(other.m_writeBuffer),
     m_listener(other.m_listener),
-    m_request(other.m_request)
+    m_request(other.m_request),
+    m_response()
 {
 }
 
@@ -97,4 +99,8 @@ const ListeningSocket* Client::getListener() const
 HttpRequest& Client::getRequest()
 {
     return (m_request);
+}
+HttpResponse& Client::getResponse()
+{
+    return (m_response);
 }

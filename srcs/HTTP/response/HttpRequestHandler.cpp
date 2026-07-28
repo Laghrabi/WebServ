@@ -10,25 +10,21 @@ static std::string getCurrentDate()
 
 void HttpRequestHandler::serveFile()
 {
-    const RouteResult& result = request._routeResult;
-    const std::string& filePath = result.targetPath;
+    const RouteResult &result = request._routeResult;
+    const std::string &filePath = result.targetPath;
     struct stat st;
     stat(filePath.c_str(), &st);
-    
+
     if (stat(filePath.c_str(), &st) == -1)
     {
         makeError(404);
         return;
     }
-    if (!S_ISREG(st.st_mode))
-    {
-        makeError(403);
-        return;
-    }
+    // check premission
     response.setBodySource(BODY_FILE);
     response.setFilePath(filePath);
-    response.setStatusCode(result.statusCode);//im gonna wait for my partner to implement the getStatusMessage map
-    response.setStatusMessage("OK");//also here
+    response.setStatusCode(result.statusCode); // im gonna wait for my partner to implement the getStatusMessage map
+    response.setStatusMessage("OK");           // also here
     response.setContentLength(st.st_size);
     // response.setHeader("Content-Type", getMimeType(filePath));//wtabnasba lhadi ana gha guessit kighatkon
     response.setHeader("Content-Length", std::to_string(st.st_size));
@@ -37,18 +33,17 @@ void HttpRequestHandler::serveFile()
     response.setHeader("server", server_name);
 }
 
-std::string HttpRequestHandler::generateAutoIndexHtml(const std::string& directoryPath)
+std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directoryPath)
 {
-    //hamzaaa haaa l3ar lamasawblina chi html yr7am bok rah ma3reftch kindirlo
-    //HELP ME PLEASE
-    
+    // hamzaaa haaa l3ar lamasawblina chi html yr7am bok rah ma3reftch kindirlo
+    // HELP ME PLEASE
 }
 
 void HttpRequestHandler::generateAutoIndex()
 {
-    const RouteResult& result = request._routeResult;
-    const std::string& directoryPath = result.targetPath;
-    
+    const RouteResult &result = request._routeResult;
+    const std::string &directoryPath = result.targetPath;
+
     std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
     response.setBodySource(BODY_BUFFER);
     response.setBufferBody(std::vector<char>(autoIndexHtml.begin(), autoIndexHtml.end()));
@@ -63,7 +58,7 @@ void HttpRequestHandler::generateAutoIndex()
 
 void HttpRequestHandler::makeRedirect()
 {
-    const RouteResult& result = request._routeResult;
+    const RouteResult &result = request._routeResult;
     response.setStatusCode(result.statusCode);
     response.setStatusMessage("Found");
     response.setHeader("Location", result.targetPath);
@@ -78,34 +73,34 @@ void HttpRequestHandler::makeError(int code)
 {
     response.setStatusCode(code);
     // response.setStatusMessage(getStatusMessage(code));//i will wait for my partner to implement the getStatusMessage map
-    //here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
-    //if no i will creat i simple html error page with the code and the message
+    // here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
+    // if no i will creat i simple html error page with the code and the message
     response.setBodySource(BODY_NONE);
     // if (code == 403) //NEED TO KNOW IS IT FORBIDDEN METHODS OR JUST FORBIDDEN ACCESS TO THE RESOURCE
-        // response.setHeader("Allow", "GET, POST, DELETE");  how can i know the allowed methods for this route?
+    // response.setHeader("Allow", "GET, POST, DELETE");  how can i know the allowed methods for this route?
     response.setHeader("Content-Length", "0");
     response.setHeader("Connection", "keep-alive");
 }
 
 void HttpRequestHandler::handleGet()
 {
-    const RouteResult& result = request._routeResult;
-    
+    const RouteResult &result = request._routeResult;
+
     switch (result.action)
     {
-        case ACTION_SERVE_FILE:
+    case ACTION_SERVE_FILE:
         serveFile();
         break;
-        case ACTION_SERVE_INDEX:
+    case ACTION_SERVE_INDEX:
         serveFile();
         break;
-        case ACTION_AUTOINDEX:
+    case ACTION_AUTOINDEX:
         generateAutoIndex();
         break;
-        case ACTION_REDIRECT:
+    case ACTION_REDIRECT:
         makeRedirect();
         break;
-        default:
+    default:
         makeError(result.statusCode);
         break;
     }
@@ -113,8 +108,8 @@ void HttpRequestHandler::handleGet()
 
 void HttpRequestHandler::handleDelete()
 {
-    const RouteResult& result = request._routeResult;
-    const std::string& filePath = result.targetPath;
+    const RouteResult &result = request._routeResult;
+    const std::string &filePath = result.targetPath;
     struct stat st;
 
     if (stat(filePath.c_str(), &st) != 0)
@@ -127,7 +122,7 @@ void HttpRequestHandler::handleDelete()
         makeError(403);
         return;
     }
-    if (remove(filePath.c_str()) != 0)//it will remove only if it was a file and not a directory
+    if (remove(filePath.c_str()) != 0) // it will remove only if it was a file and not a directory
     {
         makeError(500);
         return;
@@ -143,7 +138,7 @@ void HttpRequestHandler::handleDelete()
 
 void HttpRequestHandler::handleRequest()
 {
-    if  (request.getMethod() == "GET")
+    if (request.getMethod() == "GET")
     {
         handleGet();
     }

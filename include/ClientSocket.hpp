@@ -14,6 +14,7 @@ class Client
         int                 bytesSent;
         ListeningSocket*    m_listener;
         HttpRequest         m_request;
+        HttpResponse        m_response;
         
     public:
         
@@ -38,6 +39,7 @@ class Client
         const ListeningSocket* getListener() const;
 
         HttpRequest& getRequest();
+        HttpResponse& getResponse();
 };
 
 #endif

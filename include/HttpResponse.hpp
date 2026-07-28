@@ -48,21 +48,9 @@ class HttpResponse
 		HttpResponse& operator=(const HttpResponse& other);
 		~HttpResponse();
 		
-		std::vector<char> assembleResponse() const {
-			std::vector<char> responseBuffer;
-			std::string statusLine = httpVersion + " " + std::to_string(statusCode) + " " + statusMessage + "\r\n";
-			responseBuffer.insert(responseBuffer.end(), statusLine.begin(), statusLine.end());
-			for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-				std::string headerLine = it->first + ": " + it->second + "\r\n";
-				responseBuffer.insert(responseBuffer.end(), headerLine.begin(), headerLine.end());
-			}
-			responseBuffer.insert(responseBuffer.end(), '\r');
-			responseBuffer.insert(responseBuffer.end(), '\n');
-			if (bodySource == BODY_BUFFER) {
-				responseBuffer.insert(responseBuffer.end(), bufferBody.begin(), bufferBody.end());
-			}
-			return responseBuffer;
-		}
+		std::vector<char> assembleResponse() const;
+
+		void clear();
 
 		void setStatusCode(int code);
 		void setStatusMessage(const std::string& message);
@@ -73,6 +61,13 @@ class HttpResponse
 		void setContentLength(size_t length);
 		void setHeadersSent(bool sent);
 		void setByteSent(size_t bytes);
+
+		bool getHeadersSent() const;
+		ResponseBodySource getBodySource() const;
+		const std::string& getFilePath() const;
+		const std::vector<char>& getBufferBody() const;
+		size_t getContentLength() const;
+		size_t getBytesSent() const;
 	};
 
 #endif

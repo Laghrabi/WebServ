@@ -232,39 +232,81 @@ void ConnectionManager::sendClient(Client& client)
 
     //i dont know how to catch the data that i will send to the client, i will ask chaimaa
     // and i need to ask someone how much byte normaly i need to pass on a single send()
-    const std::vector<char>& buf = client.getWriteBuffer();
-    size_t sent = static_cast<size_t>(client.getBytesSent());
+    // const std::vector<char>& buf = client.getWriteBuffer();
+    // size_t sent = static_cast<size_t>(client.getBytesSent());
 
-    if (buf.empty() || sent >= buf.size())
-    {
-        client.setByteSent(0);
-        client.getWriteBuffer().clear();
-        ChangeClientEvent(client.getFd(), EPOLLIN);
-        return;
-    }
+    // if (buf.empty() || sent >= buf.size())
+    // {
+    //     client.setByteSent(0);
+    //     client.getWriteBuffer().clear();
+    //     ChangeClientEvent(client.getFd(), EPOLLIN);
+    //     return;
+    // }
 
-    size_t remaining = buf.size() - sent;
+    // size_t remaining = buf.size() - sent;
 
-    ssize_t n = send(client.getFd(), &buf[sent],
-        std::min(remaining, static_cast<size_t>(4096)), MSG_NOSIGNAL);
-    if (n > 0)
-        client.setByteSent(static_cast<int>(sent + static_cast<size_t>(n)));
-    else if (n == -1)
-    {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return;
-        disconnect(client);
-        return;
-    }
+    // ssize_t n = send(client.getFd(), &buf[sent],
+    //     std::min(remaining, static_cast<size_t>(4096)), MSG_NOSIGNAL);
+    // if (n > 0)
+    //     client.setByteSent(static_cast<int>(sent + static_cast<size_t>(n)));
+    // else if (n == -1)
+    // {
+    //     if (errno == EAGAIN || errno == EWOULDBLOCK)
+    //         return;
+    //     disconnect(client);
+    //     return;
+    // }
 
-    if (static_cast<size_t>(client.getBytesSent()) >= client.getWriteBuffer().size())
-    {
-        client.setByteSent(0);
-        client.getWriteBuffer().clear();
-        ChangeClientEvent(client.getFd(), EPOLLIN);
-    }
+    // if (static_cast<size_t>(client.getBytesSent()) >= client.getWriteBuffer().size())
+    // {
+    //     client.setByteSent(0);
+    //     client.getWriteBuffer().clear();
+    //     ChangeClientEvent(client.getFd(), EPOLLIN);
+    // }
     //anyway i still dont know if im done with the multiplexing,
     // waiting ofr the respond to start testing
+    HttpRequest& request = client.getRequest();
+    HttpResponse response;
+    HttpRequestHandler handler(request, response);
+    handler.handleRequest();
+    if (response.getHeadersSent() == false) {
+        std::vector<char> responseBuffer = response.assembleResponse();
+        size_t size = responseBuffer.size();
+        size_t sent = 0;
+        while (sent < size) {
+            ssize_t n = send(client.getFd(), &responseBuffer[sent], size - sent, 0);
+            if (n > 0) {
+                sent += n;
+            }
+        }
+        response.setHeadersSent(true);
+    }
+    if (response.getBodySource() == BODY_BUFFER) {
+        const std::vector<char>& bodyBuffer = response.getBufferBody();
+        size_t size = bodyBuffer.size();
+        size_t sent = response.getBytesSent();
+        ssize_t n = send(client.getFd(), &bodyBuffer[sent], SENDSIZE, 0);
+        if (n > 0) {
+            response.setByteSent(n);
+        }
+        if (sent >= size) {
+            response.clear();
+            ChangeClientEvent(client.getFd(), EPOLLIN);
+        }
+    
+    } else if (response.getBodySource() == BODY_FILE) {
+        std::ifstream file(response.getFilePath(), std::ios::binary);
+        // AAAAAAAAAAAAAAAAAAAAAAAAAAAa rabani ana mgwania,
+        //  fuck i forgot to check the permissions of the file, i will do it in the handler tomorow
+        // bacause 39li w9af fhad lil
+        char buffer[4096];
+        file.read(buffer, sizeof(buffer));
+        size_t n = send(client.getFd(), buffer, file.gcount(), 0);
+        if (file.gcount() == 0) {
+            response.clear();
+            ChangeClientEvent(client.getFd(), EPOLLIN);
+        }
+    }
 }
 
 void ConnectionManager::run()

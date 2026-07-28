@@ -9,7 +9,7 @@
 // the mime_types that is associated with
 // the extention
 
-struct MimeTypesExt : public std::map<std::string, std::string> {
+struct MimeTypesExt : protected std::map<std::string, std::string> {
 	public:
 		typedef lexer::ContIter ContIter;
 		typedef std::map<std::string, std::string> MAP;
@@ -17,6 +17,7 @@ struct MimeTypesExt : public std::map<std::string, std::string> {
 		typedef std::map<std::string, HandlerFunc> MapHandler;
 
 		void parseMimeType(ContIter &begin);
+		std::string getMimeType(const std::string& ext) const;
 };
 
 #endif

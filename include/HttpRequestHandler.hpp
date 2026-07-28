@@ -4,6 +4,9 @@
 
 #include "webserver.hpp"
 
+
+#define server_name "1337-webserver"
+
 class HttpRequestHandler
 {
     private:
@@ -20,58 +23,36 @@ class HttpRequestHandler
             return *this;
         }
         ~HttpRequestHandler() {}
+        void makeError(int code);
         void handleRequest() {};
         void handleGet() {};
         void handlePost() {};
         void handleDelete() {};
+        void serveFile();
+        void generateAutoIndex();
+        void makeRedirect();
+        std::string HttpRequestHandler::generateAutoIndexHtml(const std::string& directoryPath);
 };
-
-
-void HttpRequestHandler::handleRequest()
-{
-    if  (request.getMethod() == "GET")
-    {
-        handleGet();
-    }
-    else if (request.getMethod() == "POST")
-    {
-        handlePost();
-    }
-    else if (request.getMethod() == "DELETE")
-    {
-        handleDelete();
-    }
-}
-
-void HttpRequestHandler::handleGet()
-{
-    const RouteResult& result = request._routeResult;
-
-    switch (result.action)
-    {
-        // case ACTION_SERVE_FILE:
-        //     serveFile();
-        //     break;w
-        // case ACTION_SERVE_INDEX:
-        //     serveFile();
-        //     break;
-        // case ACTION_AUTOINDEX:
-        //     generateAutoIndex();
-        //     break;
-        // case ACTION_REDIRECT:
-        //     response.makeRedirect();
-        //     break;
-        // case ACTION_ERROR:
-        //     response.makeError();
-        //     break;
-        // default:
-        //     response.makeError();
-        //     break;
-    }
-}
-
-void HttpRequestHandler::handlePost()
-{
-
-}
+    
 #endif
+
+// in the connection manager
+// switch(response.getBodyType())
+// {
+    //     case BODY_MEMORY:
+    
+    //         sendMemory();
+    
+    //         break;
+    
+    //     case BODY_FILE:
+    
+    //         sendFile();
+
+//         break;
+
+//     default:
+
+//         break;
+// }
+

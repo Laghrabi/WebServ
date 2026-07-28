@@ -1,3 +1,4 @@
+#include "HttpRequest.hpp"
 #include "../../../include/webserver.hpp"
 
 HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
@@ -160,6 +161,13 @@ bool	HttpRequest::parseRequestLine()
 	if (iss >> _method >> _uri >> _version)
 	{
 		if (iss >> trailingGarbage) {
+			_statusCode = BAD_REQUEST;
+			_currentState = ERROR;
+			return (false);
+		}
+		if (_uri.at(0) != '/')
+		{
+			_statusCode = BAD_REQUEST;
 			_currentState = ERROR;
 			return (false);
 		}
@@ -169,6 +177,7 @@ bool	HttpRequest::parseRequestLine()
 	}
 	else
 	{
+		_statusCode = BAD_REQUEST;
 		_currentState = ERROR;
 		return (false);
 	}

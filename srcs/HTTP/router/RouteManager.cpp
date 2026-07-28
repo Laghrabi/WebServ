@@ -85,33 +85,14 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
  * @param request The validated HttpRequest object.
  * @return A RouteResult containing the determined action, target path, and status code.
  */
-void RouteManager::processRequest(HttpRequest& request) const {
+void RouteManager::processRequest(HttpRequest& request) {
 	RouteResult& result = request._routeResult;
 	result.statusCode = OK;
-	std::string location;
 
-	result.route = matchRoute(request.getUriSegments(), request.getServer(), location);
-#ifdef DBUG
-	std::cout << "[(ROUTEMANAGER) location is matched: " << location << "]\n";
-#endif
-
-	std::string str = request.getRouteUri().substr(location.length());
-
-	// std::string physical = route->getAlias() + str;
-	if (result.route->isCgiEnable()) {
-	// if (route && route-> {
-	std::vector<std::string> vec;
-#ifdef DEBUG
-		std::cout << "[(CGI): file is " << str << "]\n";
-#endif
-
-		HttpRequest::normalizeUriHelper(str, vec);
-
-
-		if (isCgi(vec, result, location)) {
-			return ;
-		}
-	}
+	result.route = matchRoute(request.getUriSegments(), request.getServer(), _basePath);
+	
+	const Location* test = dynamic_cast<const Location*>(result.route);
+	std::cout << test->getAlias() << "==============\n";
 
 	if (result.route && !result.route->isAllowed(request.getMethod())) {
 		result.action = ACTION_ERROR;
@@ -126,18 +107,25 @@ void RouteManager::processRequest(HttpRequest& request) const {
 		return ;
 	}
 
-	std::string physicalPath = _locator.resolvePath(request.getRouteUri(), result.route, request.getServer());
-	// std::cout << "PHYSICAL_PATH= " << physicalPath << std::endl;
-	ResourceType type = _locator.getResourceType(physicalPath);
-	std::cout << "type is " << type << "\n";
-	// std::cout << "HELLO\n";
+	std::string physicalPath = _locator.buildPhysicalPath(request, _basePath, _resource);
 
+	if (result.route->isCgiEnable()) {
+	std::vector<std::string> vec;
+		HttpRequest::normalizeUriHelper(_resource, vec);
+		if (isCgi(vec, result, _basePath)) {
+			return ;
+		}
+
+}
+
+	physicalPath = _locator.resolvePath(physicalPath, result.route);
+	ResourceType type = _locator.getResourceType(physicalPath);
 	determineResourceAction(result, type, physicalPath, request.getRouteUri());
 
 	return ;
 }
 
-void RouteManager::determineResourceAction(RouteResult& result, ResourceType type, const std::string& physicalPath, const std::string& routeUri) const {
+void RouteManager::determineResourceAction(RouteResult& result, ResourceType type, const std::string& physicalPath, const std::string& routeUri)  {
     switch (type) {
         case RESOURCE_FILE:
             result.action = ACTION_SERVE_FILE;
@@ -183,7 +171,7 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 	 * @param server The target server configuration containing the routing tree.
 	 * @return A pointer to the most specific RouteConfig, or the server's default config if no match.
 	 */
-	const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server, std::string& location) const {
+	const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server, std::string& location){
 		if (!server)
 			return (NULL);
 		const RouteNode* currNode = &(server->m_route_tree);
@@ -220,44 +208,11 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 				break;
 			}
 		}
-		std::cout << "this is important " << bestMatch->getRoot() << " LOCATION: " << location << "\n";
+		std::cout << "this is important " << ((Location*)bestMatch)->getAlias() << " LOCATION: " << location << "\n";
+		std::cout << "this is important " << ((Location*)bestMatch)->getRoot() << " LOCATION: " << location << "\n";
 
 	return (bestMatch);
 }
-	// const RouteConfig* RouteManager::matchRoute(const std::vector<std::string>& uriSegments, const Server* server) const {
-	//     if (!server)
-	//         return (NULL);
-	//     const RouteNode* currNode = &(server->m_route_tree);
-	//     const RouteConfig* bestMatch = server;
-
-	//     if (currNode->config)
-	//         bestMatch = currNode->config;
-
-//     if (currNode->config)
-//         bestMatch = currNode->config;
-//     for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
-
-	//             if (currNode->config && (it + 1) == uriSegments.end())
-	// 			{
-	//                 bestMatch = currNode->config;
-	// 			}
-	//         } else {
-	//             break;
-	//         }
-	//     }
-
-	//             if (currNode->config && (it + 1) == uriSegments.end())
-	// 			{
-	//                 bestMatch = currNode->config;
-	// 			}
-	//         } else {
-	//             break;
-	//         }
-	//     }
-
-//     return (bestMatch);
-// }
-
 
 void RouteManager::printRouteAction(RouteAction action) {
     switch (action) {

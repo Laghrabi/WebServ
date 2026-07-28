@@ -26,11 +26,9 @@ RouteConfig::RouteConfig(const RouteConfig& other)
 	m_indexes(other.m_indexes),
 	m_autoindex(other.m_autoindex),
 	m_max_body_size(other.m_max_body_size),
-	m_max_body_size_exist(other.m_max_body_size_exist),
 	m_allowed_methods(other.m_allowed_methods),
 	m_cgi_map(other.m_cgi_map),
-	m_redirect(other.m_redirect),
-	m_does_redirect(other.m_does_redirect)
+	m_redirect(other.m_redirect)
 {
 }
 
@@ -42,11 +40,9 @@ RouteConfig& RouteConfig::operator=(const RouteConfig& other)
 	m_indexes = other.m_indexes;
 	m_autoindex = other.m_autoindex;
 	m_max_body_size = other.m_max_body_size;
-	m_max_body_size_exist = other.m_max_body_size_exist;
 	m_allowed_methods = other.m_allowed_methods;
 	m_cgi_map = other.m_cgi_map;
 	m_redirect = other.m_redirect;
-	m_does_redirect = other.m_does_redirect;
 	return *this;
 }
 
@@ -65,9 +61,9 @@ bool RouteConfig::RedirectCode(int code) const {
 void RouteConfig::parseRedirection(ContIter& begin) {
 	std::stringstream ss;
 	ss << begin->value;
-	ss >> m_redirect.first;
+	ss >> m_redirect.second.first;
 	std::cout << "redirection " << m_redirect.first << "\n";
-	if (!RedirectCode(m_redirect.first)) {
+	if (!RedirectCode(m_redirect.second.first)) {
 		throw (ParseConfig::ConfigExcept("invalid redirect code", begin->line));
 	}
 	++begin;
@@ -75,13 +71,13 @@ void RouteConfig::parseRedirection(ContIter& begin) {
 	if (begin->is_eof()) {
 		throw (ParseConfig::ConfigExcept("got code but nor url", begin->line));
 	}
-	m_redirect.second = begin->value;
-	m_does_redirect = true;
+	m_redirect.second.second = begin->value;
+	m_redirect.first = true;
 	++begin;
 }
 
 bool RouteConfig::doesRedirect(void) const {
-	return (m_does_redirect);
+	return (m_redirect.first);
 }
 
 void RouteConfig::initAvailableMethods() {
@@ -90,10 +86,10 @@ void RouteConfig::initAvailableMethods() {
 	s_available_methods.insert("DELETE");
 }
 
-RouteConfig::RouteConfig() : 
-	m_autoindex(false),
-	m_max_body_size_exist(false),
-	m_does_redirect(false){
+RouteConfig::RouteConfig() {
+		m_autoindex.first = false;
+		m_max_body_size.first = false;
+		m_redirect.first = false;
 		initAvailableMethods();
 		init();
 	}
@@ -130,7 +126,8 @@ void RouteConfig::parseAutoIndex(ContIter &begin) {
 	if (!begin->is("on") && !begin->is("off")) {
 		throw (ParseConfigType::ConfigExcept("autoindex simple directive expect on or off, unexpected '" + begin->value + "'", begin->line));
 	}
-	m_autoindex = begin->value == "on" ? true : false;
+	m_autoindex.second = begin->value == "on" ? true : false;
+	m_autoindex.first = true;
 	++begin;
 }
 
@@ -147,24 +144,18 @@ void RouteConfig::parseRoot(ContIter &begin) {
 }
 
 void RouteConfig::parseMaxBodySize(ContIter &begin) {
+	// TODO: check if the value is valid and add support for M and G
 	std::stringstream ss;
 	ss << begin->value;
 	// std::size_t size;
-	ss >> m_max_body_size;
-	m_max_body_size_exist = true;
+	ss >> m_max_body_size.second;
+	m_max_body_size.first = true;
 	++begin;
 }
 
-//
-// void RouteConfig::parseRouteConfig(ContIter &begin) {
-// 	std::string location = begin->value;
-// 	// check location
-// 	begin++;
-// 	m_location = location;
-// }
 
 void RouteConfig::parseUploadDir(ContIter &begin) {
-	// check if upload dir is valid
+	// TODO: check if upload dir is valid
 	m_upload_dir = begin->value;	
 	++begin;
 }
@@ -200,7 +191,7 @@ void RouteConfig::addMethod(const std::string& method) throw (std::exception) {
 }
 
 const std::pair<int, std::string>& RouteConfig::getRedirection() const{
-	return (m_redirect);
+	return (m_redirect.second);
 }
 
 bool RouteConfig::isAllowed(const std::string& method) const{
@@ -224,18 +215,22 @@ const std::list<std::string>& RouteConfig::getIndexes() const{
 	return m_indexes;
 }
 
-bool RouteConfig::isAutoindex() const{
-	return m_autoindex;
+const std::pair<bool, bool>& RouteConfig::getAutoIndex() const {
+	return (m_autoindex);
 }
 
-std::size_t RouteConfig::getMaxBodySize() const
-{
-	return m_max_body_size;
+bool RouteConfig::isAutoindex() const{
+	return m_autoindex.second;
+}
+
+
+std::size_t RouteConfig::getMaxBodySize() const {
+	return m_max_body_size.second;
 }
 
 bool RouteConfig::hasMaxBodySize() const
 {
-	return m_max_body_size_exist;
+	return m_max_body_size.first;
 }
 
 const std::set<std::string>& RouteConfig::getAllowedMethods() const {

@@ -18,6 +18,8 @@ void ParseConfig::make_pair(const Server& server) {
 Config ParseConfig::parse(void) {
 	int server_begin_line;
 	while (m_it->is(WORD)) {
+
+		std::cout << "hello" << std::endl;
 		ServerType server;
 		if (m_it->is("server")) {
 			server_begin_line = m_it->line;
@@ -37,6 +39,7 @@ Config ParseConfig::parse(void) {
 			break ;
 		}
 	}
+	// TODO: check if there is at least one server
  	return (m_config);
 }
 

@@ -28,3 +28,11 @@ void MimeTypesExt::parseMimeType(ContIter &begin) {
 		++begin;
 	}
 }
+
+std::string MimeTypesExt::getMimeType(const std::string& ext) const{
+	MAP::const_iterator it = find(ext);
+	if (it == end()) {
+		return ("application/octet-stream");
+	}
+	return (it->second);
+}

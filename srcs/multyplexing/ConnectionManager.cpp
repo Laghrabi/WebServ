@@ -1,5 +1,7 @@
 #include "ConnectionManager.hpp"
-#include "webserver.hpp"
+#include "HttpRequestHandler.hpp"
+#include "HttpResponse.hpp"
+
 
 ConnectionManager::ConnectionManager(const Config& config)
     : m_config(config)
@@ -234,6 +236,9 @@ void ConnectionManager::sendClient(Client& client)
     HttpRequestHandler handler(request, response);
     handler.handleRequest();
     std::vector<char> chunk = response.assembleResponse();
+    std::cout << chunk.size() << std::endl;
+    // write(1, &chunk, chunk.size()) ;
+    std::cout << std::string(chunk.begin(), chunk.end()) << "\n";
     if (chunk.empty())
     {
         response.clear();

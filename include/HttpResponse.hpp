@@ -66,8 +66,15 @@ class HttpResponse
 		void setContentLength(size_t length);
 		void setHeadersSent(bool sent);
 		void setByteSent(size_t bytes);
-		void setHeadersSize(int size);
-		void setHeadersBytesSent(int bytes);
+		void setHeadersSize(int size)
+		{
+			headersSize= size;
+		}
+
+		void setHeadersBytesSent(int bytes)
+		{
+			headersBytesSent += bytes;
+		}
 
 		bool getHeadersSent() const;
 		int getHeadersSize() const;
@@ -80,7 +87,7 @@ class HttpResponse
 		const std::vector<char> getBufferBody() const;
 		size_t getContentLength() const;
 		size_t getBytesSent() const;
-		std::map<int, std::string>& const getStatusCodeMap();
+		const std::map<int, std::string>&  getStatusCodeMap();
 
 	};
 

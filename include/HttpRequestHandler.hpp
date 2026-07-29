@@ -2,10 +2,10 @@
 #define HTTPREQUESTHANDLER_CPP
 
 
+// #include "HttpRequest.hpp"
 #include "webserver.hpp"
 
-
-#define server_name "1337-webserver"
+#define SERVER_NAME "1337-webserver"
 
 class HttpRequestHandler
 {
@@ -13,25 +13,27 @@ class HttpRequestHandler
         HttpRequest& request;
         HttpResponse& response;
     
-    public:
-        HttpRequestHandler(HttpRequest& req, HttpResponse& res) : request(req), response(res) {}
+        HttpRequestHandler(const HttpRequestHandler& other):
+            request(other.request), response(other.response)
+        {
+            (void) other;
+        }
         HttpRequestHandler& operator=(const HttpRequestHandler& other) {
-            if (this != &other) {
-                request = other.request;
-                response = other.response;
-            }
+            (void) other;
             return *this;
         }
-        ~HttpRequestHandler() {}
+    public:
+        HttpRequestHandler(HttpRequest& req, HttpResponse& res) : request(req), response(res) {}
+        ~HttpRequestHandler() {};
         void makeError(int code);
-        void handleRequest() {};
-        void handleGet() {};
-        void handlePost() {};
-        void handleDelete() {};
+        void handleRequest();
+        void handleGet();
+        void handlePost();
+        void handleDelete();
         void serveFile();
         void generateAutoIndex();
         void makeRedirect();
-        std::string HttpRequestHandler::generateAutoIndexHtml(const std::string& directoryPath);
+        std::string generateAutoIndexHtml(const std::string& directoryPath);
 };
     
 #endif

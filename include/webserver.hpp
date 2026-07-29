@@ -66,8 +66,9 @@ typedef std::vector<token> TokenCont;
 #include "StringUtils.hpp"
 // #include "CgiRequest.hpp"
 #include "HttpResponse.hpp"
-#include "HttpRequestHandler.hpp"
+// #include "HttpRequestHandler.hpp"
 
+std::string to_string(std::size_t num);
 
 #define DEFAULT_ADDR 0
 #define DEFAULT_PORT 80

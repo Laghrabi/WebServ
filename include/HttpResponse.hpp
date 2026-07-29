@@ -34,6 +34,8 @@ class HttpResponse
 		int									statusCode;
 		std::string							statusMessage;
 		std::map<std::string, std::string>	headers;
+		int 								headersSize;
+		int 								headersBytesSent;
 		ResponseBodySource					bodySource;
 		std::ifstream						fileBody;
 		std::string							filePath;
@@ -41,7 +43,7 @@ class HttpResponse
 	    size_t								contentLength;
 		size_t								bytesSent;
 		bool 								headersSent;
-		static std::map<int, std::string> statusCodeMap;
+		static std::map<int, std::string> 	statusCodeMap;
 
 	public:
 		static void init();
@@ -50,7 +52,7 @@ class HttpResponse
 		HttpResponse& operator=(const HttpResponse& other);
 		~HttpResponse();
 		
-		std::vector<char> assembleResponse() const;
+		std::vector<char> assembleResponse();
 
 		void clear();
 
@@ -59,15 +61,23 @@ class HttpResponse
 		void setHeader(const std::string& key, const std::string& value);
 		void setBodySource(ResponseBodySource source);
 		void setFilePath(const std::string& path);
+		void setFileBody(const std::string& path);
 		void setBufferBody(const std::vector<char>& body);
 		void setContentLength(size_t length);
 		void setHeadersSent(bool sent);
 		void setByteSent(size_t bytes);
+		void setHeadersSize(int size);
+		void setHeadersBytesSent(int bytes);
 
 		bool getHeadersSent() const;
+		int getHeadersSize() const;
+		int getHeadersBytesSent() const;
+		std::string getStartline () const;
+		std::string getHeaders() const;
+		std::string getStartlineAndHeaders() const;
 		ResponseBodySource getBodySource() const;
 		const std::string& getFilePath() const;
-		const std::vector<char>& getBufferBody() const;
+		const std::vector<char> getBufferBody() const;
 		size_t getContentLength() const;
 		size_t getBytesSent() const;
 		std::map<int, std::string>& const getStatusCodeMap();

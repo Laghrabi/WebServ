@@ -20,7 +20,17 @@ void HttpRequestHandler::serveFile()
         makeError(404);
         return;
     }
-    // check premission
+    if (!S_ISREG(st.st_mode))
+    {
+        makeError(403);
+        return;
+    }
+    if (access(filePath.c_str(), R_OK) != 0)
+    {
+        makeError(403);
+        return;
+    }
+    response.setFileBody(filePath);
     response.setBodySource(BODY_FILE);
     response.setFilePath(filePath);
     response.setStatusCode(result.statusCode); // im gonna wait for my partner to implement the getStatusMessage map

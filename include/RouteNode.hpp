@@ -9,7 +9,7 @@
  */
 struct RouteNode {
 	std::string segmentName;
-	RouteConfig* config; 
+	Location* config; 
 	std::map<std::string, RouteNode*> children;
 
 	RouteNode(const std::string& name);

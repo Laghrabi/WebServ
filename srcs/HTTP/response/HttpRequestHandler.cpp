@@ -45,28 +45,36 @@ void HttpRequestHandler::serveFile()
     response.setHeader("server", SERVER_NAME);
 }
 
-// std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directoryPath)
-// {
-//     // hamzaaa haaa l3ar lamasawblina chi html yr7am bok rah ma3reftch kindirlo
-//     // HELP ME PLEASE
-// }
+void HttpRequestHandler::generateAutoIndexHtml(const std::string &directoryPath)
+{
+        DIR* p = opendir(directoryPath.c_str());
+        struct dirent* l;
+        while ((l = readdir(p))) {
+                std::cerr << "<a href=\"" << l->d_name << "\"" << l->d_name << "</a>" << "\n";
+        }
+        closedir(p);
+}
 
-// void HttpRequestHandler::generateAutoIndex()
-// {
-//     const RouteResult &result = request._routeResult;
-//     const std::string &directoryPath = result.targetPath;
-
-//     std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
-//     response.setBodySource(BODY_BUFFER);
-//     response.setBufferBody(std::vector<char>(autoIndexHtml.begin(), autoIndexHtml.end()));
-//     response.setStatusCode(200);
-//     response.setStatusMessage("OK");
-//     response.setHeader("Content-Type", "text/html");
-//     response.setHeader("Content-Length", to_string(autoIndexHtml.size()));
-//     response.setHeader("Connection", "keep-alive");
-//     response.setHeader("Date", getCurrentDate());
-//     response.setHeader("server", SERVER_NAME);
-// }
+void HttpRequestHandler::generateAutoIndex()
+{
+    std::cerr <<"error\nA A" << "\n";
+    const RouteResult &result = request._routeResult;
+    const std::string &directoryPath = result.targetPath;
+    if (access(directoryPath.c_str(), R_OK) != 0)
+    {
+        makeError(FORBIDDEN);
+        return;
+    }
+     generateAutoIndexHtml(directoryPath);
+    response.setBodySource(BODY_BUFFER);
+    response.setStatusCode(200);
+    response.setStatusMessage("OK");
+    response.setHeader("Content-Type", "text/html");
+    // response.setHeader("Content-Length", to_string(autoIndexHtml.size())); // important
+    response.setHeader("Connection", "keep-alive");
+    response.setHeader("Date", getCurrentDate());
+    response.setHeader("server", SERVER_NAME);
+}
 
 void HttpRequestHandler::makeRedirect()
 {
@@ -97,6 +105,10 @@ void HttpRequestHandler::makeError(int code)
 void HttpRequestHandler::handleGet()
 {
     const RouteResult &result = request._routeResult;
+		int status_code;
+		if (request.getCurrentState() != FINISHED) {
+			status_code = request.getStatusCode();
+		}
 
     switch (result.action)
     {
@@ -106,14 +118,14 @@ void HttpRequestHandler::handleGet()
     case ACTION_SERVE_INDEX:
         serveFile();
         break;
-    // case ACTION_AUTOINDEX:
-    //     generateAutoIndex();
-    //     break;
+    case ACTION_AUTOINDEX:
+        generateAutoIndex();
+        break;
     // case ACTION_REDIRECT:
     //     makeRedirect();
     //     break;
     default:
-        makeError(result.statusCode);
+        makeError(status_code);
         break;
     }
 }

@@ -2,8 +2,8 @@
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
+#include "HttpRequest.hpp"
 #include "webserver.hpp"
-
 
 // // headers that i need to handle
 // // Content-Length
@@ -39,13 +39,14 @@ class HttpResponse
 		ResponseBodySource					bodySource;
 		std::ifstream						fileBody;
 		std::string							filePath;
-		std::vector<char>					bufferBody;
 	    size_t								contentLength;
 		size_t								bytesSent;
 		bool 								headersSent;
-		static std::map<int, std::string> 	statusCodeMap;
-
+		static std::map<HttpStatus, std::string> 	statusCodeMap;
+		
 	public:
+		std::vector<char>					bufferBody;
+	
 		static void init();
 		HttpResponse();
 		HttpResponse(const HttpResponse& other);
@@ -65,7 +66,7 @@ class HttpResponse
 		void setBufferBody(const std::vector<char>& body);
 		void setContentLength(size_t length);
 		void setHeadersSent(bool sent);
-		void setByteSent(size_t bytes);
+		void eraseSendBytes(size_t bytes);
 		void setHeadersSize(int size)
 		{
 			headersSize= size;
@@ -87,7 +88,7 @@ class HttpResponse
 		const std::vector<char> getBufferBody() const;
 		size_t getContentLength() const;
 		size_t getBytesSent() const;
-		const std::map<int, std::string>&  getStatusCodeMap();
+		const std::map<HttpStatus, std::string>&  getStatusCodeMap();
 
 	};
 

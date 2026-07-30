@@ -33,7 +33,7 @@ class HttpRequestHandler
         void serveFile();
         void generateAutoIndex();
         void makeRedirect();
-        std::string generateAutoIndexHtml(const std::string& directoryPath);
+         void generateAutoIndexHtml(const std::string& directoryPath);
 };
     
 #endif

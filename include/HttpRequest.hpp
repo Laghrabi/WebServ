@@ -33,33 +33,6 @@ enum ParseState {
 	ERROR
 };
 
-/**
- * @brief Defines standard HTTP status codes used throughout the server.
- * Maps specific error and success states encountered during request parsing 
- * and response generation to their corresponding RFC 7231 integer codes. 
- * This centralizes status management and prevents the use of magic numbers.
- */
-enum HttpStatus {
-    OK = 200,
-    MULTIPLE_CHOICES = 300,
-    MOVED_PERMANENTLY = 301,
-    FOUND = 302,
-    SEE_OTHER = 303,
-    NOT_MODIFIED = 304,
-    TEMPORARY_REDIRECT = 307,
-    PERMANENT_REDIRECT = 308,
-    BAD_REQUEST = 400,
-    FORBIDDEN = 403,
-    NOT_FOUND = 404,
-    METHOD_NOT_ALLOWED = 405,
-    BODY_LENGTH_REQUIRED = 411,
-    PAYLOAD_TOO_LARGE = 413,
-    URI_TOO_LONG = 414,
-    INTERNAL_SERVER_ERROR = 500,
-    NOT_IMPLEMENTED = 501,
-    HTTP_VERSION_NOT_SUPPORTED = 505
-};
-
 class HttpRequest {
     private:
         HttpStatus							_statusCode;

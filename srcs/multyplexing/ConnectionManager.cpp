@@ -201,7 +201,7 @@ void ConnectionManager::recieveClient(Client& client)
         route_manager.processRequest(request);
         RouteResult result = request._routeResult;
 
-            std::cout << "result status Code = " << result.statusCode << "\n";
+        std::cout << "result status Code = " << result.statusCode << "\n";
         if (result.action != ACTION_ERROR) {
             std::cout << "target path = " << result.targetPath << "\n";
          
@@ -215,29 +215,22 @@ void ConnectionManager::recieveClient(Client& client)
             std::cout << "error\n";
             // exit (5);
         }
-        
     } else if (state == ERROR) {
         request.printHttpStatus(request.getStatusCode());
+    } else {
+        return ;
     }
-        ChangeClientEvent(client.getFd(), EPOLLOUT);
-    //     RouteResult result = routeManager.processRequest(client.m_request);
-    //     client.generateResponse(result);
-    // } 
-    // else if (state == ERROR) {
-    //     int errorCode = client.m_request.getStatusCode(); 
-    //     client.generateErrorResponse(errorCode);
-    // }
+    HttpResponse& response = client.getResponse();
+    HttpRequestHandler handler(request, response);
+    handler.handleRequest();
+    ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
 
 void ConnectionManager::sendClient(Client& client)
 {
-    HttpRequest& request = client.getRequest();
     HttpResponse& response = client.getResponse();
-    HttpRequestHandler handler(request, response);
-    handler.handleRequest();
-    std::vector<char> chunk = response.assembleResponse();
+	std::vector<char> chunk = response.assembleResponse();
     std::cout << chunk.size() << std::endl;
-    // write(1, &chunk, chunk.size()) ;
     std::cout << std::string(chunk.begin(), chunk.end()) << "\n";
     if (chunk.empty())
     {
@@ -252,7 +245,7 @@ void ConnectionManager::sendClient(Client& client)
     }
     else
     {
-        response.setByteSent(n);
+        response.eraseSendBytes(n);
     }
 }
 

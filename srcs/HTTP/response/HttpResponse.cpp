@@ -1,36 +1,39 @@
 #include "webserver.hpp"
-std::map<int, std::string> 	HttpResponse::statusCodeMap;
+std::map<HttpStatus, std::string> 	HttpResponse::statusCodeMap;
 
 HttpResponse::HttpResponse()
 	: httpVersion("HTTP/1.1"),
-	  statusCode(),
-	  statusMessage(),
-	  headers(),
-	  headersSize(0),
-	  headersBytesSent(0),
-	  bodySource(BODY_NONE),
-	  filePath(),
-	  bufferBody(),
-	  contentLength(0),
-	  bytesSent(0),
-	  headersSent(false)
+	statusCode(),
+	statusMessage(),
+	headers(),
+	headersSize(0),
+	headersBytesSent(0),
+	bodySource(BODY_NONE),
+	filePath(),
+	contentLength(0),
+	bytesSent(0),
+	headersSent(false),
+	bufferBody()
 {
+	bufferBody.reserve(SENDSIZE);
 }
 
 HttpResponse::HttpResponse(const HttpResponse& other)
 	: httpVersion(other.httpVersion),
-	  statusCode(other.statusCode),
-	  statusMessage(other.statusMessage),
-	  headers(other.headers),
-	  headersSize(other.headersSize),
-	  headersBytesSent(other.headersBytesSent),
-	  bodySource(other.bodySource),
-	  filePath(other.filePath),
-	  bufferBody(other.bufferBody),
-	  contentLength(other.contentLength),
-	  bytesSent(other.bytesSent),
-	  headersSent(other.headersSent)
-{}
+	statusCode(other.statusCode),
+	statusMessage(other.statusMessage),
+	headers(other.headers),
+	headersSize(other.headersSize),
+	headersBytesSent(other.headersBytesSent),
+	bodySource(other.bodySource),
+	filePath(other.filePath),
+	contentLength(other.contentLength),
+	bytesSent(other.bytesSent),
+	headersSent(other.headersSent),
+	bufferBody(other.bufferBody)
+{
+	bufferBody.reserve(SENDSIZE);
+}
 
 
 HttpResponse& HttpResponse::operator=(const HttpResponse& other) {
@@ -38,15 +41,15 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& other) {
 		httpVersion = other.httpVersion;
 		statusCode = other.statusCode;
 		statusMessage = other.statusMessage;
-			headers = other.headers;
-			bodySource = other.bodySource;
-			filePath = other.filePath;
-			bufferBody = other.bufferBody;
-			contentLength = other.contentLength;
-			bytesSent = other.bytesSent;
-			headersSent = other.headersSent;
-		}
-		return *this;
+		headers = other.headers;
+		bodySource = other.bodySource;
+		filePath = other.filePath;
+		bufferBody = other.bufferBody;
+		contentLength = other.contentLength;
+		bytesSent = other.bytesSent;
+		headersSent = other.headersSent;
+	}
+	return *this;
 }
 
 HttpResponse::~HttpResponse() {
@@ -86,12 +89,12 @@ void HttpResponse::setFileBody(const std::string& path)
 	std::cout << fileBody.is_open() << "yes" << std::endl;
 	fileBody.open(path.c_str());
 	std::cout << "len = " << path.length() << "\n";
-	  std::cout << ", fail()=" << fileBody.fail() << "file name" << path << "bla" << std::endl;
+	std::cout << ", fail()=" << fileBody.fail() << "file name" << path << "bla" << std::endl;
 }
 
 void HttpResponse::setBufferBody(const std::vector<char>& body)
 {
-	bufferBody = body;
+	bufferBody.insert(bufferBody.end(), body.begin(), body.end());
 }
 
 void HttpResponse::setContentLength(size_t length)
@@ -104,9 +107,10 @@ void HttpResponse::setHeadersSent(bool sent)
 	headersSent = sent;
 }
 
-void HttpResponse::setByteSent(size_t bytes)
+void HttpResponse::eraseSendBytes(size_t bytes)
 {
-	bytesSent += bytes;
+	std::vector<char>::iterator vecBegin = bufferBody.begin();
+	bufferBody.erase(vecBegin, vecBegin + bytes);
 }
 
 
@@ -171,17 +175,17 @@ size_t HttpResponse::getBytesSent() const
 }
 
 
-const std::map<int, std::string>&  HttpResponse::getStatusCodeMap()
+const std::map<HttpStatus, std::string>&  HttpResponse::getStatusCodeMap()
 {
 	return (statusCodeMap);
 }
 
 void print_state (const std::ios& stream) {
-  std::cout << " good()=" << stream.good();
-  std::cout << ", eof()=" << stream.eof();
-  std::cout << ", fail()=" << stream.fail();
-  std::cout << ", bad()=" << stream.bad();
-  std::cout << std::endl;
+	std::cout << " good()=" << stream.good();
+	std::cout << ", eof()=" << stream.eof();
+	std::cout << ", fail()=" << stream.fail();
+	std::cout << ", bad()=" << stream.bad();
+	std::cout << std::endl;
 }
 
 void HttpResponse::clear()
@@ -209,35 +213,42 @@ std::vector<char> HttpResponse::assembleResponse() {
 		if (getHeadersBytesSent() < getHeadersSize()) {
 			return std::vector<char>(responseString.begin() + getHeadersBytesSent(), responseString.end());
 		}
-		else
+		else {
 			setHeadersSent(true);
+			std::cerr << "i send the headers\n" ;
+		}
 	}
 	if (getBodySource() == BODY_BUFFER) {
-		const std::vector<char> bodyBuffer = getBufferBody();
+		const std::vector<char>& bufferBody = getBufferBody();
 		size_t sent = getBytesSent();
-		if (sent >= bodyBuffer.size())
-		return std::vector<char>();
-		size_t chunkSize = bodyBuffer.size() - sent;
+		if (sent >= bufferBody.size())
+			return std::vector<char>();
+		size_t chunkSize = bufferBody.size() - sent;
 		if (chunkSize > SENDSIZE)
-		chunkSize = SENDSIZE;
-		return std::vector<char>(bodyBuffer.begin() + sent,
-		bodyBuffer.begin() + sent + chunkSize);
-    } else if (getBodySource() == BODY_FILE) {
-		std::cout << "hello\n";
-        char buffer[4096] = {0};
-			print_state(fileBody);
-        fileBody.read(buffer, sizeof(buffer) - 1);
-		print_state(fileBody);
-		std::string str(buffer);
-		
-		// std::streamsize bytesRead = fileBody.gcount();
-		std::cout << "-------------" << fileBody.good() << std::endl;
-        // if (bytesRead <= 0)
-        //     return std::vector<char>();
-        return std::vector<char>(str.begin(), str.end());
-    }
-    return std::vector<char>();
+			chunkSize = SENDSIZE;
+		return std::vector<char>(bufferBody.begin() + sent,
+				bufferBody.begin() + sent + chunkSize);
+	} else if (getBodySource() == BODY_FILE) {
+		if (bufferBody.empty())
+		{
+		std::cerr << "i will send the body\n" ;
+			char buffer[SENDSIZE + 1];
+			buffer[SENDSIZE] = 0;
+			fileBody.read(buffer, SENDSIZE);
+			std::cerr << buffer << "\n";
+			size_t size = fileBody.gcount();
+			std::cerr << size << "\n";
+			if (size > 0)
+				copyArrayToVec(buffer, size, bufferBody);
+			std::cerr << "size of vector is " << bufferBody.size() << "\n";
+		}
+		return bufferBody; 
+	}
+	return std::vector<char>();
 }
+
+
+
 
 
 void HttpResponse::init()
@@ -246,37 +257,39 @@ void HttpResponse::init()
 		return;
 
 	// 2xx Success
-	statusCodeMap.insert(std::make_pair(200, "OK"));
-	statusCodeMap.insert(std::make_pair(201, "Created"));
-	statusCodeMap.insert(std::make_pair(202, "Accepted"));
-	statusCodeMap.insert(std::make_pair(204, "No Content"));
+	statusCodeMap.insert(std::make_pair(OK, "OK"));
+	statusCodeMap.insert(std::make_pair(CREATED, "Created"));
+	statusCodeMap.insert(std::make_pair(ACCEPTED, "Accepted"));
+	statusCodeMap.insert(std::make_pair(NO_CONTENT, "No Content"));
 
 	// 3xx Redirection
-	statusCodeMap.insert(std::make_pair(300, "Multiple Choices"));
-	statusCodeMap.insert(std::make_pair(301, "Moved Permanently"));
-	statusCodeMap.insert(std::make_pair(302, "Found"));
-	statusCodeMap.insert(std::make_pair(303, "See Other"));
-	statusCodeMap.insert(std::make_pair(304, "Not Modified"));
-	statusCodeMap.insert(std::make_pair(305, "Use Proxy"));
-	statusCodeMap.insert(std::make_pair(306, "(Unused)"));
-	statusCodeMap.insert(std::make_pair(307, "Temporary Redirect"));
-	statusCodeMap.insert(std::make_pair(308, "Permanent Redirect"));
+	statusCodeMap.insert(std::make_pair(MULTIPLE_CHOICES, "Multiple Choices"));
+	statusCodeMap.insert(std::make_pair(MOVED_PERMANENTLY, "Moved Permanently"));
+	statusCodeMap.insert(std::make_pair(FOUND, "Found"));
+	statusCodeMap.insert(std::make_pair(SEE_OTHER, "See Other"));
+	statusCodeMap.insert(std::make_pair(NOT_MODIFIED, "Not Modified"));
+	statusCodeMap.insert(std::make_pair(USE_PROXY, "Use Proxy"));
+	statusCodeMap.insert(std::make_pair(UNUSED, "(Unused)"));
+	statusCodeMap.insert(std::make_pair(TEMPORARY_REDIRECT, "Temporary Redirect"));
+	statusCodeMap.insert(std::make_pair(PERMANENT_REDIRECT, "Permanent Redirect"));
 
 	// 4xx Client Errors
-	statusCodeMap.insert(std::make_pair(400, "Bad Request"));
-	statusCodeMap.insert(std::make_pair(403, "Forbidden"));
-	statusCodeMap.insert(std::make_pair(404, "Not Found"));
-	statusCodeMap.insert(std::make_pair(405, "Method Not Allowed"));
-	statusCodeMap.insert(std::make_pair(408, "Request Timeout"));
-	statusCodeMap.insert(std::make_pair(409, "Conflict"));
-	statusCodeMap.insert(std::make_pair(411, "Length Required"));
-	statusCodeMap.insert(std::make_pair(413, "Payload Too Large"));
-	statusCodeMap.insert(std::make_pair(414, "URI Too Long"));
-	statusCodeMap.insert(std::make_pair(415, "Unsupported Media Type"));
-	statusCodeMap.insert(std::make_pair(500, "Internal Server Error"));
-	statusCodeMap.insert(std::make_pair(501, "Not Implemented"));
-	statusCodeMap.insert(std::make_pair(502, "Bad Gateway"));
-	statusCodeMap.insert(std::make_pair(503, "Service Unavailable"));
-	statusCodeMap.insert(std::make_pair(504, "Gateway Timeout"));
-	statusCodeMap.insert(std::make_pair(505, "HTTP Version Not Supported"));
+	statusCodeMap.insert(std::make_pair(BAD_REQUEST, "Bad Request"));
+	statusCodeMap.insert(std::make_pair(FORBIDDEN, "Forbidden"));
+	statusCodeMap.insert(std::make_pair(NOT_FOUND, "Not Found"));
+	statusCodeMap.insert(std::make_pair(METHOD_NOT_ALLOWED, "Method Not Allowed"));
+	statusCodeMap.insert(std::make_pair(REQUEST_TIMEOUT, "Request Timeout"));
+	statusCodeMap.insert(std::make_pair(CONFLICT, "Conflict"));
+	statusCodeMap.insert(std::make_pair(BODY_LENGTH_REQUIRED, "Length Required"));
+	statusCodeMap.insert(std::make_pair(PAYLOAD_TOO_LARGE, "Payload Too Large"));
+	statusCodeMap.insert(std::make_pair(URI_TOO_LONG, "URI Too Long"));
+	statusCodeMap.insert(std::make_pair(UNSUPPORTED_MEDIA_TYPE, "Unsupported Media Type"));
+
+	// 5xx Server Errors
+	statusCodeMap.insert(std::make_pair(INTERNAL_SERVER_ERROR, "Internal Server Error"));
+	statusCodeMap.insert(std::make_pair(NOT_IMPLEMENTED, "Not Implemented"));
+	statusCodeMap.insert(std::make_pair(BAD_GATEWAY, "Bad Gateway"));
+	statusCodeMap.insert(std::make_pair(SERVICE_UNAVAILABLE, "Service Unavailable"));
+	statusCodeMap.insert(std::make_pair(GATEWAY_TIMEOUT, "Gateway Timeout"));
+	statusCodeMap.insert(std::make_pair(HTTP_VERSION_NOT_SUPPORTED, "HTTP Version Not Supported"));
 }

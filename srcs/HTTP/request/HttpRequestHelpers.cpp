@@ -49,20 +49,20 @@ const Server* HttpRequest::findServer(const std::string& name) {
 	Config::ServerMultiMapConstIter begin = _serverRange.first;
 	const Config::ServerMultiMapConstIter& end = _serverRange.second;
 	
-	std::string host = name;
- 	if (!host.empty() && host[0] == '[') {
- 		const size_t rb = host.find(']');
+	_host = name;
+ 	if (!_host.empty() && _host[0] == '[') {
+ 		const size_t rb = _host.find(']');
  		if (rb != std::string::npos)
- 			host = host.substr(1, rb - 1);
+ 			_host = _host.substr(1, rb - 1);
  	} else {
- 		const size_t colon = host.find(':');
+ 		const size_t colon = _host.find(':');
  		if (colon != std::string::npos)
- 			host = host.substr(0, colon);
+ 			_host = _host.substr(0, colon);
  	}
 
 	for (; begin != end; ++begin) {
 		const Server *server = &begin->second;
-		if (server->hasServerName(host)) {
+		if (server->hasServerName(_host)) {
 			return (server);
 		}
 	}

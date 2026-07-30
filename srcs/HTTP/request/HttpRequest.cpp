@@ -31,6 +31,7 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
       	_EncodedUriSegments(other._EncodedUriSegments),
       	_UriSegments(other._UriSegments),
 		_queryString(other._queryString),
+		_host(other._host),
 		_queryParams(other._queryParams),
 		_version(other._version),
 		_headers(other._headers),
@@ -64,6 +65,7 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
         		_EncodedUriSegments = other._EncodedUriSegments;
         		_UriSegments = other._UriSegments;
 				_queryString = other._queryString;
+				_host = other._host;
 				_queryParams = other._queryParams;
 				_version = other._version;
 				_headers = other._headers;

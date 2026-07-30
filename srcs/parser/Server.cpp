@@ -246,7 +246,6 @@ void Server::buildRouteTree() {
 		}
 		m_locations[i].copyServerRouteConfig(*this);
 		currentNode->config = new Location;
-		*((Location*)currentNode->config) = m_locations[i]; 
-		// std::cout << ((Location*)currentNode->config)->getAlias() << "aklsdflkajsldkfjalsdkjflkj";
+		*currentNode->config = m_locations[i]; 
 	}
 }

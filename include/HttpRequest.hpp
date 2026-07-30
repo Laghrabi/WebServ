@@ -46,6 +46,7 @@ class HttpRequest {
         std::vector<std::string>            _EncodedUriSegments; // vector of encoded and normalized uri segments.
         std::vector<std::string>            _UriSegments; // vector of decoded and normalized uri segments.
     	std::string							_queryString;
+        std::string                         _host;
         std::multimap<std::string, std::string> _queryParams;
         std::string							_version;
         std::map<std::string, std::string>	_headers;

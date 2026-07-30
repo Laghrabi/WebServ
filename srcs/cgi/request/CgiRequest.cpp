@@ -1,5 +1,20 @@
 #include "CgiRequest.hpp"
 
+/* NOTE: 
+ * GATEWAY_INTERFACE
+ * PATH_INFO                             FOUND
+ * QUERY_STRING [EXIST_ALWAYS]            FOUND
+ * REMOTE_ADDR [EXIST_ALWAYS]           FOUND
+ * REMOTE_HOST [not exist]             FOUND
+ * REMOTE_IDENT [not must]
+ * REMOTE_USER [ idk ]
+ * REQUEST_METHOD                         FOUND
+ * SCRIPT_NAME  [EXIST_ALWAYS] FOUND
+ * SERVER_NAME = hostname | ipv4-address | ( "[" ipv6-address "]"
+ * SERVER_PORT [EXIST ALWAYS] FOUND
+ * SERVER_SOFTWARE [EXIST ALWAYS] FOUND
+ * */
+
 std::string CgiRequest::toCgiEnvName(const std::string& name) {
 	std::string res = "HTTP_" + name;
 	std::size_t pos = 0;
@@ -86,13 +101,19 @@ void CgiRequest::setServerEnv() {
 // NOTE:   Note that this variable MUST be set, even if the port is the default
  //  port for the scheme and could otherwise be omitted from a URI.
 	m_env_vec.push_back("SERVER_ADDR=" + iport.getIpStr());
+	m_env_vec.push_back("SERVER_NAME="); // INFO: i nee that one
 	m_env_vec.push_back("SERVER_PORT=" + m_request.getServerIPort().getPortStr());
 	m_env_vec.push_back("SERVER_PROTOCOL=HTTP/1.1");
 }
 
 void CgiRequest::setScriptInfoEnv() {
 	m_env_vec.push_back("SCRIPT_FILENAME=");
-	m_env_vec.push_back("SCRIPT_NAME=");
+	m_env_vec.push_back("SCRIPT_NAME=" + m_request._routeResult.cgiInfo.scriptName);
+}
+
+void CgiRequest::set() {
+	m_env_vec.push_back("GATEWAY_INTERFACE=CGI/1.1");
+
 }
 
 void CgiRequest::setEnv(void) {

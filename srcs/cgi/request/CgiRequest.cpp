@@ -111,10 +111,10 @@ void CgiRequest::setScriptInfoEnv() {
 	m_env_vec.push_back("SCRIPT_NAME=" + m_request._routeResult.cgiInfo.scriptName);
 }
 
-void CgiRequest::set() {
-	m_env_vec.push_back("GATEWAY_INTERFACE=CGI/1.1");
-
-}
+// void CgiRequest::set() {
+// 	m_env_vec.push_back("GATEWAY_INTERFACE=CGI/1.1");
+//
+// }
 
 void CgiRequest::setEnv(void) {
 	setRequestEnv();

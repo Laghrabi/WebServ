@@ -10,7 +10,7 @@
 
 	/**
 	 * @brief Copy constructor for RouteNode, performing a deep copy of the tree.
-	 * * Deeply copies the `segmentName`, clones the `RouteConfig` (if present),
+	 * * Deeply copies the `segmentName`, clones the `Location` (if present),
 	 * and recursively clones all child nodes to ensure the new tree is completely 
 	 * independent of the original.
 	 * @param other The RouteNode instance to copy.
@@ -19,8 +19,7 @@
 		segmentName = other.segmentName;
 		if (other.config) {
 			config = new Location;
-
-			*((Location*)config) = *(Location*)other.config;
+			*config = *other.config;
 		}
 		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 
 				it != other.children.end(); ++it) {
@@ -39,7 +38,7 @@
 		segmentName = other.segmentName;
 		if (other.config) {
 			config = new Location;
-			*((Location*)config) = *(Location*)other.config;
+			*config = *other.config;
 		}
 
 		for (std::map<std::string, RouteNode*>::const_iterator it = other.children.begin(); 

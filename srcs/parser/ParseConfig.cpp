@@ -28,6 +28,7 @@ Config ParseConfig::parse(void) {
 			if (checkServerConflict(m_config.m_servers.begin(), m_config.m_servers.end(), server, server_name))
 				throw (ParseConfig::ConfigExcept("conflict Server Name '" + server_name + "'", server_begin_line));
 			server.buildRouteTree();
+			// server.copyLocationRouteConfig();
 			m_config.m_servers.push_back(server);
 			make_pair(server);
 		}

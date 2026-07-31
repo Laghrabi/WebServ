@@ -3,6 +3,7 @@
 
 #include "webserver.hpp"
 #include "ListeningSocket.hpp"
+#include "CgiHandler.hpp"
 
 class Client
 {
@@ -16,14 +17,16 @@ class Client
         HttpRequest         m_request;
         HttpResponse        m_response;
         
+        Client& operator=(const Client& other);
     public:
         
+        int                 m_pipefd;
         Client(int fd, ListeningSocket* listener, Server::IPort ClientEndPoint, const Config::ServerRange& serverRange) ;
         Client(const Client& other);
-        Client& operator=(const Client& other);
         ~Client();
 
         int getFd() const;
+				CgiHandler					m_cgi_handler;
 
         std::vector<char>& getReadBuffer();
         std::vector<char>& getWriteBuffer();

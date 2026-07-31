@@ -15,7 +15,8 @@
 
 enum SockType {
     LISTENER_SOCK,
-    CLIENT_SOCK
+    CLIENT_SOCK,
+    CGI_PIPE
 };
 
 struct EventData {

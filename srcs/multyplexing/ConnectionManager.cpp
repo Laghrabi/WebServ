@@ -1,6 +1,7 @@
 #include "ConnectionManager.hpp"
 #include "HttpRequestHandler.hpp"
 #include "HttpResponse.hpp"
+#include "RouteResult.hpp"
 
 
 ConnectionManager::ConnectionManager(const Config& config)
@@ -190,6 +191,8 @@ void ConnectionManager::recieveClient(Client& client)
 {
     if (receive(client))
         return;
+    // check if type is cgi_pipe 
+    // events
 
     client.getRequest().parse(client.getReadBuffer());
     int state = client.getRequest().getCurrentState(); 
@@ -208,12 +211,18 @@ void ConnectionManager::recieveClient(Client& client)
             HttpRequest::printHttpStatus(request.getStatusCode());
             RouteManager::printRouteAction(result.action);
             request.printBodyContent();
+						if (result.action == ACTION_EXECUTE_CGI) {
+							client.m_pipefd = client.m_cgi_handler.execute();
+                            if (client.m_pipefd < 0)
+                                //check what cgi return 
+                            AddSocketToEpfd(fd, CGI_PIPE, EPOLLIN);
+                        }
         }
         else {
             HttpRequest::printHttpStatus(request.getStatusCode());
             RouteManager::printRouteAction(result.action);
             std::cout << "error\n";
-            // exit (5);
+				
         }
     } else if (state == ERROR) {
         request.printHttpStatus(request.getStatusCode());

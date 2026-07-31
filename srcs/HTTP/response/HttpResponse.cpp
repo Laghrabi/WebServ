@@ -1,3 +1,4 @@
+#include "HttpResponse.hpp"
 #include "webserver.hpp"
 std::map<HttpStatus, std::string> 	HttpResponse::statusCodeMap;
 
@@ -154,8 +155,10 @@ void HttpResponse::clear()
 
 std::vector<char> HttpResponse::assembleResponse() {
 	if (!getHeadersSent()) {
-		if (getBufferBytesSent() < buffer.size()) {
-			return std::vector<char>(buffer.begin(), buffer.end());
+		if (!buffer.empty()) {
+			if (buffer.size() <= SENDSIZE)
+				return std::vector<char>(buffer.begin(), buffer.end());
+			return std::vector<char>(buffer.begin(), buffer.begin() + SENDSIZE);
 		}
 		else {
 			setHeadersSent(true);

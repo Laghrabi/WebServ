@@ -12,8 +12,8 @@ Client::Client(
     m_writeBuffer(),
     m_listener(listener),
     m_request(serverRange, iport),
-    m_response()
-    
+    m_response(),
+		m_cgi_handler(m_request)
     {
     }
     //here if sacr needs the addr and port of the client i cant call the extraPort and extractip ,
@@ -24,7 +24,8 @@ Client::Client(const Client& other):
     m_writeBuffer(other.m_writeBuffer),
     m_listener(other.m_listener),
     m_request(other.m_request),
-    m_response()
+    m_response(),
+		m_cgi_handler(m_request)
 {
 }
 

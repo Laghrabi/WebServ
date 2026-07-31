@@ -1,17 +1,19 @@
 #include "CgiHandler.hpp"
+#include "HttpRequest.hpp"
 #include "sys/wait.h"
 #include <cstdio>
 
 
-CgiHandler::CgiHandler(const CgiRequest& cgiRequest) : 
-	m_cgi_request(cgiRequest){
+CgiHandler::CgiHandler(const HttpRequest& request) :
+m_request(request){
 }
 
 CgiHandler::CgiHandler(const CgiHandler& other) : 
-	m_cgi_request(other.m_cgi_request){
+	m_request(other.m_request){
 }
 
-void CgiHandler::execute(void) {
+int CgiHandler::execute(void) {
+	CgiRequest cgi_request(m_request);
 	m_cgi_script = "/home/hsacr/COMMON_CORE/webserver/tests/cgi/apache-cgi/cgi-bin/env";
 	pipe(m_pipe_fds);
 	int pid = fork();
@@ -36,26 +38,27 @@ void CgiHandler::execute(void) {
 		CString p = CString("/home/hsacr/COMMON_CORE/webserver/tests/cgi/apache-cgi/cgi-bin/env");
 		std::string l = ("hey");
 		char *const var[] = {&l[0], NULL};
-		int sucess = execve(m_cgi_script.c_str(), var, m_cgi_request.getEnvp());
+		int sucess = execve(m_cgi_script.c_str(), var, cgi_request.getEnvp());
 		(void)sucess;
 		perror(("hey"));
 		std::cout << "sucess\n";
 	}
-	else {
-		wait(NULL);
-		close(m_pipe_fds[1]);
-		char buff[2] = {0};
-		ssize_t read_bytes;
-		while ((read_bytes = read(m_pipe_fds[0], buff, 1)) > 0) {
-			// std::cout << "read bytes = " << read_bytes << "\n";
-				std::cout << buff;
-			}
-		close(m_pipe_fds[0]);
-	}
+	// else {
+	// 	wait(NULL);
+	// 	close(m_pipe_fds[1]);
+	// 	char buff[2] = {0};
+	// 	ssize_t read_bytes;
+	// 	while ((read_bytes = read(m_pipe_fds[0], buff, 1)) > 0) {
+	// 		// std::cout << "read bytes = " << read_bytes << "\n";
+	// 			std::cout << buff;
+	// 		}
+	// 	close(m_pipe_fds[0]);
+	// }
+	return (m_pipe_fds[0]);
 }
 
 CgiHandler& CgiHandler::operator=(const CgiHandler& other) {
-	m_cgi_request = other.m_cgi_request;
+	(void)(other);
   return (*this);
 }
 

@@ -230,23 +230,14 @@ void ConnectionManager::sendClient(Client& client)
 {
     HttpResponse& response = client.getResponse();
 	std::vector<char> chunk = response.assembleResponse();
-    std::cout << chunk.size() << std::endl;
-    std::cout << std::string(chunk.begin(), chunk.end()) << "\n";
-    if (chunk.empty())
+    if (chunk.empty() && response.getHeadersSent())
     {
         response.clear();
         ChangeClientEvent(client.getFd(), EPOLLIN);
         return;
     }
     ssize_t n = send(client.getFd(), &chunk[0], chunk.size(), 0);
-    if (!response.getHeadersSent())
-    {
-        response.setHeadersBytesSent(n);
-    }
-    else
-    {
-        response.eraseSendBytes(n);
-    }
+    response.eraseSendBytes(n);
 }
 
 void ConnectionManager::run()

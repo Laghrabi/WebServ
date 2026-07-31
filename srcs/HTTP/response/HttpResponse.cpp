@@ -1,53 +1,43 @@
 #include "webserver.hpp"
 std::map<HttpStatus, std::string> 	HttpResponse::statusCodeMap;
 
-HttpResponse::HttpResponse()
-	: httpVersion("HTTP/1.1"),
-	statusCode(),
-	statusMessage(),
-	headers(),
-	headersSize(0),
-	headersBytesSent(0),
+HttpResponse::HttpResponse():
+	bufferBytesSent(0),
 	bodySource(BODY_NONE),
 	filePath(),
 	contentLength(0),
-	bytesSent(0),
+	filebytesSent(0),
 	headersSent(false),
-	bufferBody()
+	buffer()
 {
-	bufferBody.reserve(SENDSIZE);
+	buffer.reserve(SENDSIZE);
+	init();
 }
 
-HttpResponse::HttpResponse(const HttpResponse& other)
-	: httpVersion(other.httpVersion),
-	statusCode(other.statusCode),
-	statusMessage(other.statusMessage),
-	headers(other.headers),
-	headersSize(other.headersSize),
-	headersBytesSent(other.headersBytesSent),
+HttpResponse::HttpResponse(const HttpResponse& other):
+	bufferBytesSent(other.bufferBytesSent),
 	bodySource(other.bodySource),
 	filePath(other.filePath),
 	contentLength(other.contentLength),
-	bytesSent(other.bytesSent),
+	filebytesSent(other.filebytesSent),
 	headersSent(other.headersSent),
-	bufferBody(other.bufferBody)
+	buffer(other.buffer)
 {
-	bufferBody.reserve(SENDSIZE);
+	buffer.reserve(SENDSIZE);
+	init();
 }
 
 
 HttpResponse& HttpResponse::operator=(const HttpResponse& other) {
 	if (this != &other) {
-		httpVersion = other.httpVersion;
-		statusCode = other.statusCode;
-		statusMessage = other.statusMessage;
-		headers = other.headers;
+		bufferBytesSent = other.bufferBytesSent;
 		bodySource = other.bodySource;
 		filePath = other.filePath;
-		bufferBody = other.bufferBody;
+		buffer = other.buffer;
 		contentLength = other.contentLength;
-		bytesSent = other.bytesSent;
+		filebytesSent = other.filebytesSent;
 		headersSent = other.headersSent;
+		buffer.reserve(SENDSIZE);
 	}
 	return *this;
 }
@@ -58,21 +48,11 @@ HttpResponse::~HttpResponse() {
 	}
 }
 
-void HttpResponse::setStatusCode(int code)
+void HttpResponse::setHeader(const std::string& key, const std::string& value, std::vector<char>& buffer)
 {
-	statusCode = code;
+	std::string headerLine = key + ": " + value + "\r\n";
+	buffer.insert(buffer.end(), headerLine.begin(), headerLine.end());
 }
-
-void HttpResponse::setStatusMessage(const std::string& message)
-{
-	statusMessage = message;
-}
-
-void HttpResponse::setHeader(const std::string& key, const std::string& value)
-{
-	headers.insert(std::make_pair(key, value));
-}
-
 
 void HttpResponse::setBodySource(ResponseBodySource source)
 {
@@ -92,11 +72,6 @@ void HttpResponse::setFileBody(const std::string& path)
 	std::cout << ", fail()=" << fileBody.fail() << "file name" << path << "bla" << std::endl;
 }
 
-void HttpResponse::setBufferBody(const std::vector<char>& body)
-{
-	bufferBody.insert(bufferBody.end(), body.begin(), body.end());
-}
-
 void HttpResponse::setContentLength(size_t length)
 {
 	contentLength = length;
@@ -109,8 +84,8 @@ void HttpResponse::setHeadersSent(bool sent)
 
 void HttpResponse::eraseSendBytes(size_t bytes)
 {
-	std::vector<char>::iterator vecBegin = bufferBody.begin();
-	bufferBody.erase(vecBegin, vecBegin + bytes);
+	std::vector<char>::iterator vecBegin = buffer.begin();
+	buffer.erase(vecBegin, vecBegin + bytes);
 }
 
 
@@ -119,34 +94,9 @@ bool HttpResponse::getHeadersSent() const
 	return headersSent;
 }
 
-int HttpResponse::getHeadersSize() const
+int HttpResponse::getBufferBytesSent() const
 {
-	return headersSize;
-}
-
-int HttpResponse::getHeadersBytesSent() const
-{
-	return headersBytesSent;
-}
-
-std::string HttpResponse::getStartline() const
-{
-	return httpVersion + " " + to_string(statusCode) + " " + statusMessage;
-}
-
-std::string HttpResponse::getHeaders() const
-{
-	std::string headersString;
-	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-		headersString += it->first + ": " + it->second + "\r\n";
-	}
-	return headersString;
-}
-
-std::string HttpResponse::getStartlineAndHeaders() const
-{
-	std::string responseString = getStartline() + "\r\n" + getHeaders() + "\r\n";
-	return responseString;
+	return bufferBytesSent;
 }
 
 ResponseBodySource HttpResponse::getBodySource() const
@@ -161,7 +111,7 @@ const std::string& HttpResponse::getFilePath() const
 
 const std::vector<char> HttpResponse::getBufferBody() const
 {
-	return bufferBody;
+	return buffer;
 }
 
 size_t HttpResponse::getContentLength() const
@@ -171,7 +121,7 @@ size_t HttpResponse::getContentLength() const
 
 size_t HttpResponse::getBytesSent() const
 {
-	return bytesSent;
+	return filebytesSent;
 }
 
 
@@ -190,59 +140,39 @@ void print_state (const std::ios& stream) {
 
 void HttpResponse::clear()
 {
-	statusCode = 0;
-	statusMessage.clear();
-	headers.clear();
-	headersSize = 0;
-	headersBytesSent = 0;
+	bufferBytesSent = 0;
 	bodySource = BODY_NONE;
 	if (fileBody.is_open()) {
 		fileBody.close();
 	}
 	filePath.clear();
-	bufferBody.clear();
+	buffer.clear();
 	contentLength = 0;
-	bytesSent = 0;
+	filebytesSent = 0;
 	headersSent = false;
 }
 
 std::vector<char> HttpResponse::assembleResponse() {
 	if (!getHeadersSent()) {
-		std::string responseString = getStartlineAndHeaders();
-		setHeadersSize(responseString.size());
-		if (getHeadersBytesSent() < getHeadersSize()) {
-			return std::vector<char>(responseString.begin() + getHeadersBytesSent(), responseString.end());
+		if (getBufferBytesSent() < buffer.size()) {
+			return std::vector<char>(buffer.begin(), buffer.end());
 		}
 		else {
 			setHeadersSent(true);
-			std::cerr << "i send the headers\n" ;
+			buffer.clear();
 		}
 	}
-	if (getBodySource() == BODY_BUFFER) {
-		const std::vector<char>& bufferBody = getBufferBody();
-		size_t sent = getBytesSent();
-		if (sent >= bufferBody.size())
-			return std::vector<char>();
-		size_t chunkSize = bufferBody.size() - sent;
-		if (chunkSize > SENDSIZE)
-			chunkSize = SENDSIZE;
-		return std::vector<char>(bufferBody.begin() + sent,
-				bufferBody.begin() + sent + chunkSize);
-	} else if (getBodySource() == BODY_FILE) {
-		if (bufferBody.empty())
+	if (getBodySource() == BODY_FILE) {
+		if (buffer.empty())
 		{
-		std::cerr << "i will send the body\n" ;
-			char buffer[SENDSIZE + 1];
-			buffer[SENDSIZE] = 0;
-			fileBody.read(buffer, SENDSIZE);
-			std::cerr << buffer << "\n";
+			char buf[SENDSIZE + 1];
+			buf[SENDSIZE] = 0;
+			fileBody.read(buf, SENDSIZE);
 			size_t size = fileBody.gcount();
-			std::cerr << size << "\n";
 			if (size > 0)
-				copyArrayToVec(buffer, size, bufferBody);
-			std::cerr << "size of vector is " << bufferBody.size() << "\n";
+				copyArrayToVec(buf, size, buffer);
 		}
-		return bufferBody; 
+		return buffer; 
 	}
 	return std::vector<char>();
 }

@@ -25,7 +25,7 @@ class HttpRequestHandler
     public:
         HttpRequestHandler(HttpRequest& req, HttpResponse& res) : request(req), response(res) {}
         ~HttpRequestHandler() {};
-        void makeError(int code);
+        void makeError(HttpStatus code);
         void handleRequest();
         void handleGet();
         void handlePost();
@@ -33,28 +33,9 @@ class HttpRequestHandler
         void serveFile();
         void generateAutoIndex();
         void makeRedirect();
-         void generateAutoIndexHtml(const std::string& directoryPath);
+        std::string generateAutoIndexHtml(const std::string& directoryPath);
 };
     
 #endif
 
-// in the connection manager
-// switch(response.getBodyType())
-// {
-    //     case BODY_MEMORY:
-    
-    //         sendMemory();
-    
-    //         break;
-    
-    //     case BODY_FILE:
-    
-    //         sendFile();
-
-//         break;
-
-//     default:
-
-//         break;
-// }
 

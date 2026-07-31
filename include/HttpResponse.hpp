@@ -30,23 +30,17 @@ enum ResponseBodySource
 class HttpResponse
 {
 	private:
-		std::string							httpVersion;
-		int									statusCode;
-		std::string							statusMessage;
-		std::map<std::string, std::string>	headers;
-		int 								headersSize;
-		int 								headersBytesSent;
-		ResponseBodySource					bodySource;
-		std::ifstream						fileBody;
-		std::string							filePath;
-	    size_t								contentLength;
-		size_t								bytesSent;
-		bool 								headersSent;
+		int 										bufferBytesSent;
+		ResponseBodySource							bodySource;
+		std::string									filePath;
+		std::ifstream								fileBody;
+	    size_t										contentLength;
+		size_t										filebytesSent;
+		bool 										headersSent;
 		static std::map<HttpStatus, std::string> 	statusCodeMap;
 		
 	public:
-		std::vector<char>					bufferBody;
-	
+		std::vector<char>							buffer;
 		static void init();
 		HttpResponse();
 		HttpResponse(const HttpResponse& other);
@@ -57,32 +51,21 @@ class HttpResponse
 
 		void clear();
 
-		void setStatusCode(int code);
-		void setStatusMessage(const std::string& message);
-		void setHeader(const std::string& key, const std::string& value);
+		void setHeader(const std::string& key, const std::string& value, std::vector<char>& buffer);
 		void setBodySource(ResponseBodySource source);
 		void setFilePath(const std::string& path);
 		void setFileBody(const std::string& path);
-		void setBufferBody(const std::vector<char>& body);
 		void setContentLength(size_t length);
 		void setHeadersSent(bool sent);
 		void eraseSendBytes(size_t bytes);
-		void setHeadersSize(int size)
-		{
-			headersSize= size;
-		}
 
-		void setHeadersBytesSent(int bytes)
+		void setbufferBytesSent(int bytes)
 		{
-			headersBytesSent += bytes;
+			bufferBytesSent += bytes;
 		}
 
 		bool getHeadersSent() const;
-		int getHeadersSize() const;
-		int getHeadersBytesSent() const;
-		std::string getStartline () const;
-		std::string getHeaders() const;
-		std::string getStartlineAndHeaders() const;
+		int getBufferBytesSent() const;
 		ResponseBodySource getBodySource() const;
 		const std::string& getFilePath() const;
 		const std::vector<char> getBufferBody() const;

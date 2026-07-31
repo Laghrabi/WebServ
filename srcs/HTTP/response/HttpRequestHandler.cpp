@@ -17,42 +17,46 @@ void HttpRequestHandler::serveFile()
 
     if (stat(filePath.c_str(), &st) == -1)
     {
-        makeError(404);
+        makeError(NOT_FOUND);
         return;
     }
     if (!S_ISREG(st.st_mode))
     {
-        makeError(403);
+        makeError(FORBIDDEN);
         return;
     }
     if (access(filePath.c_str(), R_OK) != 0)
     {
-        makeError(403);
+        makeError(FORBIDDEN);
         return;
     }
-    std::ifstream m(filePath.c_str());
-    std::cout << "fail: "<<  m.fail() << "\n";
-    response.setFileBody(filePath);
+    std::vector<char>& buffer = response.buffer;
+    std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
+    response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
+    response.setHeader("Content-Length", to_string(st.st_size), buffer);
+    // response.setHeader("Content-Type", getMimeType(filePath), buffer);//wtabnasba lhadi ana gha guessit kighatkon
+    response.setHeader("Connection", "keep-alive", buffer);
+    response.setHeader("Date", getCurrentDate(), buffer);
+    response.setHeader("server", SERVER_NAME, buffer);
+    std::string newline("\r\n");
+    response.buffer.insert(buffer.end(), newline.begin(), newline.end());
+
     response.setBodySource(BODY_FILE);
     response.setFilePath(filePath);
-    response.setStatusCode(result.statusCode); // im gonna wait for my partner to implement the getStatusMessage map
-    response.setStatusMessage("OK");           // also here
+    response.setFileBody(filePath);
     response.setContentLength(st.st_size);
-    // response.setHeader("Content-Type", getMimeType(filePath));//wtabnasba lhadi ana gha guessit kighatkon
-    response.setHeader("Content-Length", to_string(st.st_size));
-    response.setHeader("Connection", "keep-alive");
-    response.setHeader("Date", getCurrentDate());
-    response.setHeader("server", SERVER_NAME);
 }
 
-void HttpRequestHandler::generateAutoIndexHtml(const std::string &directoryPath)
+std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directoryPath)
 {
         DIR* p = opendir(directoryPath.c_str());
         struct dirent* l;
+        std::string html;
         while ((l = readdir(p))) {
-                std::cerr << "<a href=\"" << l->d_name << "\"" << l->d_name << "</a>" << "\n";
+                html += "<a href=\"" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
         }
         closedir(p);
+        return html;
 }
 
 void HttpRequestHandler::generateAutoIndex()
@@ -65,41 +69,54 @@ void HttpRequestHandler::generateAutoIndex()
         makeError(FORBIDDEN);
         return;
     }
-     generateAutoIndexHtml(directoryPath);
+    std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
+    std::vector<char>& buffer = response.buffer;
+    std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
+    response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
+    response.setHeader("Content-Type", "text/html", buffer);
+    response.setHeader("Content-Length", to_string(autoIndexHtml.size()), response.buffer);
+    response.setHeader("Connection", "keep-alive", buffer);
+    response.setHeader("Date", getCurrentDate(), buffer);
+    response.setHeader("server", SERVER_NAME, buffer);
+    std::string newline("\r\n");
+    response.buffer.insert(buffer.end(), newline.begin(), newline.end());
+    response.buffer.insert(buffer.end(), autoIndexHtml.begin(), autoIndexHtml.end());
     response.setBodySource(BODY_BUFFER);
-    response.setStatusCode(200);
-    response.setStatusMessage("OK");
-    response.setHeader("Content-Type", "text/html");
-    // response.setHeader("Content-Length", to_string(autoIndexHtml.size())); // important
-    response.setHeader("Connection", "keep-alive");
-    response.setHeader("Date", getCurrentDate());
-    response.setHeader("server", SERVER_NAME);
 }
 
 void HttpRequestHandler::makeRedirect()
 {
     const RouteResult &result = request._routeResult;
-    response.setStatusCode(result.statusCode);
-    response.setStatusMessage("Found");
-    response.setHeader("Location", result.targetPath);
+    std::vector<char>& buffer = response.buffer;
+
+    // std::map<HttpStatus, std::string>::iterator it = response.getStatusCodeMap().find(result.statusCode);
+    // here in this line above chaimaa should replace the result.statusCode with the status code map not int
+    // std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + it->second + "\r\n";
+    // response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
+
     response.setBodySource(BODY_NONE);
-    response.setHeader("Content-Length", "0");
-    response.setHeader("Connection", "keep-alive");
-    response.setHeader("Date", getCurrentDate());
-    response.setHeader("server", SERVER_NAME);
+    response.setHeader("Location", result.targetPath, response.buffer);
+    response.setHeader("Content-Length", "0", response.buffer);
+    response.setHeader("Connection", "keep-alive", response.buffer);
+    response.setHeader("Date", getCurrentDate(), response.buffer);
+    response.setHeader("server", SERVER_NAME, response.buffer);
 }
 
-void HttpRequestHandler::makeError(int code)
+void HttpRequestHandler::makeError(HttpStatus code)
 {
-    response.setStatusCode(code);
+    std::vector<char>& buffer = response.buffer;
+    std::string assemble = "HTTP/1.1 " + to_string(code) +  +"\r\n";
+    response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
     // response.setStatusMessage(getStatusMessage(code));//i will wait for my partner to implement the getStatusMessage map
     // here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
     // if no i will creat i simple html error page with the code and the message
     response.setBodySource(BODY_NONE);
-    // if (code == 403) //NEED TO KNOW IS IT FORBIDDEN METHODS OR JUST FORBIDDEN ACCESS TO THE RESOURCE
-    // response.setHeader("Allow", "GET, POST, DELETE");  how can i know the allowed methods for this route?
-    response.setHeader("Content-Length", "0");
-    response.setHeader("Connection", "keep-alive");
+    if (code == FORBIDDEN) //NEED TO KNOW IS IT FORBIDDEN METHODS OR JUST FORBIDDEN ACCESS TO THE RESOURCE
+        response.setHeader("Allow", "GET", response.buffer);  //how can i know the allowed methods for this route?
+    response.setHeader("Content-Length", "0", response.buffer);
+    response.setHeader("Connection", "keep-alive", response.buffer);
+    response.setHeader("Date", getCurrentDate(), response.buffer);
+    response.setHeader("server", SERVER_NAME, response.buffer);
 }
 
 void HttpRequestHandler::handleGet()
@@ -112,21 +129,21 @@ void HttpRequestHandler::handleGet()
 
     switch (result.action)
     {
-    case ACTION_SERVE_FILE:
-        serveFile();
-        break;
-    case ACTION_SERVE_INDEX:
-        serveFile();
-        break;
-    case ACTION_AUTOINDEX:
-        generateAutoIndex();
-        break;
-    // case ACTION_REDIRECT:
-    //     makeRedirect();
-    //     break;
-    default:
-        makeError(status_code);
-        break;
+        case ACTION_SERVE_FILE:
+            serveFile();
+            break;
+        case ACTION_SERVE_INDEX:
+            serveFile();
+            break;
+        case ACTION_AUTOINDEX:
+            generateAutoIndex();
+            break;
+        // case ACTION_REDIRECT:
+        //     makeRedirect();
+        //     break;
+        default:
+            makeError(FORBIDDEN);//same here i will wait for chaimaa to replace it 
+            break;
     }
 }
 
@@ -138,26 +155,30 @@ void HttpRequestHandler::handleDelete()
 
     if (stat(filePath.c_str(), &st) != 0)
     {
-        makeError(404);
+        makeError(NOT_FOUND);
         return;
     }
     if (!S_ISREG(st.st_mode))
     {
-        makeError(403);
+        makeError(FORBIDDEN);
         return;
     }
     if (remove(filePath.c_str()) != 0) // it will remove only if it was a file and not a directory
     {
-        makeError(500);
+        //here  i would fail if it was a directory.
+        // i dont know what should i do in this case. should i delete the directory and all its content or just return an error?
+        makeError(INTERNAL_SERVER_ERROR);
         return;
     }
-    response.setStatusCode(200);
-    response.setStatusMessage("OK");
+
+    std::vector<char>& buffer = response.buffer;
+    std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
+    response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
     response.setBodySource(BODY_NONE);
-    response.setHeader("Content-Length", "0");
-    response.setHeader("Connection", "keep-alive");
-    response.setHeader("Date", getCurrentDate());
-    response.setHeader("server", SERVER_NAME);
+    response.setHeader("Content-Length", "0", response.buffer);
+    response.setHeader("Connection", "keep-alive", response.buffer);
+    response.setHeader("Date", getCurrentDate(), response.buffer);
+    response.setHeader("server", SERVER_NAME, response.buffer);
 }
 
 void HttpRequestHandler::handleRequest()
@@ -166,12 +187,12 @@ void HttpRequestHandler::handleRequest()
     {
         handleGet();
     }
+    else if (request.getMethod() == "DELETE")
+    {
+        handleDelete();
+    }
     // else if (request.getMethod() == "POST")
     // {
     //     handlePost();
-    // }
-    // else if (request.getMethod() == "DELETE")
-    // {
-    //     handleDelete();
     // }
 }

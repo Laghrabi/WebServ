@@ -4,6 +4,6 @@ RUN apt -y update && apt -y install make gcc clang valgrind vim
 
 WORKDIR /src
 
-COPY . .
+# COPY . .
 
-RUN make re && make re CPP=clang++ && cp ./webserver /bin/
+# RUN make re && make re CPP=clang++ && cp ./webserver /bin/

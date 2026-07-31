@@ -32,6 +32,7 @@ void HttpRequestHandler::serveFile()
 		makeError(FORBIDDEN);
 		return;
 	}
+	std::cerr << "SERVE FILEones" << std::endl;
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
@@ -184,8 +185,9 @@ void HttpRequestHandler::handleRequest()
 
 	if (request.getCurrentState() != FINISHED) {
 		makeError(request.getStatusCode());
+		return ;
 	}
-	if (request._routeResult.action != ACTION_ERROR) {
+	if (request._routeResult.action == ACTION_ERROR) {
 		makeError(request.getStatusCode());
 	}
 	if (request._routeResult.action == ACTION_EXECUTE_CGI)

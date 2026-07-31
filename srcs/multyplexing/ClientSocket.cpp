@@ -13,6 +13,7 @@ Client::Client(
     m_listener(listener),
     m_request(serverRange, iport),
     m_response(),
+		m_pipefd(-1),
 		m_cgi_handler(m_request)
     {
     }
@@ -25,6 +26,7 @@ Client::Client(const Client& other):
     m_listener(other.m_listener),
     m_request(other.m_request),
     m_response(),
+		m_pipefd(other.m_pipefd),
 		m_cgi_handler(m_request)
 {
 }
@@ -38,6 +40,7 @@ Client& Client::operator=(const Client& other)
         m_writeBuffer = other.m_writeBuffer;
         m_listener = other.m_listener;
         m_request = other.m_request;
+				m_pipefd = other.m_pipefd;
     }
     return (*this);
 }

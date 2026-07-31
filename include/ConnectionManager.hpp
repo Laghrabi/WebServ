@@ -46,7 +46,9 @@ public:
     
     void sendClient(Client& client);
 
-    int receive(Client& client);
+    int receive(Client& client, int fd);
+
+    void recievePipe(Client& client);
     
     // void send(Client& client);
     

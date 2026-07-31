@@ -86,7 +86,9 @@ void HttpResponse::setHeadersSent(bool sent)
 void HttpResponse::eraseSendBytes(size_t bytes)
 {
 	std::vector<char>::iterator vecBegin = buffer.begin();
+	std::cerr << "size = " << buffer.size() << "\n";
 	buffer.erase(vecBegin, vecBegin + bytes);
+	std::cerr << "size = " << buffer.size() << "\n";
 }
 
 

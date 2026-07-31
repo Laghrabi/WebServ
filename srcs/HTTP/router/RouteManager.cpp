@@ -30,8 +30,6 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 	typedef std::vector<std::string> UriCont;
 	typedef UriCont::const_iterator UriContConstIter;
 
-	std::string path_info;
-
 	std::string test_path = location;
 	FileStatus status;
 	std::string extention;
@@ -39,6 +37,7 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 	UriContConstIter it = script_path.begin();
 	for (; it != script_path.end(); ++it) {
 		test_path += "/" + *it;
+		result.cgiInfo.scriptName += "/" + *it;
 		status.set(test_path);
 		if (status.exist()) {
 			if (status.isDir()) {
@@ -51,8 +50,7 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 				result.action = ACTION_EXECUTE_CGI;
 				result.targetPath = test_path;
 				result.statusCode = 200;
-				path_info = toPath(++it, script_path.end(), false);
-				result.cgiInfo.pathInfo = path_info;
+				result.cgiInfo.pathInfo = toPath(++it, script_path.end(), false);
 				
 #ifdef CGI_DEBUG
 				std::cout << "[CGI i found it ext = " << test_path << "]" << "\n";

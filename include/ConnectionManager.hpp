@@ -15,7 +15,8 @@
 
 enum SockType {
     LISTENER_SOCK,
-    CLIENT_SOCK
+    CLIENT_SOCK,
+    CGI_PIPE
 };
 
 struct EventData {
@@ -45,7 +46,9 @@ public:
     
     void sendClient(Client& client);
 
-    int receive(Client& client);
+    int receive(Client& client, int fd);
+
+    void recievePipe(Client& client);
     
     // void send(Client& client);
     

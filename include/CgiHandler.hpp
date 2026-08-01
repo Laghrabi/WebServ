@@ -4,17 +4,18 @@
 
 
 #include "CgiRequest.hpp"
+#include "HttpRequest.hpp"
 
 class CgiHandler {
 	private:
-	CgiRequest m_cgi_request;
+	const HttpRequest& m_request;
 	std::string m_cgi_script;
 	int m_pipe_fds[2];
+  CgiHandler& operator=(const CgiHandler& other);
   public:
-    CgiHandler(const CgiRequest& cgiRequest);
+    CgiHandler(const HttpRequest& cgiRequest);
     CgiHandler(const CgiHandler& other);
-		void execute(void);
-    CgiHandler& operator=(const CgiHandler& other);
+		int execute(void);
     ~CgiHandler(void);
 };
 

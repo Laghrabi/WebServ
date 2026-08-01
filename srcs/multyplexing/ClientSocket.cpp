@@ -11,8 +11,10 @@ Client::Client(
     m_readBuffer(),
     m_writeBuffer(),
     m_listener(listener),
-    m_request(serverRange, iport)
-    
+    m_request(serverRange, iport),
+    m_response(),
+		m_pipefd(-1),
+		m_cgi_handler(m_request)
     {
     }
     //here if sacr needs the addr and port of the client i cant call the extraPort and extractip ,
@@ -22,7 +24,10 @@ Client::Client(const Client& other):
     m_readBuffer(other.m_readBuffer),
     m_writeBuffer(other.m_writeBuffer),
     m_listener(other.m_listener),
-    m_request(other.m_request)
+    m_request(other.m_request),
+    m_response(),
+		m_pipefd(other.m_pipefd),
+		m_cgi_handler(m_request)
 {
 }
 
@@ -35,6 +40,7 @@ Client& Client::operator=(const Client& other)
         m_writeBuffer = other.m_writeBuffer;
         m_listener = other.m_listener;
         m_request = other.m_request;
+				m_pipefd = other.m_pipefd;
     }
     return (*this);
 }
@@ -97,4 +103,8 @@ const ListeningSocket* Client::getListener() const
 HttpRequest& Client::getRequest()
 {
     return (m_request);
+}
+HttpResponse& Client::getResponse()
+{
+    return (m_response);
 }

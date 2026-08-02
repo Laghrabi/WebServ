@@ -218,7 +218,7 @@ void ConnectionManager::recieveClient(Client& client)
 
 	client.getRequest().parse(client.getReadBuffer());
 	int state = client.getRequest().getCurrentState(); 
-
+	std::cout << "hello===========" << std::endl;
 	HttpRequest& request = client.getRequest();
 	if (state == FINISHED) {
 		// routing to find resources to provide

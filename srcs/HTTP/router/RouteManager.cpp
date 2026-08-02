@@ -105,6 +105,14 @@ void RouteManager::processRequest(HttpRequest& request) {
 		return ;
 	}
 
+	if (request.getMethod() == "POST") {
+		std::string uploadsPath = resolveUploadPath(request.getRouteUri(), _basePath, result.route->getUploadDir());
+		result.action = ACTION_UPLOAD_FILE;
+		result.targetPath = uploadsPath;
+		// result.statusCode
+		return ;
+	}
+
 	std::string physicalPath = _locator.buildPhysicalPath(request, _basePath, _resource);
 
 	if (result.route->isCgiEnable()) {
@@ -210,6 +218,38 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 		std::cout << "this is important " << ((Location*)bestMatch)->getRoot() << " LOCATION: " << location << "\n";
 
 	return (bestMatch);
+}
+
+std::string RouteManager::resolveUploadPath(const std::string& uri, const std::string& locationMatch, const std::string& uploadStore) {
+    std::string remainder = "";
+
+    if (uri.find(locationMatch) == 0) {
+        remainder = uri.substr(locationMatch.length());
+    } else {
+        size_t lastSlash = uri.find_last_of('/');
+        if (lastSlash != std::string::npos) {
+            remainder = uri.substr(lastSlash + 1);
+        } else {
+            remainder = uri;
+        }
+    }
+
+    std::string finalPath = uploadStore;
+    
+    bool storeEndsWithSlash = (!finalPath.empty() && finalPath[finalPath.length() - 1] == '/');
+    bool remainderStartsWithSlash = (!remainder.empty() && remainder[0] == '/');
+
+    if (storeEndsWithSlash && remainderStartsWithSlash) {
+        finalPath += remainder.substr(1);
+    } 
+    else if (!storeEndsWithSlash && !remainderStartsWithSlash && !remainder.empty()) {
+        finalPath += "/" + remainder;
+    } 
+    else {
+        finalPath += remainder;
+    }
+
+    return (finalPath);
 }
 
 void RouteManager::printRouteAction(RouteAction action) {

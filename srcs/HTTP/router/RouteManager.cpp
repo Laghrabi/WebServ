@@ -88,6 +88,7 @@ void RouteManager::processRequest(HttpRequest& request) {
 	result.statusCode = OK;
 
 	result.route = matchRoute(request.getUriSegments(), request.getServer(), _basePath);
+	std::string	LocationMatch = _basePath;
 	
 	const Location* test = dynamic_cast<const Location*>(result.route);
 	std::cout << test->getAlias() << "==============\n";
@@ -105,24 +106,28 @@ void RouteManager::processRequest(HttpRequest& request) {
 		return ;
 	}
 
-	if (request.getMethod() == "POST") {
-		std::string uploadsPath = resolveUploadPath(request.getRouteUri(), _basePath, result.route->getUploadDir());
-		result.action = ACTION_UPLOAD_FILE;
-		result.targetPath = uploadsPath;
-		// result.statusCode
-		return ;
-	}
-
+	
 	std::string physicalPath = _locator.buildPhysicalPath(request, _basePath, _resource);
-
+	
 	if (result.route->isCgiEnable()) {
-	std::vector<std::string> vec;
+		std::vector<std::string> vec;
 		HttpRequest::normalizeUriHelper(_resource, vec);
 		if (isCgi(vec, result, _basePath)) {
 			return ;
 		}
+	}
 
-}
+	if (request.getMethod() == "POST") {
+		if (result.route->getUploadDir().empty()) {
+			result.action = ACTION_ERROR;
+			result.statusCode = FORBIDDEN;
+			return ;
+		}
+		std::string uploadsPath = resolveUploadPath(request.getRouteUri(), LocationMatch, result.route->getUploadDir());
+		result.action = ACTION_UPLOAD_FILE;
+		result.targetPath = uploadsPath;
+		return ;
+	}
 
 	physicalPath = _locator.resolvePath(physicalPath, result.route);
 	ResourceType type = _locator.getResourceType(physicalPath);

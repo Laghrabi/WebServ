@@ -154,6 +154,7 @@ void HttpRequestHandler::handleGet()
         case ACTION_REDIRECT:
             makeRedirect();
             break;
+		default:;
 	}
 }
 
@@ -180,9 +181,10 @@ void HttpRequestHandler::handleDelete()
 	}
 	if (remove(filePath.c_str()) != 0) // it will remove only if it was a file and not a directory
 	{
-		//here  it would fail if it was a directory.
-		// i dont know what should i do in this case. should i delete the directory and all its content or just return an error?
-		makeError(INTERNAL_SERVER_ERROR);
+		if (errno == EACCES)
+			makeError(FORBIDDEN);//if the dir doesnt have a read or write perm or 
+		else
+			makeError(INTERNAL_SERVER_ERROR);  // 500
 		return;
 	}
 
@@ -212,7 +214,7 @@ void HttpRequestHandler::handlePost()
     {
         if (!S_ISREG(st.st_mode))
         {
-            makeError(FORBIDDEN);
+            makeError(CONFLICT);
             return;
         }
         if (access(filePath.c_str(), W_OK) != 0)
@@ -223,46 +225,63 @@ void HttpRequestHandler::handlePost()
         created = 200;
     }
     if (rename(request.getBodyFilePath().c_str(),
-           result.targetPath.c_str()) == 0)
+           result.targetPath.c_str()) != 0)
     {
+		switch (errno)
+		{
+			case ENOENT:
+				// Source file doesn't exist or destination directory doesn't exist.
+				// For uploads, this usually means the target directory is missing.
+				makeError(CONFLICT);
+				break;
 
-        // Success: file moved instantly.
+			case ENOSPC:
+				// Disk is full.
+				makeError(INSUFFICIENT_STORAGE);
+				break;
+
+			default:
+				makeError(INTERNAL_SERVER_ERROR);
+				break;
+		}
+    return;
     }
-    else
-    {
-        std::ifstream src(request.getBodyFilePath().c_str(), std::ios::in | std::ios::binary);
-        if (!src.is_open())
-        {
-            makeError(INTERNAL_SERVER_ERROR);
-            return;
-        }
-        std::ofstream dst(result.targetPath.c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
-        if (!dst.is_open())
-        {
-            src.close();
-            makeError(INTERNAL_SERVER_ERROR);
-            return;
-        }
-        char buffer[4096];
-        while (src.good())
-        {
-            src.read(buffer, sizeof(buffer));
-            std::streamsize count = src.gcount();
-            if (count > 0)
-                dst.write(buffer, count);
-        }
-        if (!src.eof() || !dst.good())
-        {
-            src.close();
-            dst.close();
-            remove(result.targetPath.c_str());
-            makeError(INTERNAL_SERVER_ERROR);
-            return;
-        }
-        src.close();
-        dst.close();
-        remove(request.getBodyFilePath().c_str());
-    }
+	//hadchi ghir tkhrbi9 sara7a
+    // else
+    // {
+    //     std::ifstream src(request.getBodyFilePath().c_str(), std::ios::in | std::ios::binary);
+    //     if (!src.is_open())
+    //     {
+    //         makeError(INTERNAL_SERVER_ERROR);
+    //         return;
+    //     }
+    //     std::ofstream dst(result.targetPath.c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
+    //     if (!dst.is_open())
+    //     {
+    //         src.close();
+    //         makeError(INTERNAL_SERVER_ERROR);
+    //         return;
+    //     }
+    //     char buffer[4096];
+    //     while (src.good())
+    //     {
+    //         src.read(buffer, sizeof(buffer));
+    //         std::streamsize count = src.gcount();
+    //         if (count > 0)
+    //             dst.write(buffer, count);
+    //     }
+    //     if (!src.eof() || !dst.good())
+    //     {
+    //         src.close();
+    //         dst.close();
+    //         remove(result.targetPath.c_str());
+    //         makeError(INTERNAL_SERVER_ERROR);
+    //         return;
+    //     }
+    //     src.close();
+    //     dst.close();
+    //     remove(request.getBodyFilePath().c_str());
+    // }
     std::vector<char> &bufferResponse = response.buffer;
 
 	std::string assemble = "HTTP/1.1 " + to_string(created);
@@ -292,7 +311,8 @@ void HttpRequestHandler::handleRequest()
 		return ;
 	}
 	if (request._routeResult.action == ACTION_ERROR) {
-		makeError(request.getStatusCode());
+		std::cout << "i have error action" << request._routeResult.statusCode << std::endl;
+		makeError(request._routeResult.statusCode);
         return;
 	}
 	if (request._routeResult.action == ACTION_EXECUTE_CGI)
@@ -300,6 +320,7 @@ void HttpRequestHandler::handleRequest()
 
 	if (request.getMethod() == "GET")
 	{
+		std::cout << "i have get method"<< std::endl;
 		handleGet();
 	}
 	else if (request.getMethod() == "DELETE")
@@ -308,6 +329,7 @@ void HttpRequestHandler::handleRequest()
 	}
 	else if (request.getMethod() == "POST")
 	{
+		std::cout << "im gonna handle post" << std::endl;
 	    handlePost();
 	}
 }

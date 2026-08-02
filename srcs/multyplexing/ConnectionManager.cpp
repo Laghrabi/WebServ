@@ -241,7 +241,7 @@ void ConnectionManager::recieveClient(Client& client)
 				AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
 				m_clients.insert(
 						std::make_pair(client.m_pipefd, client));
-			}
+				}
 		}
 		else {
 			HttpRequest::printHttpStatus(request.getStatusCode());

@@ -269,6 +269,11 @@ void ConnectionManager::sendClient(Client& client)
 	{
 		std::cerr << "nope\n";
 		response.clear();
+		if (response.keep_connection == 0)
+		{
+			disconnect(client);
+			return;
+		}
 		ChangeClientEvent(client.getFd(), EPOLLIN);
 		return;
 	}

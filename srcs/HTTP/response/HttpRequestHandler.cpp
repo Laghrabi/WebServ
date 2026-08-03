@@ -14,6 +14,21 @@ static std::string getCurrentDate()
 	return std::string(buf);
 }
 
+std::string HttpRequestHandler::checkConnection()
+{
+	std::string connection = request.getHeader("connection");
+	response.keep_connection = 1;
+	if (connection == "" || connection == "keep-alive")
+	{
+		connection = "keep-alive";
+	}
+	else if (connection == "close")
+	{
+		response.keep_connection = 0;
+	}
+	return connection;
+}
+
 void HttpRequestHandler::serveFile()
 {
 	const RouteResult &result = request._routeResult;
@@ -35,13 +50,14 @@ void HttpRequestHandler::serveFile()
 		makeError(FORBIDDEN);
 		return;
 	}
+	std::string connection = checkConnection();
 	std::cerr << "SERVE FILEones" << std::endl;
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setHeader("Content-Length", to_string(st.st_size), buffer);
-	// response.setHeader("Content-Type", MimeTypesExt::getMimeType(filePath), buffer);//;ochkile hna ma3rftoch
-	response.setHeader("Connection", "keep-alive", buffer);
+	// response.setHeader("Content-Type", MimeTypesExt::getMimeType(filePath), buffer);//i guess getmimetype khsha tkon static buch man7tajch l object bach n accessi liha
+	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
 	std::string newline("\r\n");
@@ -79,13 +95,14 @@ void HttpRequestHandler::generateAutoIndex()
 		makeError(FORBIDDEN);
 		return;
 	}
+	std::string connection = checkConnection();
 	std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setHeader("Content-Type", "text/html", buffer);
 	response.setHeader("Content-Length", to_string(autoIndexHtml.size()), response.buffer);
-	response.setHeader("Connection", "keep-alive", buffer);
+	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
 	std::string newline("\r\n");
@@ -103,10 +120,11 @@ void HttpRequestHandler::makeRedirect()
 	std::string assemble = "HTTP/1.1 " + to_string(it->first) + " " + it->second + "\r\n";
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 
+	std::string connection = checkConnection();
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Location", result.targetPath, buffer);
 	response.setHeader("Content-Length", "0", buffer);
-	response.setHeader("Connection", "keep-alive", buffer);
+	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
     buffer.insert(buffer.end(), std::string("\r\n").begin(), std::string("\r\n").end());
@@ -115,19 +133,32 @@ void HttpRequestHandler::makeRedirect()
 void HttpRequestHandler::makeError(HttpStatus code)
 {
 	std::vector<char>& buffer = response.buffer;
+	const RouteConfig *config = request._routeResult.route;
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + response.getStatusCodeMap().find(code)->second + "\r\n";
-	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
-	// response.setStatusMessage(getStatusMessage(code));//i will wait for my partner to implement the getStatusMessage map
+	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	// here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
 	// if no i will creat i simple html error page with the code and the message
 	response.setBodySource(BODY_NONE);
-	if (code == METHOD_NOT_ALLOWED) //NEED TO KNOW IS IT FORBIDDEN METHODS OR JUST FORBIDDEN ACCESS TO THE RESOURCE
-		response.setHeader("Allow", "GET", response.buffer);  //how can i know the allowed methods for this route?
-	response.setHeader("Content-Length", "0", response.buffer);
-	response.setHeader("Connection", "keep-alive", response.buffer);
-	response.setHeader("Date", getCurrentDate(), response.buffer);
-	response.setHeader("server", SERVER_NAME, response.buffer);
-    //still have to add \r\n and the bodyhtml
+	std::string connection = checkConnection();
+	if (code == METHOD_NOT_ALLOWED)
+	{
+		std::set<std::string> allowed_methods = config->getAllowedMethods();
+		std::string methods;
+		for (std::set<std::string>::const_iterator it = allowed_methods.begin();
+			it != allowed_methods.end();
+			++it)
+		{
+			if (!methods.empty())
+				methods += ", ";
+			methods += *it;
+		}
+		response.setHeader("Allow", methods, buffer);
+	}
+	response.setHeader("Content-Length", "0", buffer);
+	response.setHeader("Connection", connection, buffer);
+	response.setHeader("Date", getCurrentDate(), buffer);
+	response.setHeader("server", SERVER_NAME, buffer);
+    buffer.insert(buffer.end(), std::string("\r\n").begin(), std::string("\r\n").end());
 }
 
 void HttpRequestHandler::handleGet()
@@ -187,13 +218,13 @@ void HttpRequestHandler::handleDelete()
 			makeError(INTERNAL_SERVER_ERROR);  // 500
 		return;
 	}
-
+	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Content-Length", "0", response.buffer);
-	response.setHeader("Connection", "keep-alive", response.buffer);
+	response.setHeader("Connection", connection, response.buffer);
 	response.setHeader("Date", getCurrentDate(), response.buffer);
 	response.setHeader("server", SERVER_NAME, response.buffer);
 }
@@ -283,7 +314,7 @@ void HttpRequestHandler::handlePost()
     //     remove(request.getBodyFilePath().c_str());
     // }
     std::vector<char> &bufferResponse = response.buffer;
-
+	std::string connection = checkConnection();
 	std::string assemble = "HTTP/1.1 " + to_string(created);
     if (created == 201)
         assemble += " Created\r\n";
@@ -294,7 +325,7 @@ void HttpRequestHandler::handlePost()
 
     response.setBodySource(BODY_NONE);
     response.setHeader("Content-Length", "0", bufferResponse);
-    response.setHeader("Connection", "keep-alive", bufferResponse);
+    response.setHeader("Connection", connection, bufferResponse);
     response.setHeader("Date", getCurrentDate(), bufferResponse);
     response.setHeader("server", SERVER_NAME, bufferResponse);
 
@@ -311,7 +342,6 @@ void HttpRequestHandler::handleRequest()
 		return ;
 	}
 	if (request._routeResult.action == ACTION_ERROR) {
-		std::cout << "i have error action" << request._routeResult.statusCode << std::endl;
 		makeError(request._routeResult.statusCode);
         return;
 	}
@@ -320,7 +350,6 @@ void HttpRequestHandler::handleRequest()
 
 	if (request.getMethod() == "GET")
 	{
-		std::cout << "i have get method"<< std::endl;
 		handleGet();
 	}
 	else if (request.getMethod() == "DELETE")
@@ -329,7 +358,6 @@ void HttpRequestHandler::handleRequest()
 	}
 	else if (request.getMethod() == "POST")
 	{
-		std::cout << "im gonna handle post" << std::endl;
 	    handlePost();
 	}
 }

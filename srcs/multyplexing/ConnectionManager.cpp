@@ -206,7 +206,11 @@ void ConnectionManager::recievePipe(Client& client)
 
 	std::cerr << "i am here\n";
 	const std::vector<char>& c = client.getReadBuffer();
-	std::cout << std::string(c.begin(), c.end());
+	std::cout << std::string(10, '=');
+	std::cout << std::string(c.begin(), c.end()) << "\n";
+	std::cout << std::string(10, '=');
+	std::cout << "\n";
+	client.m_cgi_handler.parse(c);
 }
 
 void ConnectionManager::recieveClient(Client& client)
@@ -218,7 +222,7 @@ void ConnectionManager::recieveClient(Client& client)
 
 	client.getRequest().parse(client.getReadBuffer());
 	int state = client.getRequest().getCurrentState(); 
-
+	std::cout << "hello===========" << std::endl;
 	HttpRequest& request = client.getRequest();
 	if (state == FINISHED) {
 		// routing to find resources to provide
@@ -234,6 +238,7 @@ void ConnectionManager::recieveClient(Client& client)
 			RouteManager::printRouteAction(result.action);
 			request.printBodyContent();
 			if (result.action == ACTION_EXECUTE_CGI) {
+				std::cout << "====================Action is cgi" << std::endl;
 				client.m_pipefd = client.m_cgi_handler.execute();
 				// if (client.m_pipefd < 0)
 				//check what cgi return 
@@ -241,7 +246,7 @@ void ConnectionManager::recieveClient(Client& client)
 				AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
 				m_clients.insert(
 						std::make_pair(client.m_pipefd, client));
-			}
+				}
 		}
 		else {
 			HttpRequest::printHttpStatus(request.getStatusCode());
@@ -269,6 +274,11 @@ void ConnectionManager::sendClient(Client& client)
 	{
 		std::cerr << "nope\n";
 		response.clear();
+		if (response.keep_connection == 0)
+		{
+			disconnect(client);
+			return;
+		}
 		ChangeClientEvent(client.getFd(), EPOLLIN);
 		return;
 	}

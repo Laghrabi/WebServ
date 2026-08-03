@@ -40,6 +40,7 @@ class HttpResponse
 		static std::map<HttpStatus, std::string> 	statusCodeMap;
 		
 	public:
+		int keep_connection;
 		std::vector<char>							buffer;
 		static void init();
 		HttpResponse();

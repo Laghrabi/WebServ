@@ -12,9 +12,9 @@ class HttpRequestHandler
     private:
         HttpRequest& request;
         HttpResponse& response;
-    
+        
         HttpRequestHandler(const HttpRequestHandler& other):
-            request(other.request), response(other.response)
+        request(other.request), response(other.response)
         {
             (void) other;
         }
@@ -23,6 +23,7 @@ class HttpRequestHandler
             return *this;
         }
     public:
+        std::string checkConnection();
         HttpRequestHandler(HttpRequest& req, HttpResponse& res) : request(req), response(res) {}
         ~HttpRequestHandler() {};
         void makeError(HttpStatus code);

@@ -30,6 +30,7 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 	typedef std::vector<std::string> UriCont;
 	typedef UriCont::const_iterator UriContConstIter;
 
+	std::cout << "================\nlocation : " << location << "\n";
 	std::string test_path = location;
 	FileStatus status;
 	std::string extention;
@@ -49,12 +50,12 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 			else if (result.route->isCgiScript(*it)) {
 				result.action = ACTION_EXECUTE_CGI;
 				result.targetPath = test_path;
-				result.statusCode = 200;
+				result.statusCode = OK;
 				result.cgiInfo.pathInfo = toPath(++it, script_path.end(), false);
 				
 #ifdef CGI_DEBUG
 				std::cout << "[CGI i found it ext = " << test_path << "]" << "\n";
-				std::cout << "[CGI path info = " << path_info << "\n";
+				std::cout << "[CGI path info = " << result.cgiInfo.pathInfo << "\n";
 #endif
 				return (true);
 			}
@@ -86,11 +87,9 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 void RouteManager::processRequest(HttpRequest& request) {
 	RouteResult& result = request._routeResult;
 	result.statusCode = OK;
-
 	result.route = matchRoute(request.getUriSegments(), request.getServer(), _basePath);
-	
-	const Location* test = dynamic_cast<const Location*>(result.route);
-	std::cout << test->getAlias() << "==============\n";
+	std::string	LocationMatch = _basePath;
+
 
 	if (result.route && !result.route->isAllowed(request.getMethod())) {
 		result.action = ACTION_ERROR;
@@ -98,23 +97,40 @@ void RouteManager::processRequest(HttpRequest& request) {
 		return ;
 	}
 
-	if (result.route && result.route->doesRedirect()) {
+	if (result.route->doesRedirect()) {
 		result.action = ACTION_REDIRECT;
 		result.targetPath = result.route->getRedirection().second;
 		result.statusCode = result.route->getRedirection().first;
 		return ;
 	}
 
+	
 	std::string physicalPath = _locator.buildPhysicalPath(request, _basePath, _resource);
+	if (physicalPath.empty()) {
+		result.action = ACTION_ERROR;
+		result.statusCode = NOT_FOUND;
+	}
 
+	
 	if (result.route->isCgiEnable()) {
-	std::vector<std::string> vec;
+		std::vector<std::string> vec;
 		HttpRequest::normalizeUriHelper(_resource, vec);
 		if (isCgi(vec, result, _basePath)) {
 			return ;
 		}
+	}
 
-}
+	if (request.getMethod() == "POST") {
+		if (result.route->getUploadDir().empty()) {
+			result.action = ACTION_ERROR;
+			result.statusCode = FORBIDDEN;
+			return ;
+		}
+		std::string uploadsPath = resolveUploadPath(request.getRouteUri(), LocationMatch, result.route->getUploadDir());
+		result.action = ACTION_UPLOAD_FILE;
+		result.targetPath = uploadsPath;
+		return ;
+	}
 
 	physicalPath = _locator.resolvePath(physicalPath, result.route);
 	ResourceType type = _locator.getResourceType(physicalPath);
@@ -206,10 +222,40 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 				break;
 			}
 		}
-		std::cout << "this is important " << ((Location*)bestMatch)->getAlias() << " LOCATION: " << location << "\n";
-		std::cout << "this is important " << ((Location*)bestMatch)->getRoot() << " LOCATION: " << location << "\n";
 
 	return (bestMatch);
+}
+
+std::string RouteManager::resolveUploadPath(const std::string& uri, const std::string& locationMatch, const std::string& uploadStore) {
+    std::string remainder = "";
+
+    if (uri.find(locationMatch) == 0) {
+        remainder = uri.substr(locationMatch.length());
+    } else {
+        size_t lastSlash = uri.find_last_of('/');
+        if (lastSlash != std::string::npos) {
+            remainder = uri.substr(lastSlash + 1);
+        } else {
+            remainder = uri;
+        }
+    }
+
+    std::string finalPath = uploadStore;
+    
+    bool storeEndsWithSlash = (!finalPath.empty() && finalPath[finalPath.length() - 1] == '/');
+    bool remainderStartsWithSlash = (!remainder.empty() && remainder[0] == '/');
+
+    if (storeEndsWithSlash && remainderStartsWithSlash) {
+        finalPath += remainder.substr(1);
+    } 
+    else if (!storeEndsWithSlash && !remainderStartsWithSlash && !remainder.empty()) {
+        finalPath += "/" + remainder;
+    } 
+    else {
+        finalPath += remainder;
+    }
+
+    return (finalPath);
 }
 
 void RouteManager::printRouteAction(RouteAction action) {

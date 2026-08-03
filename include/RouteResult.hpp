@@ -8,6 +8,7 @@ enum RouteAction {
 	ACTION_AUTOINDEX,
 	ACTION_EXECUTE_CGI,
 	ACTION_REDIRECT,
+	ACTION_UPLOAD_FILE,
 	ACTION_ERROR,
 	NONE
 };
@@ -21,7 +22,7 @@ enum RouteAction {
 struct RouteResult {
 	RouteAction action;
 	std::string targetPath;
-	int         statusCode;
+	HttpStatus         statusCode;
 	CgiInfo cgiInfo;
 	const RouteConfig *route;
 };

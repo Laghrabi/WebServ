@@ -50,16 +50,15 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 		else {
 			base_path.insert(0, rootPath);
 			rootPath = route->getRoot();
+			base_path.insert(0, rootPath);
 		}
 	}
 	else {
-			base_path.insert(0, rootPath);
-			std::cout << base_path << "\n";
-			exit(11);
-		std::cout << "using root\n";
 		if (route->getRoot().empty())
 			return "";
 		rootPath = route->getRoot();
+			base_path.insert(0, rootPath);
+			std::cout << base_path << "\n";
 	}
 
 

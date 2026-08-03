@@ -158,7 +158,7 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
-    buffer.insert(buffer.end(), std::string("\r\n").begin(), std::string("\r\n").end());
+  buffer.insert(buffer.end(), std::string("\r\n").begin(), std::string("\r\n").end());
 }
 
 void HttpRequestHandler::handleGet()
@@ -345,8 +345,10 @@ void HttpRequestHandler::handleRequest()
 		makeError(request._routeResult.statusCode);
         return;
 	}
-	if (request._routeResult.action == ACTION_EXECUTE_CGI)
+	if (request._routeResult.action == ACTION_EXECUTE_CGI) {
+		response.setBodySource(BODY_PIPE);
 		return;
+	}
 
 	if (request.getMethod() == "GET")
 	{

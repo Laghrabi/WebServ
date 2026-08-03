@@ -24,7 +24,8 @@ enum ResponseBodySource
 {
 	BODY_NONE,
     BODY_BUFFER,
-    BODY_FILE
+    BODY_FILE,
+		BODY_PIPE
 };
 
 class HttpResponse
@@ -49,6 +50,7 @@ class HttpResponse
 		~HttpResponse();
 		
 		std::vector<char> assembleResponse();
+		bool is_finished;
 
 		void clear();
 

@@ -7,17 +7,19 @@
 #include <utility>
 
 
-CgiHandler::CgiHandler(const HttpRequest& request) :
-m_reading_body(false),
-	m_request(request)
-	{
-	}
+CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
+	m_reading_body(false),
+	m_request(request),
+	m_response(response)
+{
+}
 
 CgiHandler::CgiHandler(const CgiHandler& other) : 
-m_reading_body(other.m_reading_body),
-	m_request(other.m_request)
+	m_reading_body(other.m_reading_body),
+	m_request(other.m_request),
+	m_response(other.m_response)
 {
-	}
+}
 
 int CgiHandler::execute(void) {
 	std::cerr << "executing scrip\n";
@@ -82,6 +84,7 @@ std::pair<std::string, std::string> CgiHandler::parse_header(const std::string& 
 }
 
 void checkForError(std::string& header,const std::string& value) {
+	(void)value;
 	if (!header.empty()) {
 		throw (std::runtime_error("internel server error"));
 		// make error 500
@@ -90,40 +93,59 @@ void checkForError(std::string& header,const std::string& value) {
 
 // status void
 void CgiHandler::checkCgiHeader(std::pair<std::string, std::string> header_field) {
-	std::string* p;
-
-	if (header_field.first == "Location") p = &m_location;
-	else if (header_field.first == "Status") {
-
-	p = &m_status;
-	// parse Status and add it to ;
+	if (header_field.first == "Location")	 {
+		m_location = header_field.second;
 	}
-	else if (header_field.first == "Content-Type") p = &m_content_type;
-	// else if (header_field.first == "Content-Length") p = &m_content_;
-
-	checkForError(*p, header_field.second);
+	if (header_field.first == "Status")	 {
+		m_location = header_field.second;
+	}
+	if (header_field.first == "Status")	 {
+		m_location = header_field.second;
+	}
 }
 
 
-void CgiHandler::parseBody() {
-	;	
+void CgiHandler::parseBody(const std::vector<char>& data) {
+	if (m_state == STORE_BODY) {
+		m_response.buffer.insert(m_response.buffer.end(), data.begin(), data.end());
+	}
 }
 
-void CgiHandler::parse(const std::vector<char>& data) {;
-	m_data.insert(m_data.end(), data.begin(), data.end());
+
+void CgiHandler::setBodyCase() {
+	std::cout << "[CGI] STORE BODY NORMALLY\n";
+	m_state = STORE_BODY;
+	if (!m_status.empty()) {
+		std::string start_line = "200 something hey";
+		// add headers here // NOTE: it is best to add them before
+	}
+	else if (!m_location.empty()) {
+		m_state = BODY_NOT_USEFUL;
+	}
+}
+
+
+void CgiHandler::parse(const std::vector<char>& data) {
 	if (!m_reading_body) {
+	m_data.insert(m_data.end(), data.begin(), data.end());
 		while (true){
-			sleep(1);
+			// sleep(1);
 			std::vector<char>::iterator nl = std::find(m_data.begin(), m_data.end(), '\n');
 			if (nl != m_data.end()) {
 				std::string line = std::string(m_data.begin(), nl);
 				if (line == "") {
+					setBodyCase();
+					// m_response.setHeadersSent(true);
+					std::cerr << "[CGI] " << &m_response.buffer[0] << "\n";
+					std::cerr << "[CGI] " << m_response.buffer.size() << "\n";
 					m_reading_body = true;
 					break ;
 				}
 				try {
 					std::pair<std::string, std::string> header = parse_header(line);
-					checkCgiHeader(header)	;
+					checkCgiHeader(header);
+					std::vector<char>::iterator end = m_response.buffer.end();
+					m_response.buffer.insert(end, m_data.begin(), nl);
 					m_data.erase(m_data.begin(), nl + 1);
 				}
 				catch (const std::runtime_error& e) {
@@ -138,9 +160,9 @@ void CgiHandler::parse(const std::vector<char>& data) {;
 		}
 	}
 	if (m_reading_body) {
-		parseBody();
-			// std::cout << "[CGI_DEBUG]" << "\n";
-			// 	std::cout << "BODY [" << std::string(m_data.begin(), m_data.end()) << "]\n";
+		parseBody(data);
+		// std::cout << "[CGI_DEBUG]" << "\n";
+		// 	std::cout << "BODY [" << std::string(m_data.begin(), m_data.end()) << "]\n";
 	}
 }
 

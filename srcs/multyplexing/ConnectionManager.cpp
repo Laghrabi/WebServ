@@ -62,9 +62,8 @@ void ConnectionManager::createListeningSockets()
 			throw std::runtime_error("socket failed");
 		else
 		{
-			std::cout << "creat socket fd = " << fd << "for endpoint ";
+			std::cout << "creat socket fd = " << fd << " for endpoint ";
 			listener.getEndpoint().print();
-			std::cout << "\n";
 		}
 		int yes = 1;
 		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
@@ -75,24 +74,16 @@ void ConnectionManager::createListeningSockets()
 			perror("bind");
 			throw std::runtime_error("bind failed");
 		}
-		else
-		{
-			std::cout << "bind socket fd = " << fd << "for endpoint ";
-			listener.getEndpoint().print();
-			std::cout << "\n";
-		}
 		if (listen(fd, SOMAXCONN) < 0)
 			throw std::runtime_error("listen failed");
 		else 
 		{
-			std::cout << "socket fd = " << fd << "is listening for endpoint ";
+			std::cout << "socket fd = " << fd << " is listening for endpoint ";
 			listener.getEndpoint().print();
-			std::cout << "\n";
 		}
 		listener.setFd(fd);
 		m_listeners.insert(
 				std::make_pair(fd, listener));
-		std::cout << "listener added for endpoint " << std::endl;
 		AddSocketToEpfd(listener.getFd(), LISTENER_SOCK, EPOLLIN);
 	}
 }
@@ -130,7 +121,7 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 
 void ConnectionManager::disconnect(Client& client)
 {
-	std::cout << "client" << client.getFd() << "disconnect"<< std::endl;
+	std::cout << "client " << client.getFd() << " disconnect"<< std::endl;
 	if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
 	{
 		perror("epoll_ctl failed to delete");
@@ -154,7 +145,6 @@ int ConnectionManager::receive(Client& client, int fd)
 
 	if (bytes > 0)
 	{
-		std::cerr << "there is bytes from \n";
 		client.getReadBuffer().clear();
 		client.getReadBuffer().insert( client.getReadBuffer().end(),
 				buffer, buffer + bytes);
@@ -308,11 +298,7 @@ void ConnectionManager::run()
 			EventData *data = static_cast<EventData *>(evlist[i].data.ptr);
 			int fd = data->fd;
 			int type = data->type;
-
-			//i need to handle the cgi fd here...
-
-
-			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)// should do the same fo the cgi  because it will be type  CGI_SOCK
+			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)
 			{
 				disconnect(m_clients.find(fd)->second);
 				--ready;

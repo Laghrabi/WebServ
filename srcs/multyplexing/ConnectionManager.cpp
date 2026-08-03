@@ -206,7 +206,11 @@ void ConnectionManager::recievePipe(Client& client)
 
 	std::cerr << "i am here\n";
 	const std::vector<char>& c = client.getReadBuffer();
-	std::cout << std::string(c.begin(), c.end());
+	std::cout << std::string(10, '=');
+	std::cout << std::string(c.begin(), c.end()) << "\n";
+	std::cout << std::string(10, '=');
+	std::cout << "\n";
+	client.m_cgi_handler.parse(c);
 }
 
 void ConnectionManager::recieveClient(Client& client)
@@ -234,6 +238,7 @@ void ConnectionManager::recieveClient(Client& client)
 			RouteManager::printRouteAction(result.action);
 			request.printBodyContent();
 			if (result.action == ACTION_EXECUTE_CGI) {
+				std::cout << "====================Action is cgi" << std::endl;
 				client.m_pipefd = client.m_cgi_handler.execute();
 				// if (client.m_pipefd < 0)
 				//check what cgi return 
@@ -243,12 +248,12 @@ void ConnectionManager::recieveClient(Client& client)
 						std::make_pair(client.m_pipefd, client));
 			}
 		}
-		else {
+		std::cout << std::string(10, '-') << "\n";
 			HttpRequest::printHttpStatus(request.getStatusCode());
 			RouteManager::printRouteAction(result.action);
+		std::cout << std::string(10, '-') << "\n";
 			std::cout << "error\n";
 
-		}
 	} else if (state == ERROR) {
 		request.printHttpStatus(request.getStatusCode());
 	} else {

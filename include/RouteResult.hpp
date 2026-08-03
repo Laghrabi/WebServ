@@ -21,7 +21,7 @@ enum RouteAction {
 struct RouteResult {
 	RouteAction action;
 	std::string targetPath;
-	int         statusCode;
+	HttpStatus         statusCode;
 	CgiInfo cgiInfo;
 	const RouteConfig *route;
 };

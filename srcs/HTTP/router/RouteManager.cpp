@@ -50,7 +50,7 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 			else if (result.route->isCgiScript(*it)) {
 				result.action = ACTION_EXECUTE_CGI;
 				result.targetPath = test_path;
-				result.statusCode = 200;
+				result.statusCode = OK;
 				result.cgiInfo.pathInfo = toPath(++it, script_path.end(), false);
 				
 #ifdef CGI_DEBUG
@@ -87,19 +87,15 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 void RouteManager::processRequest(HttpRequest& request) {
 	RouteResult& result = request._routeResult;
 	result.statusCode = OK;
-
 	result.route = matchRoute(request.getUriSegments(), request.getServer(), _basePath);
-	
-	const Location* test = dynamic_cast<const Location*>(result.route);
-	std::cout << test->getAlias() << "==============\n";
-
-	if (result.route && !result.route->isAllowed(request.getMethod())) {
+	std::cout << "+================" << result.route << std::endl;
+	if (!result.route->isAllowed(request.getMethod())) {
 		result.action = ACTION_ERROR;
 		result.statusCode = METHOD_NOT_ALLOWED;
 		return ;
 	}
 
-	if (result.route && result.route->doesRedirect()) {
+	if (result.route->doesRedirect()) {
 		result.action = ACTION_REDIRECT;
 		result.targetPath = result.route->getRedirection().second;
 		result.statusCode = result.route->getRedirection().first;
@@ -107,6 +103,10 @@ void RouteManager::processRequest(HttpRequest& request) {
 	}
 
 	std::string physicalPath = _locator.buildPhysicalPath(request, _basePath, _resource);
+	if (physicalPath.empty()) {
+		result.action = ACTION_ERROR;
+		result.statusCode = NOT_FOUND;
+	}
 
 	if (result.route->isCgiEnable()) {
 	std::vector<std::string> vec;
@@ -207,8 +207,6 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 				break;
 			}
 		}
-		std::cout << "this is important " << ((Location*)bestMatch)->getAlias() << " LOCATION: " << location << "\n";
-		std::cout << "this is important " << ((Location*)bestMatch)->getRoot() << " LOCATION: " << location << "\n";
 
 	return (bestMatch);
 }

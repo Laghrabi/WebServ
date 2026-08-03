@@ -61,7 +61,8 @@ bool RouteConfig::RedirectCode(int code) const {
 void RouteConfig::parseRedirection(ContIter& begin) {
 	std::stringstream ss;
 	ss << begin->value;
-	ss >> m_redirect.second.first;
+	int tmp; ss>>tmp;
+	m_redirect.second.first = (HttpStatus)tmp;
 	std::cout << "redirection " << m_redirect.first << "\n";
 	if (!RedirectCode(m_redirect.second.first)) {
 		throw (ParseConfig::ConfigExcept("invalid redirect code", begin->line));
@@ -190,7 +191,7 @@ void RouteConfig::addMethod(const std::string& method) throw (std::exception) {
 	m_allowed_methods.insert(method);
 }
 
-const std::pair<int, std::string>& RouteConfig::getRedirection() const{
+const std::pair<HttpStatus, std::string>& RouteConfig::getRedirection() const{
 	return (m_redirect.second);
 }
 

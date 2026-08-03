@@ -246,14 +246,14 @@ void ConnectionManager::recieveClient(Client& client)
 				AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
 				m_clients.insert(
 						std::make_pair(client.m_pipefd, client));
-			}
+				}
 		}
-		std::cout << std::string(10, '-') << "\n";
+		else {
 			HttpRequest::printHttpStatus(request.getStatusCode());
 			RouteManager::printRouteAction(result.action);
-		std::cout << std::string(10, '-') << "\n";
 			std::cout << "error\n";
 
+		}
 	} else if (state == ERROR) {
 		request.printHttpStatus(request.getStatusCode());
 	} else {
@@ -274,6 +274,11 @@ void ConnectionManager::sendClient(Client& client)
 	{
 		std::cerr << "nope\n";
 		response.clear();
+		if (response.keep_connection == 0)
+		{
+			disconnect(client);
+			return;
+		}
 		ChangeClientEvent(client.getFd(), EPOLLIN);
 		return;
 	}

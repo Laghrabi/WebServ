@@ -72,7 +72,7 @@ class RouteConfig {
 		bool hasMaxBodySize() const;
 		bool hasNoConfig() const;
 
-		const std::pair<int, std::string>& getRedirection() const;
+		const std::pair<HttpStatus, std::string>& getRedirection() const;
 
 		// check if the method is allowed
 		bool isAllowed(const std::string& method) const;
@@ -93,7 +93,7 @@ class RouteConfig {
 		std::set<std::string> m_allowed_methods;
 		std::set<std::string> m_cgi_map;
 
-		std::pair <bool, std::pair<int, std::string> > m_redirect;
+		std::pair <bool, std::pair<HttpStatus, std::string> > m_redirect;
 
 		static std::set<std::string> s_available_methods;
 };

@@ -48,6 +48,7 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 			return (base_path + "/" + resource);
 		}
 		else {
+			base_path.insert(0, rootPath);
 			rootPath = route->getRoot();
 			base_path.insert(0, rootPath);
 		}

@@ -200,16 +200,15 @@ void ConnectionManager::ChangeClientEvent(int fd, uint32_t event)
 
 void ConnectionManager::receivePipe(Client& client)
 {
-	std::cerr << "i no am here\n";
 	if (receive(client, client.m_pipefd))
 		return;
 
-	std::cerr << "i am here\n";
+	// std::cerr << "i am here\n";
 	const std::vector<char>& c = client.getReadBuffer();
-	std::cout << std::string(10, '=');
-	std::cout << std::string(c.begin(), c.end()) << "\n";
-	std::cout << std::string(10, '=');
-	std::cout << "\n";
+	// std::cout << std::string(10, '=');
+	// std::cout << std::string(c.begin(), c.end()) << "\n";
+	// std::cout << std::string(10, '=');
+	// std::cout << "\n";
 	client.m_cgi_handler.parse(c);
 }
 
@@ -257,8 +256,6 @@ void ConnectionManager::sendClient(Client& client)
 {
 	HttpResponse& response = client.getResponse();
 	std::vector<char> chunk = response.assembleResponse();
-	std::cout << "CHUNK SIZE = " << chunk.size() << std::endl;
-	sleep(1);
 
 	if (chunk.empty() && response.getHeadersSent() &&
 			response.is_finished)

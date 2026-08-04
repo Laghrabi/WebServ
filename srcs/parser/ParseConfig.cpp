@@ -19,7 +19,6 @@ Config ParseConfig::parse(void) {
 	int server_begin_line;
 	while (m_it->is(WORD)) {
 
-		std::cout << "hello" << std::endl;
 		ServerType server;
 		if (m_it->is("server")) {
 			server_begin_line = m_it->line;

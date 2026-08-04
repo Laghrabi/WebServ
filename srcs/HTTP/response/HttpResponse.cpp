@@ -2,13 +2,14 @@
 #include "webserver.hpp"
 std::map<HttpStatus, std::string> 	HttpResponse::statusCodeMap;
 
-HttpResponse::HttpResponse():
+HttpResponse::HttpResponse(const Config& Config):
 	bufferBytesSent(0),
 	bodySource(BODY_NONE),
 	filePath(),
 	contentLength(0),
 	filebytesSent(0),
 	headersSent(false),
+	config(Config),
 	buffer(),
 	is_finished(false)
 {
@@ -23,6 +24,7 @@ HttpResponse::HttpResponse(const HttpResponse& other):
 	contentLength(other.contentLength),
 	filebytesSent(other.filebytesSent),
 	headersSent(other.headersSent),
+	config(other.config),
 	buffer(other.buffer),
 	is_finished(other.is_finished)
 {
@@ -155,7 +157,6 @@ void HttpResponse::clear()
 
 std::vector<char> HttpResponse::assembleResponse() {
 	if (getBodySource() == BODY_PIPE) {
-		std::cout << "[CGI] " << buffer.size() << "\n";
 		return (buffer);
 		// NOTE: check if buffer is 
 	}
@@ -188,10 +189,6 @@ std::vector<char> HttpResponse::assembleResponse() {
 
 	return buffer;
 }
-
-
-
-
 
 void HttpResponse::init()
 {

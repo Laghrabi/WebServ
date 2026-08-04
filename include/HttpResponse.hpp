@@ -39,14 +39,15 @@ class HttpResponse
 		size_t										filebytesSent;
 		bool 										headersSent;
 		static std::map<HttpStatus, std::string> 	statusCodeMap;
+		HttpResponse& operator=(const HttpResponse& other);
 		
 	public:
+		const Config&								config;
 		int keep_connection;
 		std::vector<char>							buffer;
 		static void init();
-		HttpResponse();
+		HttpResponse(const Config& config);
 		HttpResponse(const HttpResponse& other);
-		HttpResponse& operator=(const HttpResponse& other);
 		~HttpResponse();
 		
 		std::vector<char> assembleResponse();

@@ -17,7 +17,7 @@ struct MimeTypesExt : protected std::map<std::string, std::string> {
 		typedef std::map<std::string, HandlerFunc> MapHandler;
 
 		void parseMimeType(ContIter &begin);
-		std::string getMimeType(const std::string& ext) const;
+		std::string getMimeType(const std::string& path) const;
 };
 
 #endif

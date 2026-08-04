@@ -3,9 +3,6 @@
 #include "RouteResult.hpp"
 #include "MimeTypesExt.hpp"
 
-
-// i have to check if the client send connection close
-// and if so, i have to disconect the clien ffuuuuuuuck
 static std::string getCurrentDate()
 {
 	std::time_t now = std::time(NULL);
@@ -50,13 +47,13 @@ void HttpRequestHandler::serveFile()
 		makeError(FORBIDDEN);
 		return;
 	}
+	std::cout << "serving file" << std::endl;
 	std::string connection = checkConnection();
-	std::cerr << "SERVE FILEones" << std::endl;
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setHeader("Content-Length", to_string(st.st_size), buffer);
-	// response.setHeader("Content-Type", MimeTypesExt::getMimeType(filePath), buffer);//i guess getmimetype khsha tkon static buch man7tajch l object bach n accessi liha
+	response.setHeader("Content-Type", response.config.m_types.getMimeType(filePath), buffer);
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
@@ -87,7 +84,6 @@ std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directo
 
 void HttpRequestHandler::generateAutoIndex()
 {
-	std::cerr <<"error\nA A" << "\n";
 	const RouteResult &result = request._routeResult;
 	const std::string &directoryPath = result.targetPath;
 	if (access(directoryPath.c_str(), R_OK) != 0)
@@ -95,12 +91,13 @@ void HttpRequestHandler::generateAutoIndex()
 		makeError(FORBIDDEN);
 		return;
 	}
+	std::cout << "generating autoindexing" << std::endl;
 	std::string connection = checkConnection();
 	std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
-	response.setHeader("Content-Type", "text/html", buffer);
+	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);//hamza chof had l3iba
 	response.setHeader("Content-Length", to_string(autoIndexHtml.size()), response.buffer);
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
@@ -121,9 +118,11 @@ void HttpRequestHandler::makeRedirect()
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 
 	std::string connection = checkConnection();
+	std::cout << "make rediraction" << std::endl;
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Location", result.targetPath, buffer);
 	response.setHeader("Content-Length", "0", buffer);
+	// response.setHeader("Content-Type", );
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
@@ -133,15 +132,16 @@ void HttpRequestHandler::makeRedirect()
 void HttpRequestHandler::makeError(HttpStatus code)
 {
 	std::vector<char>& buffer = response.buffer;
-	const RouteConfig *config = request._routeResult.route;
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + response.getStatusCodeMap().find(code)->second + "\r\n";
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	// here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
 	// if no i will creat i simple html error page with the code and the message
 	response.setBodySource(BODY_NONE);
+	std::cout << "making error" << std::endl;
 	std::string connection = checkConnection();
 	if (code == METHOD_NOT_ALLOWED)
 	{
+		const RouteConfig *config = request._routeResult.route;
 		std::set<std::string> allowed_methods = config->getAllowedMethods();
 		std::string methods;
 		for (std::set<std::string>::const_iterator it = allowed_methods.begin();
@@ -158,7 +158,8 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
-  buffer.insert(buffer.end(), std::string("\r\n").begin(), std::string("\r\n").end());
+	std::string rlnl = "\r\n";
+  buffer.insert(buffer.end(), rlnl.begin(), rlnl.end());
 }
 
 void HttpRequestHandler::handleGet()
@@ -171,6 +172,7 @@ void HttpRequestHandler::handleGet()
         return;
     }
 
+	std::cout << "im gonna handle GIT" << std::endl; 
 	switch (result.action)
 	{
 		case ACTION_SERVE_FILE:
@@ -218,6 +220,7 @@ void HttpRequestHandler::handleDelete()
 			makeError(INTERNAL_SERVER_ERROR);  // 500
 		return;
 	}
+	std::cout << "[DELETE]: delete file " << filePath.c_str();
 	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
@@ -238,7 +241,7 @@ void HttpRequestHandler::handlePost()
         makeError(METHOD_NOT_ALLOWED);
         return;
     }
-
+	std::cout << "trying to handle post" << std::cout;
     struct stat st;
     int created = 201;
     if (stat(filePath.c_str(), &st) == 0)

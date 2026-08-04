@@ -18,10 +18,10 @@ class Client
         HttpResponse        m_response;
         
         Client& operator=(const Client& other);
-    public:
+      public:
         
         int                 m_pipefd;
-        Client(int fd, ListeningSocket* listener, Server::IPort ClientEndPoint, const Config::ServerRange& serverRange) ;
+        Client(int fd, ListeningSocket* listener, Server::IPort ClientEndPoint, const Config::ServerRange& serverRange, const Config& config);
         Client(const Client& other);
         ~Client();
 

@@ -47,6 +47,7 @@ void HttpRequestHandler::serveFile()
 		makeError(FORBIDDEN);
 		return;
 	}
+	std::cout << "serving file" << std::endl;
 	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
@@ -90,12 +91,13 @@ void HttpRequestHandler::generateAutoIndex()
 		makeError(FORBIDDEN);
 		return;
 	}
+	std::cout << "generating autoindexing" << std::endl;
 	std::string connection = checkConnection();
 	std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
-	response.setHeader("Content-Type", "text/html", buffer);
+	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);//hamza chof had l3iba
 	response.setHeader("Content-Length", to_string(autoIndexHtml.size()), response.buffer);
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
@@ -116,6 +118,7 @@ void HttpRequestHandler::makeRedirect()
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 
 	std::string connection = checkConnection();
+	std::cout << "make rediraction" << std::endl;
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Location", result.targetPath, buffer);
 	response.setHeader("Content-Length", "0", buffer);
@@ -134,6 +137,7 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	// here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
 	// if no i will creat i simple html error page with the code and the message
 	response.setBodySource(BODY_NONE);
+	std::cout << "making error" << std::endl;
 	std::string connection = checkConnection();
 	if (code == METHOD_NOT_ALLOWED)
 	{
@@ -168,6 +172,7 @@ void HttpRequestHandler::handleGet()
         return;
     }
 
+	std::cout << "im gonna handle GIT" << std::endl; 
 	switch (result.action)
 	{
 		case ACTION_SERVE_FILE:
@@ -215,6 +220,7 @@ void HttpRequestHandler::handleDelete()
 			makeError(INTERNAL_SERVER_ERROR);  // 500
 		return;
 	}
+	std::cout << "[DELETE]: delete file " << filePath.c_str();
 	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
@@ -235,7 +241,7 @@ void HttpRequestHandler::handlePost()
         makeError(METHOD_NOT_ALLOWED);
         return;
     }
-
+	std::cout << "trying to handle post" << std::cout;
     struct stat st;
     int created = 201;
     if (stat(filePath.c_str(), &st) == 0)

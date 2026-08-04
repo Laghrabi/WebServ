@@ -3,9 +3,6 @@
 #include "RouteResult.hpp"
 #include "MimeTypesExt.hpp"
 
-
-// i have to check if the client send connection close
-// and if so, i have to disconect the clien ffuuuuuuuck
 static std::string getCurrentDate()
 {
 	std::time_t now = std::time(NULL);
@@ -51,12 +48,11 @@ void HttpRequestHandler::serveFile()
 		return;
 	}
 	std::string connection = checkConnection();
-	std::cerr << "SERVE FILEones" << std::endl;
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setHeader("Content-Length", to_string(st.st_size), buffer);
-	// response.setHeader("Content-Type", MimeTypesExt::getMimeType(filePath), buffer);//i guess getmimetype khsha tkon static buch man7tajch l object bach n accessi liha
+	response.setHeader("Content-Type", response.config.m_types.getMimeType(filePath), buffer);
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
@@ -87,7 +83,6 @@ std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directo
 
 void HttpRequestHandler::generateAutoIndex()
 {
-	std::cerr <<"error\nA A" << "\n";
 	const RouteResult &result = request._routeResult;
 	const std::string &directoryPath = result.targetPath;
 	if (access(directoryPath.c_str(), R_OK) != 0)
@@ -124,6 +119,7 @@ void HttpRequestHandler::makeRedirect()
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Location", result.targetPath, buffer);
 	response.setHeader("Content-Length", "0", buffer);
+	// response.setHeader("Content-Type", );
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);

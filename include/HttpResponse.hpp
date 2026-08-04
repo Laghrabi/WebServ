@@ -40,10 +40,11 @@ class HttpResponse
 		static std::map<HttpStatus, std::string> 	statusCodeMap;
 		
 	public:
+		const Config&								config;
 		int keep_connection;
 		std::vector<char>							buffer;
 		static void init();
-		HttpResponse();
+		HttpResponse(const Config& config);
 		HttpResponse(const HttpResponse& other);
 		HttpResponse& operator=(const HttpResponse& other);
 		~HttpResponse();

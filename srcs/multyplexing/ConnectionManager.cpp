@@ -110,7 +110,7 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 
 	const Server::IPort& key = listener.getEndpoint();
 	const Config::ServerMultiMap& map = m_config.m_iport_server;
-	Client client(clientFd, &listener, Server::IPort(address), map.equal_range(key));
+	Client client(clientFd, &listener, Server::IPort(address), map.equal_range(key), m_config);
 	std::cout << "Accepted new client with fd: " << clientFd << "\n";
 	m_clients.insert(
 			std::make_pair(clientFd, client));
@@ -126,10 +126,10 @@ void ConnectionManager::disconnect(Client& client)
 	{
 		perror("epoll_ctl failed to delete");
 	}
-	close(client.getFd());
-	m_clients.erase(client.getFd());
 	delete (m_events.find(client.getFd())->second);
 	m_events.erase(client.getFd());
+	close(client.getFd());
+	m_clients.erase(client.getFd());
 }
 
 

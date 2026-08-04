@@ -2,13 +2,14 @@
 #include "webserver.hpp"
 std::map<HttpStatus, std::string> 	HttpResponse::statusCodeMap;
 
-HttpResponse::HttpResponse():
+HttpResponse::HttpResponse(const Config& Config):
 	bufferBytesSent(0),
 	bodySource(BODY_NONE),
 	filePath(),
 	contentLength(0),
 	filebytesSent(0),
 	headersSent(false),
+	config(Config),
 	buffer()
 {
 	buffer.reserve(SENDSIZE);
@@ -22,6 +23,7 @@ HttpResponse::HttpResponse(const HttpResponse& other):
 	contentLength(other.contentLength),
 	filebytesSent(other.filebytesSent),
 	headersSent(other.headersSent),
+	config(other.config),
 	buffer(other.buffer)
 {
 	buffer.reserve(SENDSIZE);
@@ -67,10 +69,7 @@ void HttpResponse::setFilePath(const std::string& path)
 
 void HttpResponse::setFileBody(const std::string& path)
 {
-	std::cout << fileBody.is_open() << "yes" << std::endl;
 	fileBody.open(path.c_str());
-	std::cout << "len = " << path.length() << "\n";
-	std::cout << ", fail()=" << fileBody.fail() << "file name" << path << "bla" << std::endl;
 }
 
 void HttpResponse::setContentLength(size_t length)
@@ -181,10 +180,6 @@ std::vector<char> HttpResponse::assembleResponse() {
 	}
 	return std::vector<char>();
 }
-
-
-
-
 
 void HttpResponse::init()
 {

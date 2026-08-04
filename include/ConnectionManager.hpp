@@ -38,28 +38,15 @@ public:
     EventContainer      m_events;
     int epfd;
 
-    void createListeningSockets();
-
-    void acceptClient(ListeningSocket& listener);
-    
-    void recieveClient(Client& client);
-    
-    void sendClient(Client& client);
-
-    int receive(Client& client, int fd);
-
-    void recievePipe(Client& client);
-    
-    // void send(Client& client);
-    
-    void disconnect(Client& client);
-
-    void ChangeClientEvent(int fd, uint32_t event);
-    // void enablePollout(int fd);
-
-    // void disablePollout(int fd);
-
-    void AddSocketToEpfd(int fd, SockType type, uint32_t event);
+    void				createListeningSockets();
+    void				acceptClient(ListeningSocket& listener);
+    void				recieveClient(Client& client);
+    void				sendClient(Client& client);
+    int					receive(Client& client, int fd);
+    void				recievePipe(Client& client);
+    void				disconnect(Client& client);
+    void				ChangeClientEvent(int fd, uint32_t event);
+    void				AddSocketToEpfd(int fd, SockType type, uint32_t event);
 
 public:
 

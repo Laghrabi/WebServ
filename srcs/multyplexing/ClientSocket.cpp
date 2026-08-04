@@ -2,22 +2,23 @@
 
 
 Client::Client(
-    int fd,
-    ListeningSocket* listener,
-    Server::IPort iport,
-    const Config::ServerRange& serverRange)
-    :
-    m_fd(fd),
-    m_readBuffer(),
-    m_writeBuffer(),
-    m_listener(listener),
-    m_request(serverRange, iport),
-    m_response(),
-		m_pipefd(-1),
-		m_cgi_handler(m_request)
-    {
-    }
-    //here if sacr needs the addr and port of the client i cant call the extraPort and extractip ,
+int fd,
+ListeningSocket* listener,
+Server::IPort iport,
+const Config::ServerRange& serverRange,
+const Config& config)
+:
+m_fd(fd),
+m_readBuffer(),
+m_writeBuffer(),
+m_listener(listener),
+m_request(serverRange, iport),
+m_response(config),
+m_pipefd(-1),
+m_config(config),
+m_cgi_handler(m_request)
+{
+}
 
 Client::Client(const Client& other):
     m_fd(other.m_fd),
@@ -25,9 +26,10 @@ Client::Client(const Client& other):
     m_writeBuffer(other.m_writeBuffer),
     m_listener(other.m_listener),
     m_request(other.m_request),
-    m_response(),
-		m_pipefd(other.m_pipefd),
-		m_cgi_handler(m_request)
+    m_response(other.m_config),
+	m_pipefd(other.m_pipefd),
+    m_config(other.m_config),
+	m_cgi_handler(m_request)
 {
 }
 

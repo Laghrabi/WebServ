@@ -43,7 +43,8 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 		_serverRange(other._serverRange),
 		_bodyFilePath(other._bodyFilePath),
 		_clientEndPoint(other._clientEndPoint),
-		_bodyBytesWritten(other._bodyBytesWritten){}
+		_bodyBytesWritten(other._bodyBytesWritten),
+		_routeResult(other._routeResult){}
 
 		/**
 		 * @brief Copy assignment operator for HttpRequest.
@@ -78,11 +79,7 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 				_clientEndPoint = other._clientEndPoint;
 				_bodyFilePath = other._bodyFilePath;
 				_bodyBytesWritten = other._bodyBytesWritten;
-				// _routeResult.action = other._routeResult.action;
-    			// _routeResult.targetPath = other._routeResult.targetPath;
-    			// _routeResult.statusCode = other._routeResult.statusCode;
-				// _routeResult.cgiInfo = other._routeResult.cgiInfo;
-				// _routeResult.route = other._routeResult.route;
+				_routeResult = other._routeResult;
 			}
 			return (*this);
 		}

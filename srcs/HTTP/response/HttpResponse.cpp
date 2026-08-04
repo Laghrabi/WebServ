@@ -157,7 +157,6 @@ void HttpResponse::clear()
 
 std::vector<char> HttpResponse::assembleResponse() {
 	if (getBodySource() == BODY_PIPE) {
-		std::cout << "[CGI] " << buffer.size() << "\n";
 		return (buffer);
 		// NOTE: check if buffer is 
 	}

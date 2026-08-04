@@ -75,7 +75,7 @@ void CgiRequest::setRequestEnv() {
 void CgiRequest::setClientEnv() {
 
 	m_env_vec.push_back("REMOTE_ADDR=" + m_request.getClientIPort().getIpStr());
-	m_env_vec.push_back("REMOTE_PORT=" + m_request.getClientIPort().getIpStr());
+	m_env_vec.push_back("REMOTE_PORT=" + m_request.getClientIPort().getPortStr());
 
 	// m_env_vec.push_back("REMOTE_USER=" + m_request.getClientIPort().getIpStr());
 	

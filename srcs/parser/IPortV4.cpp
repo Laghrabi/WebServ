@@ -30,7 +30,6 @@ void Server::IPortV4::setIpString() {
 	char buffer[INET_ADDRSTRLEN] =  {0};
 	const char *success = inet_ntop(m_family, &m_addr->sin_addr, buffer, INET_ADDRSTRLEN);
 	if (!success) {	}
-	// std::cout << buffer << "hello\n";
 	m_ip_str = buffer;
 }
 

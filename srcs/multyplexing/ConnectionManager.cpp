@@ -62,9 +62,8 @@ void ConnectionManager::createListeningSockets()
 			throw std::runtime_error("socket failed");
 		else
 		{
-			std::cout << "creat socket fd = " << fd << "for endpoint ";
+			std::cout << "creat socket fd = " << fd << " for endpoint ";
 			listener.getEndpoint().print();
-			std::cout << "\n";
 		}
 		int yes = 1;
 		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
@@ -75,24 +74,16 @@ void ConnectionManager::createListeningSockets()
 			perror("bind");
 			throw std::runtime_error("bind failed");
 		}
-		else
-		{
-			std::cout << "bind socket fd = " << fd << "for endpoint ";
-			listener.getEndpoint().print();
-			std::cout << "\n";
-		}
 		if (listen(fd, SOMAXCONN) < 0)
 			throw std::runtime_error("listen failed");
 		else 
 		{
-			std::cout << "socket fd = " << fd << "is listening for endpoint ";
+			std::cout << "socket fd = " << fd << " is listening for endpoint ";
 			listener.getEndpoint().print();
-			std::cout << "\n";
 		}
 		listener.setFd(fd);
 		m_listeners.insert(
 				std::make_pair(fd, listener));
-		std::cout << "listener added for endpoint " << std::endl;
 		AddSocketToEpfd(listener.getFd(), LISTENER_SOCK, EPOLLIN);
 	}
 }
@@ -119,8 +110,8 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 
 	const Server::IPort& key = listener.getEndpoint();
 	const Config::ServerMultiMap& map = m_config.m_iport_server;
-	Client client(clientFd, &listener, Server::IPort(address), map.equal_range(key));
-	std::cout << "Accepted new client with fd: " << clientFd << "\n";
+	Client client(clientFd, &listener, Server::IPort(address), map.equal_range(key), m_config);
+	std::cout << "[ACCEPT]: Accepted new client with fd: " << clientFd << std::endl;
 	m_clients.insert(
 			std::make_pair(clientFd, client));
 
@@ -130,15 +121,15 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 
 void ConnectionManager::disconnect(Client& client)
 {
-	std::cout << "client" << client.getFd() << "disconnect"<< std::endl;
+	std::cout << "[DISCONNECT]: "<< "client " << client.getFd() << " disconnect"<< std::endl;
 	if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
 	{
 		perror("epoll_ctl failed to delete");
 	}
-	close(client.getFd());
-	m_clients.erase(client.getFd());
 	delete (m_events.find(client.getFd())->second);
 	m_events.erase(client.getFd());
+	m_clients.erase(client.getFd());
+	close(client.getFd());
 }
 
 
@@ -149,26 +140,34 @@ int ConnectionManager::receive(Client& client, int fd)
 	std::cerr << "cgi fd = " << fd << "\n";
 	// NOTE: DO SOMETHING HERE that is special to pipe
 	if (client.m_pipefd == -1)
+	{
 	    bytes = recv(fd, buffer, sizeof(buffer), 0);
+		std::cout << "[RECV]: from client" << client.getFd() << buffer << std::endl;
+	}
 	else
+	{
 	    bytes = read(fd, buffer, sizeof(buffer));
+		std::cout << "[RECV]: from pipe" << buffer << std::endl;
+	}
 
 	if (bytes > 0)
 	{
-		std::cerr << "there is bytes from \n";
 		client.getReadBuffer().clear();
 		client.getReadBuffer().insert( client.getReadBuffer().end(),
 				buffer, buffer + bytes);
 		return (0);
 	}
-	else if (bytes == 0)
+	else if (bytes == 0 && client.m_pipefd == -1)
 	{
+		//khoya hamza ach kadir hna?? ana li zadt db && client.m_pipefd == -1)
 		std::cerr << "0 bytes cgi\n";
+		std::cout << "[RECV]: client " << client.getFd() << "close the connection";
 		disconnect(client);
 		return (1);
 	}
 	else
 	{
+		std::cout << "the is some error in receive";
 		std::cerr << "error cgi \n";
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 		{
@@ -199,7 +198,7 @@ void ConnectionManager::ChangeClientEvent(int fd, uint32_t event)
 	}
 }
 
-void ConnectionManager::recievePipe(Client& client)
+void ConnectionManager::receivePipe(Client& client)
 {
 	std::cerr << "i no am here\n";
 	if (receive(client, client.m_pipefd))
@@ -214,46 +213,33 @@ void ConnectionManager::recievePipe(Client& client)
 	client.m_cgi_handler.parse(c);
 }
 
-void ConnectionManager::recieveClient(Client& client)
+void ConnectionManager::receiveClient(Client& client)
 {
 	if (receive(client, client.getFd()))
 		return;
-	// check if type is cgi_pipe 
-	// events
 
 	client.getRequest().parse(client.getReadBuffer());
 	int state = client.getRequest().getCurrentState(); 
-	std::cout << "hello===========" << std::endl;
 	HttpRequest& request = client.getRequest();
 	if (state == FINISHED) {
-		// routing to find resources to provide
+		std::cout << "[recieve]: http request recieved completly" << std::endl; 
 		RouteManager route_manager;
 		route_manager.processRequest(request);
 		RouteResult result = request._routeResult;
-
-		std::cout << "result status Code = " << result.statusCode << "\n";
-		if (result.action != ACTION_ERROR) {
-			std::cout << "target path = " << result.targetPath << "\n";
-
-			HttpRequest::printHttpStatus(request.getStatusCode());
-			RouteManager::printRouteAction(result.action);
-			request.printBodyContent();
-			if (result.action == ACTION_EXECUTE_CGI) {
-				std::cout << "====================Action is cgi" << std::endl;
-				client.m_pipefd = client.m_cgi_handler.execute();
-				// if (client.m_pipefd < 0)
-				//check what cgi return 
-				std::cerr << "action cgi " << client.m_pipefd;
-				AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
-				m_client_pipes.insert(
-						std::make_pair(client.m_pipefd, &client));
-				}
-		}
-		else {
-			HttpRequest::printHttpStatus(request.getStatusCode());
-			RouteManager::printRouteAction(result.action);
-			std::cout << "error\n";
-
+		RouteManager::printRouteAction(result.action);
+		std::map<HttpStatus, std::string>::const_iterator it = client.getResponse().getStatusCodeMap().find(result.statusCode);
+		std::cout << "result status Code = " << it->second << "\n";
+		std::cout << "target path = " << result.targetPath << "\n";
+		request.printBodyContent();
+		if (result.action == ACTION_EXECUTE_CGI) {
+			std::cout << "[CGI] this action is cgi" << std::endl;
+			client.m_pipefd = client.m_cgi_handler.execute();
+			// if (client.m_pipefd < 0)
+			//check what cgi return 
+			std::cerr << "action cgi " << client.m_pipefd;
+			AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
+			m_client_pipes.insert(
+					std::make_pair(client.m_pipefd, &client));
 		}
 	} else if (state == ERROR) {
 		request.printHttpStatus(request.getStatusCode());
@@ -262,8 +248,7 @@ void ConnectionManager::recieveClient(Client& client)
 	}
 	HttpResponse& response = client.getResponse();
 	HttpRequestHandler handler(request, response);
-
-
+	std::cout << request.getStatusCode() << "\n";
 	handler.handleRequest();
 	ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
@@ -272,13 +257,12 @@ void ConnectionManager::sendClient(Client& client)
 {
 	HttpResponse& response = client.getResponse();
 	std::vector<char> chunk = response.assembleResponse();
-	std::cerr << "CHUNK SIZE = " << chunk.size() << std::endl;
+	std::cout << "CHUNK SIZE = " << chunk.size() << std::endl;
 	sleep(1);
 
 	if (chunk.empty() && response.getHeadersSent() &&
 			response.is_finished)
 	{
-		std::cerr << "nope\n";
 		response.clear();
 		if (response.keep_connection == 0)
 		{
@@ -316,11 +300,7 @@ void ConnectionManager::run()
 			EventData *data = static_cast<EventData *>(evlist[i].data.ptr);
 			int fd = data->fd;
 			int type = data->type;
-
-			//i need to handle the cgi fd here...
-
-
-			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)// should do the same fo the cgi  because it will be type  CGI_SOCK
+			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)
 			{
 				disconnect(m_clients.find(fd)->second);
 				--ready;
@@ -331,12 +311,12 @@ void ConnectionManager::run()
 				if (type == LISTENER_SOCK && (events & EPOLLIN))
 					acceptClient(m_listeners.find(fd)->second);
 				else if (type == CLIENT_SOCK && (events & EPOLLIN))
-					recieveClient(m_clients.find(fd)->second);
+					receiveClient(m_clients.find(fd)->second);
 				else if (type == CLIENT_SOCK && (events & EPOLLOUT))
 					sendClient(m_clients.find(fd)->second);
 				else if (type == (CGI_PIPE)) {
 					std::cerr << "there is cgi pipe\n";
-					recievePipe(*m_client_pipes.find(fd)->second);
+					receivePipe(*m_client_pipes.find(fd)->second);
 				}
 			}
 			--ready;

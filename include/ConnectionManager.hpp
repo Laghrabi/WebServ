@@ -34,33 +34,20 @@ public:
 
     const Config&       m_config;
     ListenerContainer   m_listeners;
-		std::map<int, Client*> m_client_pipes;
+	std::map<int, Client*> m_client_pipes;
     ClientContainer     m_clients;
     EventContainer      m_events;
     int epfd;
 
-    void createListeningSockets();
-
-    void acceptClient(ListeningSocket& listener);
-    
-    void recieveClient(Client& client);
-    
-    void sendClient(Client& client);
-
-    int receive(Client& client, int fd);
-
-    void recievePipe(Client& client);
-    
-    // void send(Client& client);
-    
-    void disconnect(Client& client);
-
-    void ChangeClientEvent(int fd, uint32_t event);
-    // void enablePollout(int fd);
-
-    // void disablePollout(int fd);
-
-    void AddSocketToEpfd(int fd, SockType type, uint32_t event);
+    void				createListeningSockets();
+    void				acceptClient(ListeningSocket& listener);
+    void				receiveClient(Client& client);
+    void				sendClient(Client& client);
+    int					receive(Client& client, int fd);
+    void				receivePipe(Client& client);
+    void				disconnect(Client& client);
+    void				ChangeClientEvent(int fd, uint32_t event);
+    void				AddSocketToEpfd(int fd, SockType type, uint32_t event);
 
 public:
 

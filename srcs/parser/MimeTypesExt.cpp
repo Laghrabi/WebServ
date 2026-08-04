@@ -29,7 +29,14 @@ void MimeTypesExt::parseMimeType(ContIter &begin) {
 	}
 }
 
-std::string MimeTypesExt::getMimeType(const std::string& ext) const{
+std::string MimeTypesExt::getMimeType(const std::string& path) const{
+	size_t dot = path.rfind('.');
+    size_t slash = path.rfind("/");
+	if (dot == std::string::npos || (slash != std::string::npos && dot < slash))
+    {
+        return "application/octet-stream";
+    }
+    std::string ext = path.substr(dot + 1);
 	MAP::const_iterator it = find(ext);
 	if (it == end()) {
 		return ("application/octet-stream");

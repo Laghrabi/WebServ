@@ -90,6 +90,13 @@ void RouteManager::processRequest(HttpRequest& request) {
 	result.route = matchRoute(request.getUriSegments(), request.getServer(), _basePath);
 	std::string	LocationMatch = _basePath;
 
+	if (result.route->hasMaxBodySize()) {
+		if (request._bodyBytesWritten > result.route->getMaxBodySize()) {
+			result.statusCode = PAYLOAD_TOO_LARGE;
+			result.action = ACTION_ERROR;
+			return ;
+		}
+	}
 
 	if (result.route && !result.route->isAllowed(request.getMethod())) {
 		result.action = ACTION_ERROR;

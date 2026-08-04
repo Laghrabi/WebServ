@@ -2,7 +2,7 @@
 #include "../../../include/webserver.hpp"
 
 HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-	_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL) {}
+	_contentLength(0),  _chunkedSize(0), _server(NULL), _bodyBytesWritten(0){}
 
 	/**
 	 * @brief Default constructor.
@@ -11,7 +11,7 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 	 * to READING_REQUEST_LINE and the buffer index to 0.
 	 */
 	HttpRequest::HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-	_contentLength(0),  _chunkedSize(0), _bodyBytesWritten(0), _server(NULL), _serverRange(serverRange), _clientEndPoint(clientEndPoint) {}
+	_contentLength(0),  _chunkedSize(0), _server(NULL), _serverRange(serverRange), _clientEndPoint(clientEndPoint), _bodyBytesWritten(0) {}
 
 	/**
 	 * @brief Copy constructor for HttpRequest.
@@ -38,12 +38,12 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 		_contentLength(other._contentLength),
 		_chunkedSize(other._chunkedSize),
 		_body(other._body),
-		_bodyBytesWritten(other._bodyBytesWritten),
 		_client_max_body_size(other._client_max_body_size),
 		_server(other._server),
 		_serverRange(other._serverRange),
 		_bodyFilePath(other._bodyFilePath),
-		_clientEndPoint(other._clientEndPoint){}
+		_clientEndPoint(other._clientEndPoint),
+		_bodyBytesWritten(other._bodyBytesWritten){}
 
 		/**
 		 * @brief Copy assignment operator for HttpRequest.
@@ -72,12 +72,17 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 				_contentLength = other._contentLength;
 				_chunkedSize = other._chunkedSize;
 				_body = other._body;
-				_bodyBytesWritten = other._bodyBytesWritten;
 				_client_max_body_size = other._client_max_body_size;
 				_server = other._server;
 				_serverRange = other._serverRange;
 				_clientEndPoint = other._clientEndPoint;
 				_bodyFilePath = other._bodyFilePath;
+				_bodyBytesWritten = other._bodyBytesWritten;
+				// _routeResult.action = other._routeResult.action;
+    			// _routeResult.targetPath = other._routeResult.targetPath;
+    			// _routeResult.statusCode = other._routeResult.statusCode;
+				// _routeResult.cgiInfo = other._routeResult.cgiInfo;
+				// _routeResult.route = other._routeResult.route;
 			}
 			return (*this);
 		}
@@ -279,10 +284,10 @@ bool	HttpRequest::validateHeaders() {
 		return false;
 	}
 	_server = findServer(itHost->second);
-	if (_server->hasMaxBodySize() == true)
-		_client_max_body_size = _server->getMaxBodySize(); 
-	else
-		_client_max_body_size = _DEFAULT_BODY_SIZE;
+	// if (_server->hasMaxBodySize() == true)
+	// 	_client_max_body_size = _server->getMaxBodySize(); 
+	// else
+	// 	_client_max_body_size = _DEFAULT_BODY_SIZE;
 	if (_method == "POST" && itContentLength == _headers.end() && itTransferEncoding == _headers.end()) {
 		_statusCode = BODY_LENGTH_REQUIRED;
 		_currentState = ERROR;
@@ -306,11 +311,11 @@ bool	HttpRequest::validateHeaders() {
 			_currentState = ERROR;
 			return (false);
 		}
-		if (_contentLength > _client_max_body_size) {
-			_statusCode = PAYLOAD_TOO_LARGE;
-			_currentState = ERROR;
-			return (false);
-		}
+		// if (_contentLength > _client_max_body_size) {
+		// 	_statusCode = PAYLOAD_TOO_LARGE;
+		// 	_currentState = ERROR;
+		// 	return (false);
+		// }
 		_currentState = READING_BODY;
 	} 
 	else if (itTransferEncoding != _headers.end()) {
@@ -419,24 +424,24 @@ bool HttpRequest::parseChunkSize() {
 		_currentState = ERROR;
 		return (false);
 	} else if (_chunkedSize != 0) {
-		if (_chunkedSize > _client_max_body_size) {
-			if (_bodyStream.is_open()) {
-                _bodyStream.close();
-                std::remove(_bodyFilePath.c_str());
-            }
-			_statusCode = PAYLOAD_TOO_LARGE;
-			_currentState = ERROR;
-			return (false);
-		}
-		if (_bodyBytesWritten + _chunkedSize > _client_max_body_size) {
-			if (_bodyStream.is_open()) {
-                _bodyStream.close();
-                std::remove(_bodyFilePath.c_str());
-            }
-			_statusCode = PAYLOAD_TOO_LARGE;
-			_currentState = ERROR;
-			return (false);
-		}
+		// if (_chunkedSize > _client_max_body_size) {
+		// 	if (_bodyStream.is_open()) {
+        //         _bodyStream.close();
+        //         std::remove(_bodyFilePath.c_str());
+        //     }
+		// 	_statusCode = PAYLOAD_TOO_LARGE;
+		// 	_currentState = ERROR;
+		// 	return (false);
+		// }
+		// if (_bodyBytesWritten + _chunkedSize > _client_max_body_size) {
+		// 	if (_bodyStream.is_open()) {
+        //         _bodyStream.close();
+        //         std::remove(_bodyFilePath.c_str());
+        //     }
+		// 	_statusCode = PAYLOAD_TOO_LARGE;
+		// 	_currentState = ERROR;
+		// 	return (false);
+		// }
 		_currentState = READING_CHUNK_DATA;
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);
@@ -470,15 +475,15 @@ bool	HttpRequest::parseChunkData() {
 		_currentState = ERROR;
 		return (false);
 	}
-	if (_bodyBytesWritten + _chunkedSize > _client_max_body_size) {
-		if (_bodyStream.is_open()) {
-            _bodyStream.close();
-            std::remove(_bodyFilePath.c_str());
-        }
-		_statusCode = PAYLOAD_TOO_LARGE;
-		_currentState = ERROR;
-		return (false);
-	}
+	// if (_bodyBytesWritten + _chunkedSize > _client_max_body_size) {
+	// 	if (_bodyStream.is_open()) {
+    //         _bodyStream.close();
+    //         std::remove(_bodyFilePath.c_str());
+    //     }
+	// 	_statusCode = PAYLOAD_TOO_LARGE;
+	// 	_currentState = ERROR;
+	// 	return (false);
+	// }
 
 	if (!openBodyStream())
         return false;

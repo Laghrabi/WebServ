@@ -15,10 +15,10 @@ m_listener(listener),
 m_request(serverRange, iport),
 m_response(config),
 m_pipefd(-1),
-m_config(config),
-m_cgi_handler(m_request)
+m_cgi_handler(m_request, m_response)
 {
 }
+    //here if sacr needs the addr and port of the client i cant call the extraPort and extractip ,
 
 Client::Client(const Client& other):
     m_fd(other.m_fd),
@@ -26,10 +26,9 @@ Client::Client(const Client& other):
     m_writeBuffer(other.m_writeBuffer),
     m_listener(other.m_listener),
     m_request(other.m_request),
-    m_response(other.m_config),
+    m_response(other.m_response),
 	m_pipefd(other.m_pipefd),
-    m_config(other.m_config),
-	m_cgi_handler(m_request)
+    m_cgi_handler(m_request, m_response)
 {
 }
 
@@ -37,12 +36,7 @@ Client& Client::operator=(const Client& other)
 {
     if (this != &other)
     {
-        m_fd = other.m_fd;
-        m_readBuffer = other.m_readBuffer;
-        m_writeBuffer = other.m_writeBuffer;
-        m_listener = other.m_listener;
-        m_request = other.m_request;
-				m_pipefd = other.m_pipefd;
+        (void)other;
     }
     return (*this);
 }

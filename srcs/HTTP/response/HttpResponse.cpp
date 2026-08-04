@@ -10,7 +10,8 @@ HttpResponse::HttpResponse(const Config& Config):
 	filebytesSent(0),
 	headersSent(false),
 	config(Config),
-	buffer()
+	buffer(),
+	is_finished(false)
 {
 	buffer.reserve(SENDSIZE);
 	init();
@@ -24,7 +25,8 @@ HttpResponse::HttpResponse(const HttpResponse& other):
 	filebytesSent(other.filebytesSent),
 	headersSent(other.headersSent),
 	config(other.config),
-	buffer(other.buffer)
+	buffer(other.buffer),
+	is_finished(other.is_finished)
 {
 	buffer.reserve(SENDSIZE);
 	init();
@@ -41,6 +43,7 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& other) {
 		filebytesSent = other.filebytesSent;
 		headersSent = other.headersSent;
 		buffer.reserve(SENDSIZE);
+		is_finished = other.is_finished;
 	}
 	return *this;
 }
@@ -85,9 +88,7 @@ void HttpResponse::setHeadersSent(bool sent)
 void HttpResponse::eraseSendBytes(size_t bytes)
 {
 	std::vector<char>::iterator vecBegin = buffer.begin();
-	std::cerr << "size = " << buffer.size() << "\n";
 	buffer.erase(vecBegin, vecBegin + bytes);
-	std::cerr << "size = " << buffer.size() << "\n";
 }
 
 
@@ -155,6 +156,11 @@ void HttpResponse::clear()
 }
 
 std::vector<char> HttpResponse::assembleResponse() {
+	if (getBodySource() == BODY_PIPE) {
+		std::cout << "[CGI] " << buffer.size() << "\n";
+		return (buffer);
+		// NOTE: check if buffer is 
+	}
 	if (!getHeadersSent()) {
 		if (!buffer.empty()) {
 			if (buffer.size() <= SENDSIZE)
@@ -176,9 +182,13 @@ std::vector<char> HttpResponse::assembleResponse() {
 			if (size > 0)
 				copyArrayToVec(buf, size, buffer);
 		}
-		return buffer; 
 	}
-	return std::vector<char>();
+
+	if (buffer.empty()) {
+		is_finished = true;
+	}
+
+	return buffer;
 }
 
 void HttpResponse::init()

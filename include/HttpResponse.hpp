@@ -24,7 +24,8 @@ enum ResponseBodySource
 {
 	BODY_NONE,
     BODY_BUFFER,
-    BODY_FILE
+    BODY_FILE,
+		BODY_PIPE
 };
 
 class HttpResponse
@@ -38,6 +39,7 @@ class HttpResponse
 		size_t										filebytesSent;
 		bool 										headersSent;
 		static std::map<HttpStatus, std::string> 	statusCodeMap;
+		HttpResponse& operator=(const HttpResponse& other);
 		
 	public:
 		const Config&								config;
@@ -46,10 +48,10 @@ class HttpResponse
 		static void init();
 		HttpResponse(const Config& config);
 		HttpResponse(const HttpResponse& other);
-		HttpResponse& operator=(const HttpResponse& other);
 		~HttpResponse();
 		
 		std::vector<char> assembleResponse();
+		bool is_finished;
 
 		void clear();
 

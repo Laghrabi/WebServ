@@ -138,6 +138,7 @@ int ConnectionManager::receive(Client& client, int fd)
 	char    buffer[4096] = {0};
 	ssize_t bytes;
 	std::cerr << "cgi fd = " << fd << "\n";
+	// NOTE: DO SOMETHING HERE that is special to pipe
 	if (client.m_pipefd == -1)
 	    bytes = recv(fd, buffer, sizeof(buffer), 0);
 	else
@@ -234,8 +235,8 @@ void ConnectionManager::recieveClient(Client& client)
 				//check what cgi return 
 				std::cerr << "action cgi " << client.m_pipefd;
 				AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
-				m_clients.insert(
-						std::make_pair(client.m_pipefd, client));
+				m_client_pipes.insert(
+						std::make_pair(client.m_pipefd, &client));
 				}
 		}
 		else {
@@ -251,6 +252,7 @@ void ConnectionManager::recieveClient(Client& client)
 	}
 	HttpResponse& response = client.getResponse();
 	HttpRequestHandler handler(request, response);
+	std::cout << request.getStatusCode() << "\n";
 	handler.handleRequest();
 	ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
@@ -260,7 +262,10 @@ void ConnectionManager::sendClient(Client& client)
 	HttpResponse& response = client.getResponse();
 	std::vector<char> chunk = response.assembleResponse();
 	std::cerr << "CHUNK SIZE = " << chunk.size() << std::endl;
-	if (chunk.empty() && response.getHeadersSent())
+	sleep(1);
+
+	if (chunk.empty() && response.getHeadersSent() &&
+			response.is_finished)
 	{
 		std::cerr << "nope\n";
 		response.clear();
@@ -272,9 +277,11 @@ void ConnectionManager::sendClient(Client& client)
 		ChangeClientEvent(client.getFd(), EPOLLIN);
 		return;
 	}
-	ssize_t n = send(client.getFd(), &chunk[0], chunk.size(), 0);
-	std::cerr << "size n  = " << n << "\n";
-	response.eraseSendBytes(n);
+	if (!chunk.empty()) {
+		ssize_t n = send(client.getFd(), &chunk[0], chunk.size(), 0);
+		std::cerr << "size n  = " << n << "\n";
+		response.eraseSendBytes(n);
+	}
 }
 
 void ConnectionManager::run()
@@ -314,7 +321,7 @@ void ConnectionManager::run()
 					sendClient(m_clients.find(fd)->second);
 				else if (type == (CGI_PIPE)) {
 					std::cerr << "there is cgi pipe\n";
-					recievePipe(m_clients.find(fd)->second);
+					recievePipe(*m_client_pipes.find(fd)->second);
 				}
 			}
 			--ready;

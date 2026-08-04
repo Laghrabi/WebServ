@@ -129,7 +129,6 @@ void HttpRequestHandler::makeRedirect()
 void HttpRequestHandler::makeError(HttpStatus code)
 {
 	std::vector<char>& buffer = response.buffer;
-	const RouteConfig *config = request._routeResult.route;
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + response.getStatusCodeMap().find(code)->second + "\r\n";
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	// here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
@@ -138,6 +137,7 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	std::string connection = checkConnection();
 	if (code == METHOD_NOT_ALLOWED)
 	{
+		const RouteConfig *config = request._routeResult.route;
 		std::set<std::string> allowed_methods = config->getAllowedMethods();
 		std::string methods;
 		for (std::set<std::string>::const_iterator it = allowed_methods.begin();
@@ -154,7 +154,8 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
-    buffer.insert(buffer.end(), std::string("\r\n").begin(), std::string("\r\n").end());
+	std::string rlnl = "\r\n";
+  buffer.insert(buffer.end(), rlnl.begin(), rlnl.end());
 }
 
 void HttpRequestHandler::handleGet()
@@ -341,8 +342,10 @@ void HttpRequestHandler::handleRequest()
 		makeError(request._routeResult.statusCode);
         return;
 	}
-	if (request._routeResult.action == ACTION_EXECUTE_CGI)
+	if (request._routeResult.action == ACTION_EXECUTE_CGI) {
+		response.setBodySource(BODY_PIPE);
 		return;
+	}
 
 	if (request.getMethod() == "GET")
 	{

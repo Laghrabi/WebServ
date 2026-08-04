@@ -34,6 +34,7 @@ public:
 
     const Config&       m_config;
     ListenerContainer   m_listeners;
+		std::map<int, Client*> m_client_pipes;
     ClientContainer     m_clients;
     EventContainer      m_events;
     int epfd;

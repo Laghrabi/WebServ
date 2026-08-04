@@ -34,11 +34,9 @@ std::string MimeTypesExt::getMimeType(const std::string& path) const{
     size_t slash = path.rfind("/");
 	if (dot == std::string::npos || (slash != std::string::npos && dot < slash))
     {
-		std::cout << "3lach dkhalt hna" << std::endl;
         return "application/octet-stream";
     }
     std::string ext = path.substr(dot + 1);
-	std::cout << "this is the extention " << ext << std::endl;
 	MAP::const_iterator it = find(ext);
 	if (it == end()) {
 		return ("application/octet-stream");

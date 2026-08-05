@@ -30,6 +30,8 @@ class RouteConfig {
 		typedef std::map<std::string, HandlerFunc> MapHandler ;
 		typedef ParseConfig ParseConfigType ;
 
+		typedef std::map<char, std::size_t> UnitMap;
+
 		static MapHandler s_handlers;
 
 		void addMethod(const std::string& new_method) throw (std::exception);
@@ -99,7 +101,7 @@ class RouteConfig {
 		std::pair <bool, std::pair<HttpStatus, std::string> > m_redirect;
 
 		static std::set<std::string> s_available_methods;
-		static std::map<char, unsigned long long> m_unit_multi;
+		static UnitMap m_unit_multi;
 };
 
 

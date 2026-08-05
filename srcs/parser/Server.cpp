@@ -1,7 +1,4 @@
 #include "webserver.hpp"
-#include <cstring>
-#include <sstream>
-#include <sys/socket.h>
 
 Server::Server() : RouteConfig(), m_route_tree("/") {
 	init();
@@ -70,24 +67,10 @@ void Server::parseIPort(ContIter &begin) {
 	++begin;
 }
 
-bool toInt(int &num, const std::string& str) {
-	size_t found = str.find_first_not_of("0123456789");
-	if (found != std::string::npos) {
-		return (false);
-	}
-	std::stringstream ss;
-
-	ss << str;
-
-	if (!(ss >> num)) {
-		return false;
-	}
-	return true;
-}
 
 void Server::parseErrorPage(ContIter &begin) {
 	int code = 0;
-	if (!toInt(code, begin->value)) {
+	if (!toNum<int>(code, begin->value)) {
 		throw(ParseConfigType::ConfigExcept("not valid code: \"" + begin->value + "\"", begin->line));
 	}
 

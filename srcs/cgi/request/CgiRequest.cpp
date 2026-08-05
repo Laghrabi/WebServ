@@ -76,6 +76,10 @@ void CgiRequest::setClientEnv() {
 
 	m_env_vec.push_back("REMOTE_ADDR=" + m_request.getClientIPort().getIpStr());
 	m_env_vec.push_back("REMOTE_PORT=" + m_request.getClientIPort().getPortStr());
+	m_env_vec.push_back(std::string("USER=") + getenv("USER"));
+	m_env_vec.push_back(std::string("PATH=") + getenv("PATH"));
+	m_env_vec.push_back(std::string("HOME=") + getenv("HOME"));
+	m_env_vec.push_back(std::string("DOCKER_HOST=") + getenv("DOCKER_HOST"));
 
 	// m_env_vec.push_back("REMOTE_USER=" + m_request.getClientIPort().getIpStr());
 	

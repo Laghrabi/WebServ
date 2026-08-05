@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <sstream>
 #include <stdexcept>
+#include <unistd.h>
 #include <utility>
 
 
@@ -24,24 +25,37 @@ CgiHandler::CgiHandler(const CgiHandler& other) :
 {
 }
 
+ void CgiHandler::checkProcessState() {
+// NOTE: wailt pid
+// check time out 
+// check stat of the handler: error, finished
+// set m_response.is_finished to true
+ }
+
 int CgiHandler::execute(void) {
-	std::cerr << "executing scrip\n";
+	std::cerr << "[CGI] start setup executing scrip\n";
 	CgiRequest cgi_request(m_request);
 	m_cgi_script = m_request._routeResult.targetPath;
 	pipe(m_pipe_fds);
+		std::cout << "[CGI] opening file for the script to read\n" << m_request.getBodyFilePath().c_str() << std::endl;
+
 	int pid = fork();
 	if (pid != -1) {
 		// internel server error
 	}
+
 	if (pid == 0) { // child
 		close (m_pipe_fds[0]);
-		int fd = open ("file", O_RDONLY);
+		int fd = open (m_request.getBodyFilePath().c_str(), O_RDONLY);
+		std::string wdir = m_cgi_script.substr(0, m_cgi_script.find_last_of('/'));
+		std::cout << "[CGI] setting working dir to " << wdir << std::endl;
+		chdir(wdir.c_str());
 		if (fd == -1) {
-
+			std::cerr << "[CGI] can't open file " << m_request.getBodyFilePath().c_str() << "\n";
 		}
 		if (dup2(fd, 0) )
 		{
-			;
+			std::cerr << "[CGI] fail to dup file to 0 " << m_request.getBodyFilePath().c_str() << "\n";
 		}
 		close (fd);
 		if (dup2(m_pipe_fds[1], 1)) {
@@ -70,7 +84,7 @@ std::pair<std::string, std::string> CgiHandler::parse_header(const std::string& 
 	std::size_t colon_pos = data.find(':');
 
 	if (colon_pos == std::string::npos) {
-		throw (std::runtime_error("no colon"));
+		throw (std::runtime_error("no colon filed: " + data));
 	}
 
 	std::string field_name = data.substr(0, colon_pos);
@@ -94,16 +108,10 @@ void checkForError(std::string& header,const std::string& value) {
 	}
 }
 
-bool CgiHandler::isCgiField(const std::string& field_name, const std::string& field_value) {
-	std::cout << "field_value " << field_value << "\n";
-	if (field_name == "Location" || field_name == "Status" ||
-			field_name == "Status") {
-		if (field_name == "Location")	 {
-			m_location = field_value;
-		}
-		if (field_name == "Status")	 {
+
+void CgiHandler::parseStatus(const std::string& field_value) {
+		std::string str;
 			int val;
-			std::string str;
 			std::stringstream ss(field_value);
 			if ((ss >> val) && (ss >> str)) {
 				m_location = field_value;
@@ -112,9 +120,25 @@ bool CgiHandler::isCgiField(const std::string& field_name, const std::string& fi
 				throw (std::runtime_error("status error"));
 			}
 			m_status = field_value;
-		}
-		if (field_name == "Status") {
+}
+
+bool CgiHandler::isCgiField(const std::string& field_name, const std::string& field_value) {
+	if (field_name == "Location" || field_name == "Status" ||
+			field_name == "Content-Type") {
+		if (field_name == "Location")	 {
+			if (!m_location.empty())
+				throw (std::runtime_error("got location two times\n"));
 			m_location = field_value;
+		}
+		if (field_name == "Status")	 {
+			if (!m_status.empty())
+				throw (std::runtime_error("got status two times\n"));
+			parseStatus(field_value);
+		}
+		if (field_name == "Content-Type") {
+			if (!m_content_type.empty())
+				throw (std::runtime_error("got Content Type two times\n"));
+			m_content_type = field_value;
 		}
 		return (true);
 	}
@@ -133,7 +157,7 @@ void CgiHandler::checkHeader(const std::string& header) {
 
 	bool is_cgi_field = isCgiField(field_name, field_value);
 	if (!is_cgi_field || (is_cgi_field && field_name != "Status")) {
-		std::cout << "[CGI] insert a new header: " << field_name << "\n";
+		std::cout << "[CGI] insert a new header: [" << field_name << "]\n";
 		VecIter end = m_send_buffer.end();
 		m_send_buffer.insert(end, header.begin(), header.end());
 		std::cout << "[CGI] appending \\r\\n to the header to put in in buffer send\n";
@@ -141,7 +165,7 @@ void CgiHandler::checkHeader(const std::string& header) {
 	}
 }
 
-std::string toHex(std::size_t num) {
+static std::string toHex(std::size_t num) {
 	std::stringstream ss;
 	ss << std::hex << num;
 	return (ss.str());
@@ -163,11 +187,8 @@ void CgiHandler::setChunckedBody() {
 
 void CgiHandler::parseBody() {
 	if (m_state == STORE_BODY) {
+		std::cout << m_data.size() << "[CGI] saving body to Send Buffer\n";
 		setChunckedBody();
-		std::cout << m_data.size() << "[CGI] saving body\n importnat data[";
-		// write(1, &data[0], data.size());
-		std::cout << "]";
-
 	}
 }
 
@@ -177,7 +198,6 @@ void CgiHandler::addEssentialHeaders() {
 	// appendStringToVec(m_send_buffer, m_send_buffer.end(),
 	// 		"\r\n");
 }
-
 
 
 void CgiHandler::setBodyState() {
@@ -207,10 +227,9 @@ void CgiHandler::parse(const std::vector<char>& data) {
 			if (nl != m_data.end()) {
 				std::string line = std::string(m_data.begin(), nl);
 				if (line == "") {
-					// m_data.clear();
 					m_data.erase(m_data.begin(), nl + 1);
 					setBodyState();
-					std::cerr << "[CGI] reading body" << "\n";
+					std::cerr << "[CGI] reading body phase" << std::endl;
 					m_response.setHeadersSent(true);
 					m_reading_body = true;
 					break ;
@@ -220,9 +239,11 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					m_data.erase(m_data.begin(), nl + 1);
 				}
 				catch (const std::runtime_error& e) {
+					std::cout << "[CGI] malformed header, clearing send buffer and set internel server error\n";
+					m_send_buffer.clear();
 					// NOTE: here internel server errror
 					// terminate the script
-					std::cout << e.what() << "\n";
+					std::cout << "[CGI] "<< e.what() << "\n";
 				}
 			}
 			else {

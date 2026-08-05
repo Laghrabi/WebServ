@@ -38,6 +38,7 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 	UriContConstIter it = script_path.begin();
 	for (; it != script_path.end(); ++it) {
 		test_path += "/" + *it;
+		std::cout << "[CGI] test path is " << test_path << "\n";
 		result.cgiInfo.scriptName += "/" + *it;
 		status.set(test_path);
 		if (status.exist()) {
@@ -53,10 +54,8 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 				result.statusCode = OK;
 				result.cgiInfo.pathInfo = toPath(++it, script_path.end(), false);
 				
-#ifdef CGI_DEBUG
 				std::cout << "[CGI i found it ext = " << test_path << "]" << "\n";
 				std::cout << "[CGI path info = " << result.cgiInfo.pathInfo << "\n";
-#endif
 				return (true);
 			}
 			else {
@@ -64,15 +63,11 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 			}
 		}
 		else {
-#ifdef CGI_DEBUG
 			std::cout << "[(CGI) path: " << test_path << "is not found ]";
-#endif
 			break;
 		}
 	}
-#ifdef CGI_DEBUG
 	std::cout << "[CGI not cgi]";
-#endif
 	return (false);
 }
 

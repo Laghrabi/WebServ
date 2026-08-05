@@ -55,6 +55,7 @@ class HttpResponse
 
 		void clear();
 
+		static std::string getCurrentDate();
 		void setHeader(const std::string& key, const std::string& value, std::vector<char>& buffer);
 		void setBodySource(ResponseBodySource source);
 		void setFilePath(const std::string& path);

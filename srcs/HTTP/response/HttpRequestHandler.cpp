@@ -3,14 +3,6 @@
 #include "RouteResult.hpp"
 #include "MimeTypesExt.hpp"
 
-static std::string getCurrentDate()
-{
-	std::time_t now = std::time(NULL);
-	char buf[100];
-	std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", std::gmtime(&now));
-	return std::string(buf);
-}
-
 std::string HttpRequestHandler::checkConnection()
 {
 	std::string connection = request.getHeader("connection");
@@ -55,7 +47,7 @@ void HttpRequestHandler::serveFile()
 	response.setHeader("Content-Length", to_string(st.st_size), buffer);
 	response.setHeader("Content-Type", response.config.m_types.getMimeType(filePath), buffer);
 	response.setHeader("Connection", connection, buffer);
-	response.setHeader("Date", getCurrentDate(), buffer);
+	response.setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
 	std::string newline("\r\n");
 	response.buffer.insert(buffer.end(), newline.begin(), newline.end());
@@ -100,7 +92,7 @@ void HttpRequestHandler::generateAutoIndex()
 	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);//hamza chof had l3iba
 	response.setHeader("Content-Length", to_string(autoIndexHtml.size()), response.buffer);
 	response.setHeader("Connection", connection, buffer);
-	response.setHeader("Date", getCurrentDate(), buffer);
+	response.setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
 	std::string newline("\r\n");
 	response.buffer.insert(buffer.end(), newline.begin(), newline.end());
@@ -124,7 +116,7 @@ void HttpRequestHandler::makeRedirect()
 	response.setHeader("Content-Length", "0", buffer);
 	// response.setHeader("Content-Type", );
 	response.setHeader("Connection", connection, buffer);
-	response.setHeader("Date", getCurrentDate(), buffer);
+	response.setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
     buffer.insert(buffer.end(), std::string("\r\n").begin(), std::string("\r\n").end());
 }
@@ -156,7 +148,7 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	}
 	response.setHeader("Content-Length", "0", buffer);
 	response.setHeader("Connection", connection, buffer);
-	response.setHeader("Date", getCurrentDate(), buffer);
+	response.setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
 	std::string rlnl = "\r\n";
   buffer.insert(buffer.end(), rlnl.begin(), rlnl.end());
@@ -228,7 +220,7 @@ void HttpRequestHandler::handleDelete()
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Content-Length", "0", response.buffer);
 	response.setHeader("Connection", connection, response.buffer);
-	response.setHeader("Date", getCurrentDate(), response.buffer);
+	response.setHeader("Date", HttpResponse::getCurrentDate(), response.buffer);
 	response.setHeader("server", SERVER_NAME, response.buffer);
 }
 
@@ -329,7 +321,7 @@ void HttpRequestHandler::handlePost()
     response.setBodySource(BODY_NONE);
     response.setHeader("Content-Length", "0", bufferResponse);
     response.setHeader("Connection", connection, bufferResponse);
-    response.setHeader("Date", getCurrentDate(), bufferResponse);
+    response.setHeader("Date", HttpResponse::getCurrentDate(), bufferResponse);
     response.setHeader("server", SERVER_NAME, bufferResponse);
 
     std::string newline("\r\n");

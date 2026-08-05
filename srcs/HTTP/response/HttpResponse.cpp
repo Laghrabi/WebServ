@@ -2,6 +2,14 @@
 #include "webserver.hpp"
 std::map<HttpStatus, std::string> 	HttpResponse::statusCodeMap;
 
+std::string HttpResponse::getCurrentDate()
+{
+	std::time_t now = std::time(NULL);
+	char buf[100];
+	std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", std::gmtime(&now));
+	return std::string(buf);
+}
+
 HttpResponse::HttpResponse(const Config& Config):
 	bufferBytesSent(0),
 	bodySource(BODY_NONE),

@@ -22,7 +22,6 @@ class CgiHandler {
 		typedef std::vector<char>::iterator VecIter;
 		typedef std::vector<char>::const_iterator VecConstIter;
 		
-		int m_pid;
 		CgiBodyParsingState m_state;
 		std::map<std::string, std::string> m_headers;
 		// std::size_t m_bodyBytes;
@@ -36,6 +35,7 @@ class CgiHandler {
 		int m_pipe_fds[2];
 		HttpResponse &m_response;
 		Vec& m_send_buffer;
+		int m_pid;
 
 		CgiHandler& operator=(const CgiHandler& other);
 		void checkHeader(const std::string& header);

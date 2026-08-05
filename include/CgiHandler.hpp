@@ -17,6 +17,10 @@ enum CgiBodyParsingState {
 
 class CgiHandler {
 	private:
+		typedef std::pair<std::string, std::string> FieldPair;
+		typedef std::vector<char> Vec;
+		typedef std::vector<char>::iterator VecIter;
+		typedef std::vector<char>::const_iterator VecConstIter;
 		
 		CgiBodyParsingState m_state;
 		std::map<std::string, std::string> m_headers;
@@ -30,11 +34,15 @@ class CgiHandler {
 		std::string m_cgi_script;
 		int m_pipe_fds[2];
 		HttpResponse &m_response;
+		Vec& m_send_buffer;
 
 		CgiHandler& operator=(const CgiHandler& other);
-		void checkCgiHeader(std::pair<std::string, std::string> header_field);
-		void parseBody(const std::vector<char>& data);
-		void setBodyCase();
+		void checkHeader(const std::string& header);
+		void parseBody(void);
+		void setBodyState();
+		bool isCgiField(const std::string& field_name, const std::string& field_value);
+		void addEssentialHeaders();
+		void setChunckedBody();
 	public:
 		CgiHandler(const HttpRequest& cgiRequest, HttpResponse& m_response);
 		CgiHandler(const CgiHandler& other);

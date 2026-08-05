@@ -4,15 +4,27 @@
 
 RouteConfig::MapHandler RouteConfig::s_handlers;
 std::set<std::string> RouteConfig::s_available_methods;
+std::map<char, unsigned long long> RouteConfig::m_unit_multi;
+
+void RouteConfig::initUnitMultiplier()
+{
+    m_unit_multi['B'] = 1;
+    m_unit_multi['K'] = 1024ULL;
+    m_unit_multi['M'] = 1024ULL * 1024ULL;
+    m_unit_multi['G'] = 1024ULL * 1024ULL * 1024ULL;
+}
 
 void RouteConfig::init(void) {
 	if (s_handlers.empty()) {
+
+		initUnitMultiplier();
+
 		s_handlers["index"] = &RouteConfig::parseIndex;
 		s_handlers["autoindex"] = &RouteConfig::parseAutoIndex;
 		s_handlers["root"] = &RouteConfig::parseRoot;
 		s_handlers["upload_dir"] = &RouteConfig::parseUploadDir;
 		s_handlers["access_log"] = &RouteConfig::parseAccessLog;
-		s_handlers["max_client_body_size"] = &RouteConfig::parseMaxBodySize;
+		s_handlers["client_max_body_size"] = &RouteConfig::parseMaxBodySize;
 		s_handlers["allowed_methods"] = &RouteConfig::parseAllowedMethods;
 		s_handlers["cgi"] = &RouteConfig::parseCgiConf;
 		s_handlers["redirect"] = &RouteConfig::parseRedirection;
@@ -146,11 +158,14 @@ void RouteConfig::parseRoot(ContIter &begin) {
 
 void RouteConfig::parseMaxBodySize(ContIter &begin) {
 	// TODO: check if the value is valid and add support for M and G
+	// TODO: importnant check if the char is valid
 	std::stringstream ss;
 	ss << begin->value;
 	// std::size_t size;
 	ss >> m_max_body_size.second;
 	m_max_body_size.first = true;
+	char unitChar; ss >> unitChar;
+	m_max_body_size.second *= m_unit_multi[unitChar];
 	++begin;
 }
 

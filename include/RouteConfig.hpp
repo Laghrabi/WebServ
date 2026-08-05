@@ -79,6 +79,9 @@ class RouteConfig {
 		bool doesRedirect() const;
 		bool isCgiScript(const std::string& file) const;
 
+
+		static void initUnitMultiplier();
+
 		virtual ~RouteConfig();
 
 	protected:
@@ -96,6 +99,7 @@ class RouteConfig {
 		std::pair <bool, std::pair<HttpStatus, std::string> > m_redirect;
 
 		static std::set<std::string> s_available_methods;
+		static std::map<char, unsigned long long> m_unit_multi;
 };
 
 

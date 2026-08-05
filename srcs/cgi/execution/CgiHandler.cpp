@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <sstream>
 #include <stdexcept>
+#include <unistd.h>
 #include <utility>
 
 
@@ -29,20 +30,25 @@ int CgiHandler::execute(void) {
 	CgiRequest cgi_request(m_request);
 	m_cgi_script = m_request._routeResult.targetPath;
 	pipe(m_pipe_fds);
+		std::cout << "[CGI] opening file for the script to read\n" << m_request.getBodyFilePath().c_str() << std::endl;
+
 	int pid = fork();
 	if (pid != -1) {
 		// internel server error
 	}
+
 	if (pid == 0) { // child
 		close (m_pipe_fds[0]);
-		std::cout << "[CGI] opening file for the script to read\n" << m_request.getBodyFilePath().c_str();
 		int fd = open (m_request.getBodyFilePath().c_str(), O_RDONLY);
+	std::string wdir = m_cgi_script.substr(0, m_cgi_script.find_last_of('/'));
+	std::cout << "[CGI] setting working dir to " << wdir << std::endl;
+	chdir(wdir.c_str());
 		if (fd == -1) {
-
+			std::cerr << "[CGI] can't open file " << m_request.getBodyFilePath().c_str() << "\n";
 		}
 		if (dup2(fd, 0) )
 		{
-			;
+			std::cerr << "[CGI] fail to dup file to 0 " << m_request.getBodyFilePath().c_str() << "\n";
 		}
 		close (fd);
 		if (dup2(m_pipe_fds[1], 1)) {
@@ -152,7 +158,7 @@ void CgiHandler::checkHeader(const std::string& header) {
 	}
 }
 
-std::string toHex(std::size_t num) {
+static std::string toHex(std::size_t num) {
 	std::stringstream ss;
 	ss << std::hex << num;
 	return (ss.str());

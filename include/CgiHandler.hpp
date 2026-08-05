@@ -22,6 +22,7 @@ class CgiHandler {
 		typedef std::vector<char>::iterator VecIter;
 		typedef std::vector<char>::const_iterator VecConstIter;
 		
+		int m_pid;
 		CgiBodyParsingState m_state;
 		std::map<std::string, std::string> m_headers;
 		// std::size_t m_bodyBytes;
@@ -45,6 +46,7 @@ class CgiHandler {
 		void setChunckedBody();
 		void parseStatus(const std::string& field_value);
 	public:
+		void killProcess();
 		void checkProcessState();
 		CgiHandler(const HttpRequest& cgiRequest, HttpResponse& m_response);
 		CgiHandler(const CgiHandler& other);

@@ -3,6 +3,7 @@
 #include "findElem.hpp"
 #include "sys/wait.h"
 #include <cstdio>
+#include <cstdlib>
 #include <sstream>
 #include <stdexcept>
 #include <unistd.h>
@@ -30,7 +31,25 @@ CgiHandler::CgiHandler(const CgiHandler& other) :
 // check time out 
 // check stat of the handler: error, finished
 // set m_response.is_finished to true
+int status;
+int success;
+	if ((success = waitpid(m_pid, &status, WNOHANG)) == 0) {
+		// std::cout << "[CGI] no change in state\n";
+		return ;
+	}
+	else if (status > 0) {
+		std::cout << "[CGI] process terminate\n";
+		m_response.is_finished = true;
+	}
+	// else {
+	// 	std::cout << "[CGI] No process at All\n";
+	// }
  }
+
+void CgiHandler::killProcess() {
+	kill (m_pid, SIGKILL);
+	checkProcessState();
+}
 
 int CgiHandler::execute(void) {
 	std::cerr << "[CGI] start setup executing scrip\n";
@@ -39,12 +58,12 @@ int CgiHandler::execute(void) {
 	pipe(m_pipe_fds);
 		std::cout << "[CGI] opening file for the script to read\n" << m_request.getBodyFilePath().c_str() << std::endl;
 
-	int pid = fork();
-	if (pid != -1) {
+	m_pid = fork();
+	if (m_pid != -1) {
 		// internel server error
 	}
 
-	if (pid == 0) { // child
+	if (m_pid == 0) { // child
 		close (m_pipe_fds[0]);
 		int fd = open (m_request.getBodyFilePath().c_str(), O_RDONLY);
 		std::string wdir = m_cgi_script.substr(0, m_cgi_script.find_last_of('/'));
@@ -244,6 +263,9 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					// NOTE: here internel server errror
 					// terminate the script
 					std::cout << "[CGI] "<< e.what() << "\n";
+					killProcess();
+					break ;
+					// exit (20);
 				}
 			}
 			else {

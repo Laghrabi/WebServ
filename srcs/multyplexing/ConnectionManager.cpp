@@ -211,11 +211,19 @@ void ConnectionManager::receivePipe(Client& client)
 	// std::cout << "\n";
 	client.m_cgi_handler.parse(c);
 }
+
+
+
 void ConnectionManager::handleCgi(Client& client) { 
 		std::cout << "[CGI] this action is cgi" << std::endl;
 		client.m_pipefd = client.m_cgi_handler.execute();
 			if (client.m_pipefd < 0) {
-					//httpresponse error 500
+				RouteResult& result = client.getRequest()._routeResult;
+				result.action = ACTION_ERROR;
+				result.statusCode = INTERNAL_SERVER_ERROR;
+				// i didnt make another makeErroe function i just modify the result member 
+				// to act like like its an error and then it will be handle in httpRequesthandler
+				//hope it will work need to test this
 			}
 			else {
 			//check what cgi return 

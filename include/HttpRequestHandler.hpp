@@ -5,7 +5,6 @@
 // #include "HttpRequest.hpp"
 #include "webserver.hpp"
 
-#define SERVER_NAME "1337-webserver"
 
 class HttpRequestHandler
 {

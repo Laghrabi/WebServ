@@ -79,4 +79,6 @@ void copyArrayToVec(char* first, std::size_t n, std::vector<char>& vec);
 #define DEFAULT_ADDR 0
 #define DEFAULT_PORT 80
 
+#define SERVER_NAME "1337-webserver"
+
 #endif

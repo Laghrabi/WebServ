@@ -76,6 +76,7 @@ class HttpResponse
 		const std::vector<char> getBufferBody() const;
 		size_t getContentLength() const;
 		size_t getBytesSent() const;
+		void makeErrorCgi(HttpStatus code, HttpRequest& reques);
 		const std::map<HttpStatus, std::string>&  getStatusCodeMap();
 
 	};

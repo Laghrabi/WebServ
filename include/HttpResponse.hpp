@@ -2,8 +2,9 @@
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
+
+// #include "webserver.hpp"
 #include "HttpRequest.hpp"
-#include "webserver.hpp"
 
 // // headers that i need to handle
 // // Content-Length
@@ -52,6 +53,7 @@ class HttpResponse
 		
 		std::vector<char> assembleResponse();
 		bool is_finished;
+		bool is_ok_send;
 
 		void clear();
 
@@ -76,7 +78,11 @@ class HttpResponse
 		const std::vector<char> getBufferBody() const;
 		size_t getContentLength() const;
 		size_t getBytesSent() const;
+<<<<<<< HEAD
 		void makeErrorCgi(HttpStatus code, HttpRequest& reques);
+=======
+		void makeErrorCgi(HttpStatus code, const HttpRequest& reques);
+>>>>>>> 93faf3f4fa76347df37a672b8e064c00d48a0aab
 		const std::map<HttpStatus, std::string>&  getStatusCodeMap();
 
 	};

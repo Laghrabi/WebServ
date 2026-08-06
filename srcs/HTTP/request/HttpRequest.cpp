@@ -1,5 +1,4 @@
 #include "HttpRequest.hpp"
-#include "../../../include/webserver.hpp"
 
 HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
 	_contentLength(0),  _chunkedSize(0), _server(NULL), _bodyBytesWritten(0){}

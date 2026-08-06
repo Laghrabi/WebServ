@@ -2,8 +2,9 @@
 #define HTTPREQUESTHANDLER_CPP
 
 
-// #include "HttpRequest.hpp"
 #include "webserver.hpp"
+#include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
 
 
 class HttpRequestHandler
@@ -36,7 +37,11 @@ class HttpRequestHandler
         std::string generateAutoIndexHtml(const std::string& directoryPath);
         std::string generateErrorPage(HttpStatus code);
 
+<<<<<<< HEAD
         void standardHeader(std::vector<char> buffer , std::string connection);
+=======
+        void standardHeader(std::vector<char>& buffer , std::string connection);
+>>>>>>> 93faf3f4fa76347df37a672b8e064c00d48a0aab
 };
     
 #endif

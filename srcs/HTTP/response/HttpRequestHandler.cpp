@@ -18,13 +18,21 @@ std::string HttpRequestHandler::checkConnection()
 	return connection;
 }
 
+<<<<<<< HEAD
 void HttpRequestHandler::standardHeader(std::vector<char> buffer , std::string connection)
+=======
+void HttpRequestHandler::standardHeader(std::vector<char>& buffer , std::string connection)
+>>>>>>> 93faf3f4fa76347df37a672b8e064c00d48a0aab
 {
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
 	std::string newline("\r\n");
+<<<<<<< HEAD
 	response.buffer.insert(buffer.end(), newline.begin(), newline.end());
+=======
+	buffer.insert(buffer.end(), newline.begin(), newline.end());
+>>>>>>> 93faf3f4fa76347df37a672b8e064c00d48a0aab
 }
 
 void HttpRequestHandler::serveFile()
@@ -138,6 +146,10 @@ std::string HttpRequestHandler::generateErrorPage(HttpStatus code)
 
 void HttpRequestHandler::makeError(HttpStatus code)
 {
+<<<<<<< HEAD
+=======
+	response.is_ok_send = true;
+>>>>>>> 93faf3f4fa76347df37a672b8e064c00d48a0aab
 	std::cout << "making error" << std::endl;
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + response.getStatusCodeMap().find(code)->second + "\r\n";
@@ -316,7 +328,7 @@ void HttpRequestHandler::handleRequest()
 		response.setBodySource(BODY_PIPE);
 		return;
 	}
-
+	response.is_ok_send = true;
 	if (request.getMethod() == "GET")
 	{
 		handleGet();

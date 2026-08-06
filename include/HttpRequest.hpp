@@ -1,16 +1,6 @@
 #ifndef HTTP_REQUEST_HPP
 # define HTTP_REQUEST_HPP
 
-# include <iostream>
-# include <vector>
-# include <map>
-# include <string>
-# include <sstream>
-# include <fstream>
-# include <algorithm>
-# include <ctime>
-# include <cstdio>
-#include <cctype>
 #include "webserver.hpp"
 #include "RouteResult.hpp"
 

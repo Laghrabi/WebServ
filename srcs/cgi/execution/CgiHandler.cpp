@@ -1,13 +1,5 @@
 #include "CgiHandler.hpp"
-#include "HttpRequest.hpp"
-#include "findElem.hpp"
-#include "sys/wait.h"
-#include <cstdio>
-#include <cstdlib>
-#include <sstream>
-#include <stdexcept>
-#include <unistd.h>
-#include <utility>
+#include "HttpStatus.hpp"
 
 
 CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
@@ -15,7 +7,8 @@ CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
 	m_request(request),
 	m_response(response),
 	m_send_buffer(response.buffer),
-	m_pid(-1)
+	m_pid(-1),
+	m_ok(true)
 {
 }
 
@@ -24,7 +17,8 @@ CgiHandler::CgiHandler(const CgiHandler& other) :
 	m_request(other.m_request),
 	m_response(other.m_response),
 	m_send_buffer(other.m_send_buffer),
-	m_pid(other.m_pid)
+	m_pid(other.m_pid),
+	m_ok(other.m_ok)
 {
 }
 
@@ -112,6 +106,7 @@ int CgiHandler::execute(void) {
 //      content-type:
 
 std::pair<std::string, std::string> CgiHandler::parse_header(const std::string& data) {
+	std::cout << "[CGI] " << data << "\n";
 	std::size_t colon_pos = data.find(':');
 
 	if (colon_pos == std::string::npos) {
@@ -161,15 +156,15 @@ bool CgiHandler::isCgiField(const std::string& field_name, const std::string& fi
 				throw (std::runtime_error("got location two times\n"));
 			m_location = field_value;
 		}
-		if (field_name == "Status")	 {
-			if (!m_status.empty())
-				throw (std::runtime_error("got status two times\n"));
-			parseStatus(field_value);
-		}
 		if (field_name == "Content-Type") {
 			if (!m_content_type.empty())
 				throw (std::runtime_error("got Content Type two times\n"));
 			m_content_type = field_value;
+		}
+		if (field_name == "Status")	 {
+			if (!m_status.empty())
+				throw (std::runtime_error("got status two times\n"));
+			parseStatus(field_value);
 		}
 		return (true);
 	}
@@ -251,6 +246,8 @@ void CgiHandler::setBodyState() {
 
 
 void CgiHandler::parse(const std::vector<char>& data) {
+	if (!m_ok)
+		return ;
 	m_data.insert(m_data.end(), data.begin(), data.end());
 	if (!m_reading_body) {
 		while (true){
@@ -272,12 +269,13 @@ void CgiHandler::parse(const std::vector<char>& data) {
 				catch (const std::runtime_error& e) {
 					std::cout << "[CGI] malformed header, clearing send buffer and set internel server error\n";
 					m_send_buffer.clear();
+					m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+					m_ok = false;
 					// NOTE: here internel server errror
 					// terminate the script
 					std::cout << "[CGI] "<< e.what() << "\n";
 					killProcess();
 					break ;
-					// exit (20);
 				}
 			}
 			else {

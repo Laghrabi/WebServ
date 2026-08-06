@@ -1,5 +1,6 @@
 #include "HttpResponse.hpp"
 #include "webserver.hpp"
+
 std::map<HttpStatus, std::string> 	HttpResponse::statusCodeMap;
 
 std::string HttpResponse::getCurrentDate()
@@ -196,6 +197,29 @@ std::vector<char> HttpResponse::assembleResponse() {
 	}
 
 	return buffer;
+}
+
+void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
+{
+	std::cout << "[CGI]: making error for the CGI" << std::endl;
+	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + getStatusCodeMap().find(code)->second + "\r\n";
+	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
+	setBodySource(BODY_BUFFER);
+	std::string connection = request.getHeader("connection");
+	keep_connection = 1;
+	if (connection == "" || connection == "keep-alive")
+	{
+		connection = "keep-alive";
+	}
+	else if (connection == "close")
+	{
+		keep_connection = 0;
+	}
+	setHeader("Connection", connection, buffer);
+	setHeader("Date", HttpResponse::getCurrentDate(), buffer);
+	setHeader("server", SERVER_NAME, buffer);
+	std::string newline("\r\n");
+	buffer.insert(buffer.end(), newline.begin(), newline.end());
 }
 
 void HttpResponse::init()

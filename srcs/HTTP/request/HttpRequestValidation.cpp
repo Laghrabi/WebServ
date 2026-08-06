@@ -122,7 +122,6 @@ bool    HttpRequest::normalizeUri() {
 
 	_UriSegments.insert(_UriSegments.begin(), "/");
 	normalizeUriHelper(_EncodedRouteUri, _EncodedUriSegments);
-	std::cout << "encoded route uri: " << _EncodedRouteUri  << "\n";
     return (true);
 }
 

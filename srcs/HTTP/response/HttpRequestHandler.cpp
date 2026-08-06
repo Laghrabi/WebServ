@@ -248,7 +248,7 @@ void HttpRequestHandler::handlePost()
         makeError(METHOD_NOT_ALLOWED);
         return;
     }
-	std::cout << "trying to handle post" << std::cout;
+	std::cout << "trying to handle post" << std::endl;
     struct stat st;
     int created = 201;
     if (stat(filePath.c_str(), &st) == 0)

@@ -120,7 +120,7 @@ void HttpRequest::reset() {
     _contentLength = 0;
     _chunkedSize = 0;
     _bodyBytesWritten = 0;
-    _client_max_body_size = _DEFAULT_BODY_SIZE;
+    // _client_max_body_size = _DEFAULT_BODY_SIZE;
     _server = NULL;
     _routeResult.action = NONE;
     _routeResult.statusCode = OK;
@@ -128,6 +128,7 @@ void HttpRequest::reset() {
 }
 
 void HttpRequest::printHttpStatus(HttpStatus status) {
+    std::cout << "**********HTTP PARSING RESULT**********" << std::endl;
     switch (status) {
         case OK:
             std::cout << "Status [200]: OK\n";

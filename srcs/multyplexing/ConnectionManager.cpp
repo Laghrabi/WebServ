@@ -277,6 +277,7 @@ void ConnectionManager::receiveClient(Client& client)
 		route_manager.processRequest(request);
 		RouteResult result = request._routeResult;
 		RouteManager::printRouteAction(result.action);
+		HttpRequest::printHttpStatus(result.statusCode);
 		std::map<HttpStatus, std::string>::const_iterator it = client.getResponse().getStatusCodeMap().find(result.statusCode);
 		std::cout << "result status Code = " << it->second << "\n";
 		std::cout << "target path = " << result.targetPath << "\n";

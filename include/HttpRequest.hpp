@@ -43,10 +43,9 @@ class HttpRequest {
         size_t                              _contentLength;
         size_t                              _chunkedSize;
         std::vector<char>                   _body;
-        size_t								_bodyBytesWritten;
-        static const size_t                 _MAX_BODY_SIZE = 10485760;
-        static const size_t                 _DEFAULT_BODY_SIZE = 1048576;
-        size_t                              _client_max_body_size;
+        // static const size_t                 _MAX_BODY_SIZE = 10485760;
+        // static const size_t                 _DEFAULT_BODY_SIZE = 1048576;
+        // size_t                              _client_max_body_size;
         const Server*                       _server;
         Config::ServerRange                 _serverRange;
         std::ofstream _bodyStream;
@@ -78,12 +77,13 @@ class HttpRequest {
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
         ~HttpRequest();
-    
+        
         void	parse(const std::vector<char>& rawBuffer);
         void    reset();
-
+        
         static void printHttpStatus(HttpStatus status);
         
+        size_t								_bodyBytesWritten;
         RouteResult                         _routeResult;
 
         std::vector<char> getLeftoverData() const;
@@ -93,6 +93,7 @@ class HttpRequest {
         const std::vector<char>& getBody() const;
         const std::map<std::string, std::string>& getHeaders() const;
 		const std::string& getRouteUri() const;
+        const std::string& getHost() const;
     	const std::string& getQueryString() const;
         std::string getHeader(const std::string& key) const;
         ParseState getCurrentState() const;

@@ -30,7 +30,6 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 	typedef std::vector<std::string> UriCont;
 	typedef UriCont::const_iterator UriContConstIter;
 
-	std::cout << "================\nlocation : " << location << "\n";
 	std::string test_path = location;
 	FileStatus status;
 	std::string extention;
@@ -38,14 +37,10 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 	UriContConstIter it = script_path.begin();
 	for (; it != script_path.end(); ++it) {
 		test_path += "/" + *it;
-		std::cout << "[CGI] test path is " << test_path << "\n";
 		result.cgiInfo.scriptName += "/" + *it;
 		status.set(test_path);
 		if (status.exist()) {
 			if (status.isDir()) {
-#ifdef CGI_DEBUG
-				std::cout << "[(CGI) " << test_path << "is a directory\n";
-#endif
 				continue ;
 			}
 			else if (result.route->isCgiScript(*it)) {
@@ -53,17 +48,13 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 				result.targetPath = test_path;
 				result.statusCode = OK;
 				result.cgiInfo.pathInfo = toPath(++it, script_path.end(), false);
-				
-				std::cout << "[CGI i found it ext = " << test_path << "]" << "\n";
-				std::cout << "[CGI path info = " << result.cgiInfo.pathInfo << "\n";
 				return (true);
 			}
 			else {
 				return (false);
 			}
 		}
-		else {
-			std::cout << "[(CGI) path: " << test_path << "is not found ]";
+		else {;
 			break;
 		}
 	}
@@ -84,7 +75,15 @@ void RouteManager::processRequest(HttpRequest& request) {
 	result.statusCode = OK;
 	result.route = matchRoute(request.getUriSegments(), request.getServer(), _basePath);
 	std::string	LocationMatch = _basePath;
+	std::cout << "LOCATION MATCH ==> " << LocationMatch << std::endl;
 
+	if (result.route->hasMaxBodySize()) {
+		if (request._bodyBytesWritten > result.route->getMaxBodySize()) {
+			result.statusCode = PAYLOAD_TOO_LARGE;
+			result.action = ACTION_ERROR;
+			return ;
+		}
+	}
 
 	if (result.route && !result.route->isAllowed(request.getMethod())) {
 		result.action = ACTION_ERROR;
@@ -101,6 +100,7 @@ void RouteManager::processRequest(HttpRequest& request) {
 
 	
 	std::string physicalPath = _locator.buildPhysicalPath(request, _basePath, _resource);
+	std::cout << "PHYSICAL PATH ==> " << physicalPath << std::endl;
 	if (physicalPath.empty()) {
 		result.action = ACTION_ERROR;
 		result.statusCode = NOT_FOUND;
@@ -108,6 +108,7 @@ void RouteManager::processRequest(HttpRequest& request) {
 
 	
 	if (result.route->isCgiEnable()) {
+		std::cout << "rousource: " <<  _resource << "\n";
 		std::vector<std::string> vec;
 		HttpRequest::normalizeUriHelper(_resource, vec);
 		if (isCgi(vec, result, _basePath)) {
@@ -117,17 +118,20 @@ void RouteManager::processRequest(HttpRequest& request) {
 
 	if (request.getMethod() == "POST") {
 		if (result.route->getUploadDir().empty()) {
+			std::cout << "ERROR ==> NO UPLOAD DIRECTIVE FOUND" << std::endl;
 			result.action = ACTION_ERROR;
 			result.statusCode = FORBIDDEN;
 			return ;
 		}
 		std::string uploadsPath = resolveUploadPath(request.getRouteUri(), LocationMatch, result.route->getUploadDir());
+		std::cout << "UPLOAD PATH ==> " << uploadsPath << std::endl;
 		result.action = ACTION_UPLOAD_FILE;
 		result.targetPath = uploadsPath;
 		return ;
 	}
 
 	physicalPath = _locator.resolvePath(physicalPath, result.route);
+	std::cout << "NEW PHYSICAL PATH ==> " << physicalPath << std::endl;
 	ResourceType type = _locator.getResourceType(physicalPath);
 	determineResourceAction(result, type, physicalPath, request.getRouteUri());
 
@@ -137,12 +141,13 @@ void RouteManager::processRequest(HttpRequest& request) {
 void RouteManager::determineResourceAction(RouteResult& result, ResourceType type, const std::string& physicalPath, const std::string& routeUri)  {
     switch (type) {
         case RESOURCE_FILE:
+			std::cout << "TYPE ==> RESOURCE_FILE" << std::endl;
             result.action = ACTION_SERVE_FILE;
             result.targetPath = physicalPath;
             break;
 
         case RESOURCE_DIRECTORY:
-            // Check for missing trailing slash
+			std::cout << "TYPE ==> RESOURCE_DIRECTORY" << std::endl;
             if (routeUri[routeUri.length() - 1] != '/') {
                 result.action = ACTION_REDIRECT;
                 result.targetPath = routeUri + "/";
@@ -159,12 +164,14 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
             break;
 
         case RESOURCE_FORBIDDEN:
+			std::cout << "TYPE ==> RESOURCE_FORBIDDEN" << std::endl;
             result.action = ACTION_ERROR;
             result.statusCode = FORBIDDEN;
             break;
 
         case RESOURCE_NOT_FOUND:
         default:
+			std::cout << "TYPE ==> RESOURCE_NOT_FOUND" << std::endl;
             result.action = ACTION_ERROR;
             result.statusCode = NOT_FOUND;
             break;
@@ -185,34 +192,22 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 			return (NULL);
 		const RouteNode* currNode = &(server->m_route_tree);
 		const RouteConfig* bestMatch = server;
-		// std::cout << "SERVER ROOT: " << server->getRoot() << std::endl;
 
-		// std::cout << "server found " << server->getRedirection().second << "\n";
 		if (currNode->config)
 			bestMatch = currNode->config;
 
 		for (std::vector<std::string>::const_iterator it = uriSegments.begin(); it != uriSegments.end(); ++it) {
-			// std::cout << "hello\n";
 			std::string segment = *it;
-			std::cout << "\nsegment " << *it << "\n";
-			std::cout << "SIZE= " << uriSegments.size() << std::endl;
 			std::map<std::string, RouteNode*>::const_iterator match = currNode->children.find(*it);
 			if (match != currNode->children.end()) {
-				std::cout << "i find that " << *it << "\n";
-				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
 				currNode = match->second;
 				if ((!location.empty() && location[location.length() - 1] == '/') ||
 					(location.empty() && segment == "/"))
 						location += segment;
 				else
 					location += "/" + segment;
-				// std::cout << "here " << currNode->config->getRedirection().second << "\n";
 				if (currNode->config)
-				{
-					// std::cout << "============MATCH===============\n";
 					bestMatch = currNode->config;
-					// std::cout << "best match " << bestMatch->getRedirection().second << "\n";
-				}
 			} else {
 				break;
 			}
@@ -254,6 +249,7 @@ std::string RouteManager::resolveUploadPath(const std::string& uri, const std::s
 }
 
 void RouteManager::printRouteAction(RouteAction action) {
+	std::cout << "**********ROUTING RESULT**********" << std::endl;
     switch (action) {
         case ACTION_SERVE_FILE:
             std::cout << "Action: Serving static file.\n";
@@ -270,6 +266,9 @@ void RouteManager::printRouteAction(RouteAction action) {
         case ACTION_REDIRECT:
             std::cout << "Action: Performing HTTP redirection.\n";
             break;
+		case ACTION_UPLOAD_FILE:
+			std::cout << "Action: Uploading a file.\n";
+			break;
         case ACTION_ERROR:
             std::cout << "Action: Handling route error state.\n";
             break;

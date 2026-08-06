@@ -217,11 +217,35 @@ void ConnectionManager::receivePipe(Client& client)
 	const std::vector<char>& c = client.getReadBuffer();
 	client.m_cgi_handler.parse(c);
 }
+
+void HttpResponse::makeError(HttpStatus code, HttpRequest& request)
+{
+	std::cout << "making error of the CGI" << std::endl;
+	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + getStatusCodeMap().find(code)->second + "\r\n";
+	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
+	setBodySource(BODY_BUFFER);
+	std::string connection = request.getHeader("connection");
+	keep_connection = 1;
+	if (connection == "" || connection == "keep-alive")
+	{
+		connection = "keep-alive";
+	}
+	else if (connection == "close")
+	{
+		keep_connection = 0;
+	}
+	setHeader("Connection", connection, buffer);
+	setHeader("Date", HttpResponse::getCurrentDate(), buffer);
+	setHeader("server", SERVER_NAME, buffer);
+	std::string newline("\r\n");
+	buffer.insert(buffer.end(), newline.begin(), newline.end());
+}
+
 void ConnectionManager::handleCgi(Client& client) { 
 		std::cout << "[CGI] this action is cgi" << std::endl;
 		client.m_pipefd = client.m_cgi_handler.execute();
 			if (client.m_pipefd < 0) {
-					//httpresponse error 500
+				//call the make error function here
 			}
 			else {
 			//check what cgi return 

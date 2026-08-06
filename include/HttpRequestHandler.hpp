@@ -5,7 +5,6 @@
 // #include "HttpRequest.hpp"
 #include "webserver.hpp"
 
-#define SERVER_NAME "1337-webserver"
 
 class HttpRequestHandler
 {
@@ -35,6 +34,9 @@ class HttpRequestHandler
         void generateAutoIndex();
         void makeRedirect();
         std::string generateAutoIndexHtml(const std::string& directoryPath);
+        std::string generateErrorPage(HttpStatus code);
+
+        void standardHeader(std::vector<char> buffer , std::string connection);
 };
     
 #endif

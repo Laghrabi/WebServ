@@ -267,3 +267,16 @@ void HttpRequest::printBodyContent() const {
     
     inFile.close();
 }
+
+void HttpRequest::debugPrintHeaders(const std::map<std::string, std::string>& headers) const {
+    
+    std::cout << "---HTTP HEADERS---" << std::endl;
+    
+    std::map<std::string, std::string>::const_iterator it;
+    
+    for (it = headers.begin(); it != headers.end(); ++it) {
+        std::cout << it->first << ": " << it->second << std::endl;
+    }
+    
+    std::cout << "--------------------" << std::endl;
+}

@@ -41,5 +41,3 @@ class HttpRequestHandler
 };
     
 #endif
-
-

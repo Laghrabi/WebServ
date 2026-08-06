@@ -273,6 +273,8 @@ void ConnectionManager::receiveClient(Client& client)
 	HttpRequest& request = client.getRequest();
 	if (state == FINISHED) {
 		std::cout << "[recieve]: http request recieved completly" << std::endl; 
+		request.debugPrintHeaders(request.getHeaders());
+		request.printBodyContent();
 		RouteManager route_manager;
 		route_manager.processRequest(request);
 		RouteResult result = request._routeResult;
@@ -281,7 +283,6 @@ void ConnectionManager::receiveClient(Client& client)
 		std::map<HttpStatus, std::string>::const_iterator it = client.getResponse().getStatusCodeMap().find(result.statusCode);
 		std::cout << "result status Code = " << it->second << "\n";
 		std::cout << "target path = " << result.targetPath << "\n";
-		request.printBodyContent();
 			if (result.action == ACTION_EXECUTE_CGI) {
 				handleCgi(client);
 			}

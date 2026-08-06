@@ -71,7 +71,9 @@ class HttpRequest {
         bool openBodyStream();
         
         public:
-        static bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
+        size_t								_bodyBytesWritten;
+        RouteResult                         _routeResult;
+
         HttpRequest();
         HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint);
         HttpRequest(const HttpRequest& other);
@@ -81,10 +83,9 @@ class HttpRequest {
         void	parse(const std::vector<char>& rawBuffer);
         void    reset();
         
+        static bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
         static void printHttpStatus(HttpStatus status);
         
-        size_t								_bodyBytesWritten;
-        RouteResult                         _routeResult;
 
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;
@@ -106,6 +107,7 @@ class HttpRequest {
         const std::string& getBodyFilePath() const;
         const std::ofstream& getBodyStream() const;
         void printBodyContent() const;
+        void debugPrintHeaders(const std::map<std::string, std::string>& headers) const;
 		const Server::IPort& getServerIPort() const;
 		const Server::IPort& getClientIPort() const;
 };

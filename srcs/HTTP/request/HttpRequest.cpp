@@ -280,6 +280,7 @@ bool	HttpRequest::validateHeaders() {
 		return false;
 	}
 	_server = findServer(itHost->second);
+	_headers.erase("host");
 	// if (_server->hasMaxBodySize() == true)
 	// 	_client_max_body_size = _server->getMaxBodySize(); 
 	// else

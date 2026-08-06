@@ -212,6 +212,46 @@ void ConnectionManager::receivePipe(Client& client)
 	client.m_cgi_handler.parse(c);
 }
 
+void HttpResponse::makeError(HttpStatus code, HttpRequest& request)
+{
+	std::cout << "making error of the CGI" << std::endl;
+	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + getStatusCodeMap().find(code)->second + "\r\n";
+	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
+	setBodySource(BODY_BUFFER);
+	std::string connection = request.getHeader("connection");
+	keep_connection = 1;
+	if (connection == "" || connection == "keep-alive")
+	{
+		connection = "keep-alive";
+	}
+	else if (connection == "close")
+	{
+		keep_connection = 0;
+	}
+	setHeader("Connection", connection, buffer);
+	setHeader("Date", HttpResponse::getCurrentDate(), buffer);
+	setHeader("server", SERVER_NAME, buffer);
+	std::string newline("\r\n");
+	buffer.insert(buffer.end(), newline.begin(), newline.end());
+}
+
+void ConnectionManager::handleCgi(Client& client) { 
+		std::cout << "[CGI] this action is cgi" << std::endl;
+		client.m_pipefd = client.m_cgi_handler.execute();
+			if (client.m_pipefd < 0) {
+				//call the make error function here
+			}
+			else {
+			//check what cgi return 
+			std::cerr << "action cgi " << client.m_pipefd;
+			AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
+			m_client_pipes.insert(
+					std::make_pair(client.m_pipefd, &client));
+	}
+}
+
+
+
 void ConnectionManager::receiveClient(Client& client)
 {
 	if (receive(client, client.getFd()))
@@ -230,16 +270,10 @@ void ConnectionManager::receiveClient(Client& client)
 		std::cout << "result status Code = " << it->second << "\n";
 		std::cout << "target path = " << result.targetPath << "\n";
 		request.printBodyContent();
-		if (result.action == ACTION_EXECUTE_CGI) {
-			std::cout << "[CGI] this action is cgi" << std::endl;
-			client.m_pipefd = client.m_cgi_handler.execute();
-			// if (client.m_pipefd < 0)
-			//check what cgi return 
-			std::cerr << "action cgi " << client.m_pipefd;
-			AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
-			m_client_pipes.insert(
-					std::make_pair(client.m_pipefd, &client));
-		}
+			if (result.action == ACTION_EXECUTE_CGI) {
+				handleCgi(client);
+			}
+		
 	} else if (state == ERROR) {
 		request.printHttpStatus(request.getStatusCode());
 	} else {
@@ -256,6 +290,8 @@ void ConnectionManager::sendClient(Client& client)
 {
 	HttpResponse& response = client.getResponse();
 	std::vector<char> chunk = response.assembleResponse();
+
+	client.checkCgiState();
 
 	if (chunk.empty() && response.getHeadersSent() &&
 			response.is_finished)

@@ -52,7 +52,9 @@ typedef std::vector<token> TokenCont;
 
 #include "UnorderedMultiMap.hpp"
 
+
 #include "utils.tpp"
+#include "toNum.tpp"
 #include "./FileStatus.hpp"
 #include "./MimeTypesExt.hpp"
 #include "RouteConfig.hpp"
@@ -72,10 +74,11 @@ typedef std::vector<token> TokenCont;
 // #include "HttpRequestHandler.hpp"
 
 std::string to_string(std::size_t num);
-
 void copyArrayToVec(char* first, std::size_t n, std::vector<char>& vec);
 
 #define DEFAULT_ADDR 0
 #define DEFAULT_PORT 80
+
+#define SERVER_NAME "1337-webserver"
 
 #endif

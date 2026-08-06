@@ -43,6 +43,8 @@ class Client
 
         HttpRequest& getRequest();
         HttpResponse& getResponse();
+
+        void checkCgiState();
 };
 
 #endif

@@ -55,6 +55,7 @@ class HttpResponse
 
 		void clear();
 
+		static std::string getCurrentDate();
 		void setHeader(const std::string& key, const std::string& value, std::vector<char>& buffer);
 		void setBodySource(ResponseBodySource source);
 		void setFilePath(const std::string& path);
@@ -75,6 +76,7 @@ class HttpResponse
 		const std::vector<char> getBufferBody() const;
 		size_t getContentLength() const;
 		size_t getBytesSent() const;
+		void makeErrorCgi(HttpStatus code, HttpRequest& reques);
 		const std::map<HttpStatus, std::string>&  getStatusCodeMap();
 
 	};

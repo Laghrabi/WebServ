@@ -130,7 +130,16 @@ void RouteManager::processRequest(HttpRequest& request) {
 		return ;
 	}
 
-	physicalPath = _locator.resolvePath(physicalPath, result.route);
+	if (request.getMethod() == "DELETE") {
+		if (_locator.getResourceType(physicalPath) == RESOURCE_DIRECTORY) {
+			result.action = ACTION_ERROR;
+			result.statusCode = FORBIDDEN;
+			return ;
+		}
+	}
+
+	if (request.getMethod() != "DELETE")
+		physicalPath = _locator.resolvePath(physicalPath, result.route);
 	std::cout << "NEW PHYSICAL PATH ==> " << physicalPath << std::endl;
 	ResourceType type = _locator.getResourceType(physicalPath);
 	determineResourceAction(result, type, physicalPath, request.getRouteUri());

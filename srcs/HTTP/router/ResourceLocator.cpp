@@ -37,8 +37,14 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 	bool base_path_slash = false;
 
 	const Location* test = dynamic_cast<const Location*>(route);
-	if (base_path.length() > 1)
-		resource = uri.substr(base_path.length() + 1);;
+
+	if (!base_path.empty()) {
+		if (base_path.at(0) == '/')
+			resource = uri.substr(base_path.length());
+		else
+			resource = uri.substr(base_path.length() + 1);
+	}
+
 	if (test) {
 		if (!test->getAlias().empty()) {
 			base_path = test->getAlias();
@@ -48,7 +54,7 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 			return (base_path + "/" + resource);
 		}
 		else {
-			base_path.insert(0, rootPath);
+			// base_path.insert(0, rootPath);
 			rootPath = route->getRoot();
 			base_path.insert(0, rootPath);
 		}
@@ -57,7 +63,7 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 		if (route->getRoot().empty())
 			return "";
 		rootPath = route->getRoot();
-			base_path.insert(0, rootPath);
+		base_path.insert(0, rootPath);
 	}
 
 

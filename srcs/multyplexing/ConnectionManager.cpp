@@ -317,11 +317,12 @@ void ConnectionManager::sendClient(Client& client)
 			return;
 		}
 		ChangeClientEvent(client.getFd(), EPOLLIN);
+		client.getRequest().reset();
 		return;
 	}
 	if (!chunk.empty() && response.is_ok_send) {
 		ssize_t n = send(client.getFd(), &chunk[0], chunk.size(), 0);
-		std::cerr << "size n  = " << n << "\n";
+		// std::cerr << "size n  = " << n << "\n";
 		response.eraseSendBytes(n);
 	}
 }
@@ -359,8 +360,10 @@ void ConnectionManager::run()
 					acceptClient(m_listeners.find(fd)->second);
 				else if (type == CLIENT_SOCK && (events & EPOLLIN))
 					receiveClient(m_clients.find(fd)->second);
-				else if (type == CLIENT_SOCK && (events & EPOLLOUT))
+				else if (type == CLIENT_SOCK && (events & EPOLLOUT)) {
+					std::cout << "hey hey hey hey hey " << (m_clients.find(fd) == m_clients.end()) << "\n";
 					sendClient(m_clients.find(fd)->second);
+				}
 				else if (type == (CGI_PIPE)) {
 					// NOTE: something here
 					std::map<int, Client*>::iterator it = m_client_pipes.find(fd);

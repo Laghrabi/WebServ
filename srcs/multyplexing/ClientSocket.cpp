@@ -104,3 +104,9 @@ HttpResponse& Client::getResponse()
 {
     return (m_response);
 }
+
+void Client::checkCgiState() {
+    if (m_pipefd != -1) {
+        m_cgi_handler.checkProcessState();
+    }
+}

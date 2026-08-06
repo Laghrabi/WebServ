@@ -4,7 +4,7 @@
 
 RouteConfig::MapHandler RouteConfig::s_handlers;
 std::set<std::string> RouteConfig::s_available_methods;
-std::map<char, unsigned long long> RouteConfig::m_unit_multi;
+RouteConfig::UnitMap RouteConfig::m_unit_multi;
 
 void RouteConfig::initUnitMultiplier()
 {
@@ -156,16 +156,28 @@ void RouteConfig::parseRoot(ContIter &begin) {
 	++begin;
 }
 
+/* NOTE: this function takes an iterator to token {value, type}
+ * and expect [num][letter {M, G, K, B}] ex: 10M, 1000G witout point not a float
+ */
 void RouteConfig::parseMaxBodySize(ContIter &begin) {
-	// TODO: check if the value is valid and add support for M and G
-	// TODO: importnant check if the char is valid
-	std::stringstream ss;
-	ss << begin->value;
-	// std::size_t size;
-	ss >> m_max_body_size.second;
+	std::string numUnit = begin->value;
+	if (numUnit.find(" \t") != std::string::npos) {
+		throw (ParseConfigType::ConfigExcept("max body size malformed", begin->line));
+	}
+	std::stringstream ss(numUnit);
+	if (!(ss >> m_max_body_size.second))
+		throw (ParseConfigType::ConfigExcept("max body size malformed", begin->line));
 	m_max_body_size.first = true;
-	char unitChar; ss >> unitChar;
-	m_max_body_size.second *= m_unit_multi[unitChar];
+	std::string unitChar;
+	if (!(ss >> unitChar) || unitChar.size() != 1)
+		throw (ParseConfigType::ConfigExcept("", begin->line));
+	UnitMap::iterator it = m_unit_multi.find(unitChar.at(0));
+	if (it == m_unit_multi.end())
+	{
+		throw (ParseConfigType::ConfigExcept("max body size malformed, " + unitChar
+					+ " not a supporeted unit", begin->line));
+	}
+	m_max_body_size.second *= it->second;
 	++begin;
 }
 

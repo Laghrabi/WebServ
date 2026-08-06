@@ -1,4 +1,3 @@
-
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
@@ -78,11 +77,7 @@ class HttpResponse
 		const std::vector<char> getBufferBody() const;
 		size_t getContentLength() const;
 		size_t getBytesSent() const;
-<<<<<<< HEAD
-		void makeErrorCgi(HttpStatus code, HttpRequest& reques);
-=======
 		void makeErrorCgi(HttpStatus code, const HttpRequest& reques);
->>>>>>> 93faf3f4fa76347df37a672b8e064c00d48a0aab
 		const std::map<HttpStatus, std::string>&  getStatusCodeMap();
 
 	};

@@ -38,7 +38,7 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 
 	const Location* test = dynamic_cast<const Location*>(route);
 	if (base_path.length() > 1)
-		resource = uri.substr(base_path.length() + 1);
+		resource = uri.substr(base_path.length() + 1);;
 	if (test) {
 		if (!test->getAlias().empty()) {
 			base_path = test->getAlias();

@@ -108,6 +108,7 @@ void RouteManager::processRequest(HttpRequest& request) {
 
 	
 	if (result.route->isCgiEnable()) {
+		std::cout << "rousource: " <<  _resource << "\n";
 		std::vector<std::string> vec;
 		HttpRequest::normalizeUriHelper(_resource, vec);
 		if (isCgi(vec, result, _basePath)) {

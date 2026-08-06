@@ -37,7 +37,7 @@ class HttpRequestHandler
         std::string generateAutoIndexHtml(const std::string& directoryPath);
         std::string generateErrorPage(HttpStatus code);
 
-        void standardHeader(std::vector<char> buffer , std::string connection);
+        void standardHeader(std::vector<char>& buffer , std::string connection);
 };
     
 #endif

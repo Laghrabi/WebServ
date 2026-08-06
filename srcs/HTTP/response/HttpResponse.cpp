@@ -20,7 +20,8 @@ HttpResponse::HttpResponse(const Config& Config):
 	headersSent(false),
 	config(Config),
 	buffer(),
-	is_finished(false)
+	is_finished(false),
+	is_ok_send(false)
 {
 	buffer.reserve(SENDSIZE);
 	init();
@@ -35,7 +36,8 @@ HttpResponse::HttpResponse(const HttpResponse& other):
 	headersSent(other.headersSent),
 	config(other.config),
 	buffer(other.buffer),
-	is_finished(other.is_finished)
+	is_finished(other.is_finished),
+	is_ok_send(other.is_ok_send)
 {
 	buffer.reserve(SENDSIZE);
 	init();
@@ -53,6 +55,7 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& other) {
 		headersSent = other.headersSent;
 		buffer.reserve(SENDSIZE);
 		is_finished = other.is_finished;
+		is_ok_send = other.is_ok_send;
 	}
 	return *this;
 }
@@ -201,6 +204,7 @@ std::vector<char> HttpResponse::assembleResponse() {
 
 void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 {
+	is_ok_send = true;
 	std::cout << "[CGI]: making error for the CGI" << std::endl;
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + getStatusCodeMap().find(code)->second + "\r\n";
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());

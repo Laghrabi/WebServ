@@ -46,6 +46,8 @@ class CgiHandler {
 		void addEssentialHeaders();
 		void setChunckedBody();
 		void parseStatus(const std::string& field_value);
+		int waitForProcess();
+		void handleChild();
 	public:
 		void killProcess();
 		void checkProcessState();

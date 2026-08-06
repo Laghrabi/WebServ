@@ -53,6 +53,7 @@ class HttpResponse
 		
 		std::vector<char> assembleResponse();
 		bool is_finished;
+		bool is_ok_send;
 
 		void clear();
 

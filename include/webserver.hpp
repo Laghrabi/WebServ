@@ -53,6 +53,7 @@ typedef std::vector<token> TokenCont;
 
 #include "HttpStatus.hpp"
 
+int safeClose(int fd);
 
 #include "UnorderedMultiMap.hpp"
 

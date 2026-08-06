@@ -1,5 +1,6 @@
 #include "CgiHandler.hpp"
 #include "HttpStatus.hpp"
+#include "HttpStatus.hpp"
 
 
 CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
@@ -22,40 +23,79 @@ CgiHandler::CgiHandler(const CgiHandler& other) :
 {
 }
 
+
 void CgiHandler::checkProcessState() {
-	// NOTE: wailt pid
-	// check time out 
-	// check stat of the handler: error, finished
-	// set m_response.is_finished to true
+	int status = waitForProcess();
+	if (status && !m_reading_body) {
+		m_response.is_ok_send = true;
+		m_response.is_finished = true;
+		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+	}
+}
+
+int CgiHandler::waitForProcess() {
 	int status = 0;
 	int success;
 	if ((success = waitpid(m_pid, &status, WNOHANG)) == 0) {
 		// std::cout << "[CGI] no change in state\n";
-		return ;
 	}
 	else if (status > 0) {
-		std::cout << "[CGI] process terminate\n";
-		m_response.is_finished = true;
+		std::cout << "[CGI] process terminate " << m_cgi_script << "\n";
 	}
-	// else {
-	// 	std::cout << "[CGI] No process at All\n";
-	// }
+	return (status);
 }
 
 void CgiHandler::killProcess() {
 	if (m_pid != -1) {
 		kill (m_pid, SIGKILL);
-		checkProcessState();
+		waitForProcess();
+	}
+}
+
+void CgiHandler::handleChild() {
+	CgiRequest cgi_request(m_request);
+	std::string fileIn = m_request.getBodyFilePath().c_str();
+	int fd = -1;
+	if (!fileIn.empty())
+	{
+		if ((fd= open(fileIn.c_str(), O_RDONLY))) {
+			;
+		}
+		if (dup2(fd, 0))
+		{
+			close (fd);
+			//NOTE: internel server errror
+			std::cerr << "[CGI] fail to dup file to 0 " << m_request.getBodyFilePath().c_str() << "\n";
+		}
+		else
+			close (fd);
+	}
+	std::string wdir = m_cgi_script.substr(0, m_cgi_script.find_last_of('/'));
+	if (wdir.empty()) wdir = "/";
+	std::cout << "[CGI] setting working dir to " << wdir << std::endl;
+	chdir(wdir.c_str());
+	// if (fd == -1) {
+	// 	std::cerr << "[CGI] can't open file " << m_request.getBodyFilePath().c_str() << "\n";
+	// }
+
+	if (dup2(m_pipe_fds[1], 1))
+	{
+		// TODO: do something here exit is not an option maybe
 	}
 
+	close (m_pipe_fds[1]);
+	CString l(m_cgi_script);
+	char *const var[] = {l.getCstr(), NULL};
+	int sucess = execve(m_cgi_script.c_str(), var, cgi_request.getEnvp());
+	(void)sucess;
+	std::cerr << "[CGI] execution for script " << m_cgi_script << " failed\n";
 }
 
 int CgiHandler::execute(void) {
 	std::cerr << "[CGI] start setup executing scrip\n";
-	CgiRequest cgi_request(m_request);
 	m_cgi_script = m_request._routeResult.targetPath;
 	pipe(m_pipe_fds);
-	std::cout << "[CGI] opening file for the script to read\n" << m_request.getBodyFilePath().c_str() << std::endl;
+	std::cout << "[CGI] opening file for the script to read " << m_request.getBodyFilePath().c_str() << std::endl;
 
 	m_pid = fork();
 	if (m_pid != -1) {
@@ -63,39 +103,8 @@ int CgiHandler::execute(void) {
 	}
 
 	if (m_pid == 0) { // child
-		std::string fileIn = m_request.getBodyFilePath().c_str();
-		if (!fileIn.empty())
-		{
-			int fd = open (fileIn.c_str(), O_RDONLY);
-			if (dup2(fd, 0))
-			{
-				//NOTE: internel server errror
-				std::cerr << "[CGI] fail to dup file to 0 " << m_request.getBodyFilePath().c_str() << "\n";
-			}
-			else
-				close (fd);
-		}
-		close (m_pipe_fds[0]);
-		std::string wdir = m_cgi_script.substr(0, m_cgi_script.find_last_of('/'));
-		std::cout << "[CGI] setting working dir to " << wdir << std::endl;
-		chdir(wdir.c_str());
-		// if (fd == -1) {
-		// 	std::cerr << "[CGI] can't open file " << m_request.getBodyFilePath().c_str() << "\n";
-		// }
-
-		if (dup2(m_pipe_fds[1], 1)) {
-
-		}
-		close (m_pipe_fds[1]);
-		std::string l = ("hey");
-		char *const var[] = {&l[0], NULL};
-		std::cerr << "execution valid\n";
-		int sucess = execve(m_cgi_script.c_str(), var, cgi_request.getEnvp());
-		(void)sucess;
-		std::cerr << "execution failed\n";
-		// response.makeerror(501);
+		handleChild();
 	}
-	std::cerr << "file des is " << m_pipe_fds[0] << "\n";
 	close(m_pipe_fds[1]);
 	return (m_pipe_fds[0]);
 }
@@ -236,6 +245,7 @@ void CgiHandler::setBodyState() {
 		appendStringToVec(m_send_buffer, m_send_buffer.begin(), "HTTP/1.1 ");
 	}
 	else if (!m_location.empty()) {
+		// appendStringToVec(m_send_buffer, m_send_buffer, );
 		m_state = BODY_NOT_USEFUL;
 	}
 	else {
@@ -259,6 +269,7 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					setBodyState();
 					std::cerr << "[CGI] reading body phase" << std::endl;
 					m_response.setHeadersSent(true);
+					m_response.is_ok_send = true;
 					m_reading_body = true;
 					break ;
 				}
@@ -270,11 +281,11 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					std::cout << "[CGI] malformed header, clearing send buffer and set internel server error\n";
 					m_send_buffer.clear();
 					m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+					m_response.is_finished = true;
 					m_ok = false;
 					// NOTE: here internel server errror
 					// terminate the script
 					std::cout << "[CGI] "<< e.what() << "\n";
-					killProcess();
 					break ;
 				}
 			}

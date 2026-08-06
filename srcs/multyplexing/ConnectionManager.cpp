@@ -113,12 +113,6 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 	AddSocketToEpfd(clientFd, CLIENT_SOCK, EPOLLIN);
 }
 
-int safeClose(int fd) {
-	if (fd > 0) {
-		return (close(fd));
-	}
-	return (-1);
-}
 
 void ConnectionManager::disconnect(Client& client)
 {
@@ -303,6 +297,8 @@ void ConnectionManager::receiveClient(Client& client)
 	ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
 
+
+
 void ConnectionManager::sendClient(Client& client)
 {
 	HttpResponse& response = client.getResponse();
@@ -322,7 +318,7 @@ void ConnectionManager::sendClient(Client& client)
 		ChangeClientEvent(client.getFd(), EPOLLIN);
 		return;
 	}
-	if (!chunk.empty()) {
+	if (!chunk.empty() && response.is_ok_send) {
 		ssize_t n = send(client.getFd(), &chunk[0], chunk.size(), 0);
 		std::cerr << "size n  = " << n << "\n";
 		response.eraseSendBytes(n);
@@ -366,7 +362,6 @@ void ConnectionManager::run()
 					sendClient(m_clients.find(fd)->second);
 				else if (type == (CGI_PIPE)) {
 					// NOTE: something here
-					std::cerr << "there is cgi pipe\n";
 					std::map<int, Client*>::iterator it = m_client_pipes.find(fd);
 					if (it != m_client_pipes.end())
 						receivePipe(*it->second);

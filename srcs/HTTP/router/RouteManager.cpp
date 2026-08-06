@@ -138,7 +138,7 @@ void RouteManager::processRequest(HttpRequest& request) {
 		}
 	}
 
-	if (request.getMethod() != "DELETE")
+	if (request.getMethod() == "GET")
 		physicalPath = _locator.resolvePath(physicalPath, result.route);
 	std::cout << "NEW PHYSICAL PATH ==> " << physicalPath << std::endl;
 	ResourceType type = _locator.getResourceType(physicalPath);

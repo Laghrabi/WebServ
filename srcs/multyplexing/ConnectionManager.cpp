@@ -311,6 +311,7 @@ void ConnectionManager::sendClient(Client& client)
 	if (chunk.empty() && response.getHeadersSent() &&
 			response.is_finished)
 	{
+		client.getRequest().removeTmpFile();
 		response.clear();
 		if (response.keep_connection == 0)
 		{
@@ -318,7 +319,7 @@ void ConnectionManager::sendClient(Client& client)
 			return;
 		}
 		ChangeClientEvent(client.getFd(), EPOLLIN);
-		client.getRequest().reset();
+		client.getRequest() = HttpRequest();
 		return;
 	}
 	if (!chunk.empty() && response.is_ok_send) {

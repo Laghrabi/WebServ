@@ -72,7 +72,6 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 				_contentLength = other._contentLength;
 				_chunkedSize = other._chunkedSize;
 				_body = other._body;
-				// _client_max_body_size = other._client_max_body_size;
 				_server = other._server;
 				_serverRange = other._serverRange;
 				_clientEndPoint = other._clientEndPoint;
@@ -82,6 +81,13 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 			}
 			return (*this);
 		}
+
+
+void HttpRequest::removeTmpFile(void) {
+	if (!_bodyFilePath.empty()) {
+		remove(_bodyFilePath.c_str());
+	}
+}
 
 
 /**

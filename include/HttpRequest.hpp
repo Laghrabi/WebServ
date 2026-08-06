@@ -110,6 +110,8 @@ class HttpRequest {
         void debugPrintHeaders(const std::map<std::string, std::string>& headers) const;
 		const Server::IPort& getServerIPort() const;
 		const Server::IPort& getClientIPort() const;
+
+			void removeTmpFile(void);
 };
 
 char	safeToLower(char c);

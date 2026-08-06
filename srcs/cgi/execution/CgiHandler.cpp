@@ -1,19 +1,15 @@
 #include "CgiHandler.hpp"
-#include "HttpRequest.hpp"
-#include "findElem.hpp"
-#include "sys/wait.h"
-#include <cstdio>
-#include <sstream>
-#include <stdexcept>
-#include <unistd.h>
-#include <utility>
+#include "HttpStatus.hpp"
+#include "HttpStatus.hpp"
 
 
 CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
 	m_reading_body(false),
 	m_request(request),
 	m_response(response),
-	m_send_buffer(response.buffer)
+	m_send_buffer(response.buffer),
+	m_pid(-1),
+	m_ok(true)
 {
 }
 
@@ -21,56 +17,94 @@ CgiHandler::CgiHandler(const CgiHandler& other) :
 	m_reading_body(other.m_reading_body),
 	m_request(other.m_request),
 	m_response(other.m_response),
-	m_send_buffer(other.m_send_buffer)
+	m_send_buffer(other.m_send_buffer),
+	m_pid(other.m_pid),
+	m_ok(other.m_ok)
 {
 }
 
- void CgiHandler::checkProcessState() {
-// NOTE: wailt pid
-// check time out 
-// check stat of the handler: error, finished
-// set m_response.is_finished to true
- }
+
+void CgiHandler::checkProcessState() {
+	int status = waitForProcess();
+	if (status && !m_reading_body) {
+		m_response.is_ok_send = true;
+		m_response.is_finished = true;
+		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+	}
+}
+
+int CgiHandler::waitForProcess() {
+	int status = 0;
+	int success;
+	if ((success = waitpid(m_pid, &status, WNOHANG)) == 0) {
+		// std::cout << "[CGI] no change in state\n";
+	}
+	else if (status > 0) {
+		std::cout << "[CGI] process terminate " << m_cgi_script << "\n";
+	}
+	return (status);
+}
+
+void CgiHandler::killProcess() {
+	if (m_pid != -1) {
+		kill (m_pid, SIGKILL);
+		waitForProcess();
+	}
+}
+
+void CgiHandler::handleChild() {
+	CgiRequest cgi_request(m_request);
+	std::string fileIn = m_request.getBodyFilePath().c_str();
+	int fd = -1;
+	if (!fileIn.empty())
+	{
+		if ((fd= open(fileIn.c_str(), O_RDONLY))) {
+			;
+		}
+		if (dup2(fd, 0))
+		{
+			close (fd);
+			//NOTE: internel server errror
+			std::cerr << "[CGI] fail to dup file to 0 " << m_request.getBodyFilePath().c_str() << "\n";
+		}
+		else
+			close (fd);
+	}
+	std::string wdir = m_cgi_script.substr(0, m_cgi_script.find_last_of('/'));
+	if (wdir.empty()) wdir = "/";
+	std::cout << "[CGI] setting working dir to " << wdir << std::endl;
+	chdir(wdir.c_str());
+	// if (fd == -1) {
+	// 	std::cerr << "[CGI] can't open file " << m_request.getBodyFilePath().c_str() << "\n";
+	// }
+
+	if (dup2(m_pipe_fds[1], 1))
+	{
+		// TODO: do something here exit is not an option maybe
+	}
+
+	close (m_pipe_fds[1]);
+	CString l(m_cgi_script);
+	char *const var[] = {l.getCstr(), NULL};
+	int sucess = execve(m_cgi_script.c_str(), var, cgi_request.getEnvp());
+	(void)sucess;
+	std::cerr << "[CGI] execution for script " << m_cgi_script << " failed\n";
+}
 
 int CgiHandler::execute(void) {
 	std::cerr << "[CGI] start setup executing scrip\n";
-	CgiRequest cgi_request(m_request);
 	m_cgi_script = m_request._routeResult.targetPath;
 	pipe(m_pipe_fds);
-		std::cout << "[CGI] opening file for the script to read\n" << m_request.getBodyFilePath().c_str() << std::endl;
+	std::cout << "[CGI] opening file for the script to read " << m_request.getBodyFilePath().c_str() << std::endl;
 
-	int pid = fork();
-	if (pid != -1) {
+	m_pid = fork();
+	if (m_pid != -1) {
 		// internel server error
 	}
 
-	if (pid == 0) { // child
-		close (m_pipe_fds[0]);
-		int fd = open (m_request.getBodyFilePath().c_str(), O_RDONLY);
-		std::string wdir = m_cgi_script.substr(0, m_cgi_script.find_last_of('/'));
-		std::cout << "[CGI] setting working dir to " << wdir << std::endl;
-		chdir(wdir.c_str());
-		if (fd == -1) {
-			std::cerr << "[CGI] can't open file " << m_request.getBodyFilePath().c_str() << "\n";
-		}
-		if (dup2(fd, 0) )
-		{
-			std::cerr << "[CGI] fail to dup file to 0 " << m_request.getBodyFilePath().c_str() << "\n";
-		}
-		close (fd);
-		if (dup2(m_pipe_fds[1], 1)) {
-
-		}
-		close (m_pipe_fds[1]);
-		std::string l = ("hey");
-		char *const var[] = {&l[0], NULL};
-		std::cerr << "execution valid\n";
-		int sucess = execve(m_cgi_script.c_str(), var, cgi_request.getEnvp());
-		(void)sucess;
-		std::cerr << "execution failed\n";
-		// response.makeerror(501);
+	if (m_pid == 0) { // child
+		handleChild();
 	}
-	std::cerr << "file des is " << m_pipe_fds[0] << "\n";
 	close(m_pipe_fds[1]);
 	return (m_pipe_fds[0]);
 }
@@ -81,6 +115,7 @@ int CgiHandler::execute(void) {
 //      content-type:
 
 std::pair<std::string, std::string> CgiHandler::parse_header(const std::string& data) {
+	std::cout << "[CGI] " << data << "\n";
 	std::size_t colon_pos = data.find(':');
 
 	if (colon_pos == std::string::npos) {
@@ -110,16 +145,16 @@ void checkForError(std::string& header,const std::string& value) {
 
 
 void CgiHandler::parseStatus(const std::string& field_value) {
-		std::string str;
-			int val;
-			std::stringstream ss(field_value);
-			if ((ss >> val) && (ss >> str)) {
-				m_location = field_value;
-			}
-			else {
-				throw (std::runtime_error("status error"));
-			}
-			m_status = field_value;
+	std::string str;
+	int val;
+	std::stringstream ss(field_value);
+	if ((ss >> val) && (ss >> str)) {
+		m_location = field_value;
+	}
+	else {
+		throw (std::runtime_error("status error"));
+	}
+	m_status = field_value;
 }
 
 bool CgiHandler::isCgiField(const std::string& field_name, const std::string& field_value) {
@@ -130,15 +165,15 @@ bool CgiHandler::isCgiField(const std::string& field_name, const std::string& fi
 				throw (std::runtime_error("got location two times\n"));
 			m_location = field_value;
 		}
-		if (field_name == "Status")	 {
-			if (!m_status.empty())
-				throw (std::runtime_error("got status two times\n"));
-			parseStatus(field_value);
-		}
 		if (field_name == "Content-Type") {
 			if (!m_content_type.empty())
 				throw (std::runtime_error("got Content Type two times\n"));
 			m_content_type = field_value;
+		}
+		if (field_name == "Status")	 {
+			if (!m_status.empty())
+				throw (std::runtime_error("got status two times\n"));
+			parseStatus(field_value);
 		}
 		return (true);
 	}
@@ -195,8 +230,8 @@ void CgiHandler::parseBody() {
 void CgiHandler::addEssentialHeaders() {
 	appendStringToVec(m_send_buffer, m_send_buffer.end(),
 			"Server: 1337-webserver\r\n");
-	// appendStringToVec(m_send_buffer, m_send_buffer.end(),
-	// 		"\r\n");
+	appendStringToVec(m_send_buffer, m_send_buffer.end(),
+			HttpResponse::getCurrentDate());
 }
 
 
@@ -210,6 +245,7 @@ void CgiHandler::setBodyState() {
 		appendStringToVec(m_send_buffer, m_send_buffer.begin(), "HTTP/1.1 ");
 	}
 	else if (!m_location.empty()) {
+		// appendStringToVec(m_send_buffer, m_send_buffer, );
 		m_state = BODY_NOT_USEFUL;
 	}
 	else {
@@ -220,6 +256,8 @@ void CgiHandler::setBodyState() {
 
 
 void CgiHandler::parse(const std::vector<char>& data) {
+	if (!m_ok)
+		return ;
 	m_data.insert(m_data.end(), data.begin(), data.end());
 	if (!m_reading_body) {
 		while (true){
@@ -231,6 +269,7 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					setBodyState();
 					std::cerr << "[CGI] reading body phase" << std::endl;
 					m_response.setHeadersSent(true);
+					m_response.is_ok_send = true;
 					m_reading_body = true;
 					break ;
 				}
@@ -241,9 +280,13 @@ void CgiHandler::parse(const std::vector<char>& data) {
 				catch (const std::runtime_error& e) {
 					std::cout << "[CGI] malformed header, clearing send buffer and set internel server error\n";
 					m_send_buffer.clear();
+					m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+					m_response.is_finished = true;
+					m_ok = false;
 					// NOTE: here internel server errror
 					// terminate the script
 					std::cout << "[CGI] "<< e.what() << "\n";
+					break ;
 				}
 			}
 			else {

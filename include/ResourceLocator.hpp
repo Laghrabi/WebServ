@@ -2,6 +2,7 @@
 # define RESOURCE_LOCATOR_HPP
 
 # include "webserver.hpp"
+# include "HttpRequest.hpp"
 
 /**
  * @enum ResourceType

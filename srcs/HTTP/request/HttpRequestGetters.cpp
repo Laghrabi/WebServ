@@ -1,4 +1,4 @@
-#include "../../../include/webserver.hpp"
+#include "HttpRequest.hpp"
 
 /**
  * @brief Retrieves the HTTP method of the parsed request.
@@ -147,4 +147,8 @@ const std::ofstream& HttpRequest::getBodyStream() const {
 
 const Server::IPort& HttpRequest::getClientIPort() const {
 	return (_clientEndPoint);
+}
+
+const std::string& HttpRequest::getHost() const {
+	return (_host);
 }

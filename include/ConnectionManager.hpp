@@ -2,6 +2,8 @@
 #define CONNECTIONMANAGER_HPP
 
 #include "webserver.hpp"
+#include "HttpResponse.hpp"
+#include "HttpRequestHandler.hpp"
 #include "Config.hpp"
 #include "ListeningSocket.hpp"
 #include "ClientSocket.hpp"

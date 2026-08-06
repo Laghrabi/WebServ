@@ -40,7 +40,6 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 	if (base_path.length() > 1)
 		resource = uri.substr(base_path.length() + 1);
 	if (test) {
-		std::cout << "this is location\n";
 		if (!test->getAlias().empty()) {
 			base_path = test->getAlias();
 			base_path_slash = base_path.at(base_path.length() - 1) == '/';
@@ -59,7 +58,6 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 			return "";
 		rootPath = route->getRoot();
 			base_path.insert(0, rootPath);
-			std::cout << base_path << "\n";
 	}
 
 
@@ -88,17 +86,8 @@ ResourceType ResourceLocator::getResourceType(const std::string& physicalPath) c
 	struct stat fileInfo;
 
 	if (stat(physicalPath.c_str(), &fileInfo) != 0) {
-#ifdef DEBUG
-		std::cout << "resource not found: " << physicalPath.c_str() << "\n";
-#endif
-
 		if (errno == EACCES)
-		{
-#ifdef DEBUG
-			std::cout << "[(ROUTING) this resource is forbidden]\n" << "\n";
-#endif
-	return (RESOURCE_FORBIDDEN);
-		}
+			return (RESOURCE_FORBIDDEN);
 		return (RESOURCE_NOT_FOUND);
 	}
 
@@ -107,9 +96,6 @@ ResourceType ResourceLocator::getResourceType(const std::string& physicalPath) c
 	if (S_ISREG(fileInfo.st_mode))
 		return (RESOURCE_FILE);
 
-#ifdef DEBUG
-	std::cout << "forbidden: " << physicalPath.c_str() << "\n";
-#endif
 	return (RESOURCE_FORBIDDEN);
 }
 

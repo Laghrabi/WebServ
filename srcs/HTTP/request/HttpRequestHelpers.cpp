@@ -128,6 +128,7 @@ void HttpRequest::reset() {
 }
 
 void HttpRequest::printHttpStatus(HttpStatus status) {
+    std::cout << "**********HTTP PARSING RESULT**********" << std::endl;
     switch (status) {
         case OK:
             std::cout << "Status [200]: OK\n";

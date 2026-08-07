@@ -167,19 +167,15 @@ int ConnectionManager::receive(Client& client, int fd)
 	}
 	else
 	{
-		std::cout << "the is some error in receive";
-		std::cerr << "error cgi \n";
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 		{
 			return (1);
 		}
-		std::cerr << " somethgin else\n";
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			perror("recv");
 		disconnect(client);
 		return (1);
 	}
-	std::cerr << "here i dont' know\n";
 }
 
 void ConnectionManager::ChangeClientEvent(int fd, uint32_t event)
@@ -303,14 +299,14 @@ void ConnectionManager::receiveClient(Client& client)
 
 void ConnectionManager::sendClient(Client& client)
 {
+	client.checkCgiState();
 	HttpResponse& response = client.getResponse();
 	std::vector<char> chunk = response.assembleResponse();
-
-	client.checkCgiState();
 
 	if (chunk.empty() && response.getHeadersSent() &&
 			response.is_finished)
 	{
+		std::cout << "[MULTI] cunk is empty\n";
 		client.getRequest().removeTmpFile();
 		response.clear();
 		if (response.keep_connection == 0)
@@ -324,7 +320,6 @@ void ConnectionManager::sendClient(Client& client)
 	}
 	if (!chunk.empty() && response.is_ok_send) {
 		ssize_t n = send(client.getFd(), &chunk[0], chunk.size(), 0);
-		// std::cerr << "size n  = " << n << "\n";
 		response.eraseSendBytes(n);
 	}
 }
@@ -352,6 +347,8 @@ void ConnectionManager::run()
 			int type = data->type;
 			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)
 			{
+				exit(20);
+				std::cout << "type " << (type == CLIENT_SOCK) << "\n";
 				disconnect(m_clients.find(fd)->second);
 				--ready;
 				continue;
@@ -363,11 +360,10 @@ void ConnectionManager::run()
 				else if (type == CLIENT_SOCK && (events & EPOLLIN))
 					receiveClient(m_clients.find(fd)->second);
 				else if (type == CLIENT_SOCK && (events & EPOLLOUT)) {
-					std::cout << "hey hey hey hey hey " << (m_clients.find(fd) == m_clients.end()) << "\n";
 					sendClient(m_clients.find(fd)->second);
 				}
 				else if (type == (CGI_PIPE)) {
-					// NOTE: something here
+					// NOTE: something here check if there is client
 					std::map<int, Client*>::iterator it = m_client_pipes.find(fd);
 					if (it != m_client_pipes.end())
 						receivePipe(*it->second);

@@ -97,7 +97,7 @@ void CgiRequest::setHttpEnvs(void) {
 
 void CgiRequest::setServerEnv() {
 	// server name will be always, and if server_name directive doesn't exist it will be empty string SERVER_NAME=
-	m_env_vec.push_back("SERVER_NAME="); // here put server name
+	m_env_vec.push_back("SERVER_NAME=" + m_request.getHost()); // here put server name
 	m_env_vec.push_back(CString("SERVER_SOFTWARE=1337 bengurir webserver"));
 	const Server::IPort& iport = m_request.getServerIPort();
 

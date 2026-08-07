@@ -167,19 +167,15 @@ int ConnectionManager::receive(Client& client, int fd)
 	}
 	else
 	{
-		std::cout << "the is some error in receive";
-		std::cerr << "error cgi \n";
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 		{
 			return (1);
 		}
-		std::cerr << " somethgin else\n";
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			perror("recv");
 		disconnect(client);
 		return (1);
 	}
-	std::cerr << "here i dont' know\n";
 }
 
 void ConnectionManager::ChangeClientEvent(int fd, uint32_t event)
@@ -272,7 +268,7 @@ void ConnectionManager::receiveClient(Client& client)
 	int state = client.getRequest().getCurrentState(); 
 	HttpRequest& request = client.getRequest();
 	if (state == FINISHED) {
-		std::cout << "[recieve]: http request recieved completly" << std::endl; 
+		std::cout << "[receive]: http request recieved completly" << std::endl; 
 		request.debugPrintHeaders(request.getHeaders());
 		request.printBodyContent();
 		RouteManager route_manager;
@@ -303,10 +299,9 @@ void ConnectionManager::receiveClient(Client& client)
 
 void ConnectionManager::sendClient(Client& client)
 {
+	client.checkCgiState();
 	HttpResponse& response = client.getResponse();
 	std::vector<char> chunk = response.assembleResponse();
-
-	client.checkCgiState();
 
 	if (chunk.empty() && response.getHeadersSent() &&
 			response.is_finished)
@@ -319,7 +314,9 @@ void ConnectionManager::sendClient(Client& client)
 			return;
 		}
 		ChangeClientEvent(client.getFd(), EPOLLIN);
-		client.getRequest() = HttpRequest(client.getRequest().getServerRange(), client.getRequest().getClientIPort());
+		client = Client(client.getFd(), client.getListener(), 
+				client.getRequest().getClientIPort(), client.getRequest().getServerRange(), 
+				response.config);
 		return;
 	}
 	if (!chunk.empty() && response.is_ok_send) {
@@ -352,6 +349,7 @@ void ConnectionManager::run()
 			int type = data->type;
 			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)
 			{
+				std::cout << "type " << (type == CLIENT_SOCK) << "\n";
 				disconnect(m_clients.find(fd)->second);
 				--ready;
 				continue;
@@ -363,11 +361,10 @@ void ConnectionManager::run()
 				else if (type == CLIENT_SOCK && (events & EPOLLIN))
 					receiveClient(m_clients.find(fd)->second);
 				else if (type == CLIENT_SOCK && (events & EPOLLOUT)) {
-					std::cout << "hey hey hey hey hey " << (m_clients.find(fd) == m_clients.end()) << "\n";
 					sendClient(m_clients.find(fd)->second);
 				}
 				else if (type == (CGI_PIPE)) {
-					// NOTE: something here
+					// NOTE: something here check if there is client
 					std::map<int, Client*>::iterator it = m_client_pipes.find(fd);
 					if (it != m_client_pipes.end())
 						receivePipe(*it->second);

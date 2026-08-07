@@ -111,20 +111,23 @@ void HttpRequest::reset() {
     _routeUri.clear();
     _EncodedRouteUri.clear();
     _queryString.clear();
+    _host.clear();
     _version.clear();
     _EncodedUriSegments.clear();
     _UriSegments.clear();
     _queryParams.clear();
     _headers.clear();
     _body.clear();
+    _bodyFilePath.clear();
     _contentLength = 0;
     _chunkedSize = 0;
     _bodyBytesWritten = 0;
-    // _client_max_body_size = _DEFAULT_BODY_SIZE;
     _server = NULL;
     _routeResult.action = NONE;
     _routeResult.statusCode = OK;
     _routeResult.targetPath.clear();
+    // _serverRange
+    // _clientEndPoint
 }
 
 void HttpRequest::printHttpStatus(HttpStatus status) {

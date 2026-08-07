@@ -198,7 +198,7 @@ void ConnectionManager::ChangeClientEvent(int fd, uint32_t event)
 	}
 }
 
-void ConnectionManager::receivePipe(Client& client)
+void ConnectionManager::																																				receivePipe(Client& client)
 {
 	if (receive(client, client.m_pipefd))
 		return;
@@ -299,16 +299,14 @@ void ConnectionManager::receiveClient(Client& client)
 	ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
 
-
-
 void ConnectionManager::sendClient(Client& client)
 {
 	HttpResponse& response = client.getResponse();
-	std::vector<char> chunk = response.assembleResponse();
+	size_t size = response.assembleResponse();
 
 	client.checkCgiState();
 
-	if (chunk.empty() && response.getHeadersSent() &&
+	if (size == 0 && response.getHeadersSent() &&
 			response.is_finished)
 	{
 		client.getRequest().removeTmpFile();
@@ -322,9 +320,8 @@ void ConnectionManager::sendClient(Client& client)
 		client.getRequest() = HttpRequest();
 		return;
 	}
-	if (!chunk.empty() && response.is_ok_send) {
-		ssize_t n = send(client.getFd(), &chunk[0], chunk.size(), 0);
-		// std::cerr << "size n  = " << n << "\n";
+	if (size != 0 && response.is_ok_send) {
+		ssize_t n = send(client.getFd(), &response.buffer[0], size, 0);
 		response.eraseSendBytes(n);
 	}
 }

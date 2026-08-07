@@ -167,16 +167,17 @@ void HttpResponse::clear()
 	headersSent = false;
 }
 
-std::vector<char> HttpResponse::assembleResponse() {
+size_t HttpResponse::assembleResponse() {
 	if (getBodySource() == BODY_PIPE) {
-		return (buffer);
+		return buffer.size();
 		// NOTE: check if buffer is 
+		//hamza hna tanta khassek treturniliya gha size;
 	}
 	if (!getHeadersSent()) {
 		if (!buffer.empty()) {
 			if (buffer.size() <= SENDSIZE)
-				return std::vector<char>(buffer.begin(), buffer.end());
-			return std::vector<char>(buffer.begin(), buffer.begin() + SENDSIZE);
+				return buffer.size();
+			return SENDSIZE;
 		}
 		else {
 			setHeadersSent(true);
@@ -194,12 +195,11 @@ std::vector<char> HttpResponse::assembleResponse() {
 				copyArrayToVec(buf, size, buffer);
 		}
 	}
-
 	if (buffer.empty()) {
 		is_finished = true;
 	}
 
-	return buffer;
+	return buffer.size();
 }
 
 void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)

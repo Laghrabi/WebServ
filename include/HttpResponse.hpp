@@ -50,7 +50,7 @@ class HttpResponse
 		HttpResponse(const HttpResponse& other);
 		~HttpResponse();
 		
-		std::vector<char> assembleResponse();
+		size_t assembleResponse();
 		bool is_finished;
 		bool is_ok_send;
 

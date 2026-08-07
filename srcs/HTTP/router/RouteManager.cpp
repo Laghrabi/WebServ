@@ -79,34 +79,28 @@ void RouteManager::processRequest(HttpRequest& request) {
 
 	if (result.route->hasMaxBodySize()) {
 		if (request._bodyBytesWritten > result.route->getMaxBodySize()) {
-			result.statusCode = PAYLOAD_TOO_LARGE;
-			result.action = ACTION_ERROR;
+			setResult(PAYLOAD_TOO_LARGE, ACTION_ERROR, "", result);
 			return ;
 		}
 	}
 
 	if (result.route && !result.route->isAllowed(request.getMethod())) {
-		result.action = ACTION_ERROR;
-		result.statusCode = METHOD_NOT_ALLOWED;
+		setResult(METHOD_NOT_ALLOWED, ACTION_ERROR, "", result);
 		return ;
 	}
 
 	if (result.route->doesRedirect()) {
-		result.action = ACTION_REDIRECT;
-		result.targetPath = result.route->getRedirection().second;
-		result.statusCode = result.route->getRedirection().first;
+		setResult(result.route->getRedirection().first, ACTION_REDIRECT, result.targetPath = result.route->getRedirection().second, result);
 		return ;
 	}
-
 	
 	std::string physicalPath = _locator.buildPhysicalPath(request, _basePath, _resource);
 	std::cout << "PHYSICAL PATH ==> " << physicalPath << std::endl;
 	if (physicalPath.empty()) {
-		result.action = ACTION_ERROR;
-		result.statusCode = NOT_FOUND;
+		setResult(NOT_FOUND, ACTION_ERROR, "", result);
+		return ;
 	}
 
-	
 	if (result.route->isCgiEnable()) {
 		std::cout << "rousource: " <<  _resource << "\n";
 		std::vector<std::string> vec;
@@ -119,21 +113,18 @@ void RouteManager::processRequest(HttpRequest& request) {
 	if (request.getMethod() == "POST") {
 		if (result.route->getUploadDir().empty()) {
 			std::cout << "ERROR ==> NO UPLOAD DIRECTIVE FOUND" << std::endl;
-			result.action = ACTION_ERROR;
-			result.statusCode = FORBIDDEN;
+			setResult(FORBIDDEN, ACTION_ERROR, "", result);
 			return ;
 		}
 		std::string uploadsPath = resolveUploadPath(request.getRouteUri(), LocationMatch, result.route->getUploadDir());
 		std::cout << "UPLOAD PATH ==> " << uploadsPath << std::endl;
-		result.action = ACTION_UPLOAD_FILE;
-		result.targetPath = uploadsPath;
+		setResult(OK, ACTION_UPLOAD_FILE, uploadsPath, result);
 		return ;
 	}
 
 	if (request.getMethod() == "DELETE") {
 		if (_locator.getResourceType(physicalPath) == RESOURCE_DIRECTORY) {
-			result.action = ACTION_ERROR;
-			result.statusCode = FORBIDDEN;
+			setResult(FORBIDDEN, ACTION_ERROR, "", result);
 			return ;
 		}
 	}
@@ -151,38 +142,31 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
     switch (type) {
         case RESOURCE_FILE:
 			std::cout << "TYPE ==> RESOURCE_FILE" << std::endl;
-            result.action = ACTION_SERVE_FILE;
-            result.targetPath = physicalPath;
+			setResult(OK, ACTION_SERVE_FILE, physicalPath, result);
             break;
 
         case RESOURCE_DIRECTORY:
 			std::cout << "TYPE ==> RESOURCE_DIRECTORY" << std::endl;
             if (routeUri[routeUri.length() - 1] != '/') {
-                result.action = ACTION_REDIRECT;
-                result.targetPath = routeUri + "/";
-                result.statusCode = MOVED_PERMANENTLY;
+				setResult(MOVED_PERMANENTLY, ACTION_REDIRECT, routeUri + "/", result);
             } 
             else if (result.route && result.route->isAutoindex()) {
-                result.action = ACTION_AUTOINDEX;
-                result.targetPath = physicalPath;
+				setResult(OK, ACTION_AUTOINDEX, physicalPath, result);
             }
             else {
-                result.action = ACTION_ERROR;
-                result.statusCode = FORBIDDEN;
+				setResult(FORBIDDEN, ACTION_ERROR, "", result);
             }
             break;
 
         case RESOURCE_FORBIDDEN:
 			std::cout << "TYPE ==> RESOURCE_FORBIDDEN" << std::endl;
-            result.action = ACTION_ERROR;
-            result.statusCode = FORBIDDEN;
+			setResult(FORBIDDEN, ACTION_ERROR, "", result);
             break;
 
         case RESOURCE_NOT_FOUND:
         default:
 			std::cout << "TYPE ==> RESOURCE_NOT_FOUND" << std::endl;
-            result.action = ACTION_ERROR;
-            result.statusCode = NOT_FOUND;
+			setResult(NOT_FOUND, ACTION_ERROR, "", result);
             break;
     }
 }
@@ -255,6 +239,12 @@ std::string RouteManager::resolveUploadPath(const std::string& uri, const std::s
     }
 
     return (finalPath);
+}
+
+void RouteManager::setResult(HttpStatus state, RouteAction action, std::string path, RouteResult& result) {
+	result.action = action;
+	result.statusCode = state;
+	result.targetPath = path;
 }
 
 void RouteManager::printRouteAction(RouteAction action) {

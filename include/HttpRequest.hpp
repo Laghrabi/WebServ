@@ -43,15 +43,13 @@ class HttpRequest {
         size_t                              _contentLength;
         size_t                              _chunkedSize;
         std::vector<char>                   _body;
-        // static const size_t                 _MAX_BODY_SIZE = 10485760;
-        // static const size_t                 _DEFAULT_BODY_SIZE = 1048576;
-        // size_t                              _client_max_body_size;
         const Server*                       _server;
         Config::ServerRange                 _serverRange;
         std::ofstream _bodyStream;
         std::string _bodyFilePath;
         Server::IPort                       _clientEndPoint;
 
+        HttpRequest();
         bool	parseRequestLine();
 		bool	parseHeaders();
         bool    validateHeaders();
@@ -74,7 +72,6 @@ class HttpRequest {
         size_t								_bodyBytesWritten;
         RouteResult                         _routeResult;
 
-        HttpRequest();
         HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint);
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
@@ -86,7 +83,7 @@ class HttpRequest {
         static bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
         static void printHttpStatus(HttpStatus status);
         
-
+        const Config::ServerRange& getServerRange() const;
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;
         const std::string& getUri() const;

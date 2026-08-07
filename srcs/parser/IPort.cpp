@@ -41,7 +41,7 @@ Server::IPort& Server::IPort::operator=(const Server::IPort& other) {
 	m_addr = other.m_addr;
 
 	m_ip_str = other.m_ip_str;
-	m_ip_str = other.m_port_str;
+	m_port_str = other.m_port_str;
 
 	return (*this);
 }

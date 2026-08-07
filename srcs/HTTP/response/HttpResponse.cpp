@@ -168,23 +168,9 @@ void HttpResponse::clear()
 }
 
 size_t HttpResponse::assembleResponse() {
-	if (getBodySource() == BODY_PIPE) {
-		return buffer.size();
-		// NOTE: check if buffer is 
-		//hamza hna tanta khassek treturniliya gha size;
-	}
-	if (!getHeadersSent()) {
-		if (!buffer.empty()) {
-			if (buffer.size() <= SENDSIZE)
-				return buffer.size();
-			return SENDSIZE;
-		}
-		else {
-			setHeadersSent(true);
-			buffer.clear();
-		}
-	}
-	if (getBodySource() == BODY_FILE) {
+	if (!getHeadersSent() && buffer.empty())
+		setHeadersSent(true);
+	if (getBodySource() == BODY_FILE && getHeadersSent()) {
 		if (buffer.empty())
 		{
 			char buf[SENDSIZE + 1];
@@ -195,11 +181,10 @@ size_t HttpResponse::assembleResponse() {
 				copyArrayToVec(buf, size, buffer);
 		}
 	}
-	if (buffer.empty()) {
+	if (buffer.empty() && getBodySource() != BODY_PIPE) {
 		is_finished = true;
 	}
-
-	return buffer.size();
+	return buffer.size() < SENDSIZE ? buffer.size() : SENDSIZE;
 }
 
 void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
@@ -226,6 +211,25 @@ void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 	buffer.insert(buffer.end(), newline.begin(), newline.end());
 }
 
+void HttpResponse::setLog(HttpStatus code, const HttpRequest& request)
+{
+	std::string path = request._routeResult.route->getAccessLog();
+	std::string clientEndpoint = request.getClientIPort().getIpStr();
+
+	struct stat st;
+    if (stat(filePath.c_str(), &st) == 0)
+	{
+		if (!S_ISREG(st.st_mode))
+			return;
+		if (access(filePath.c_str(), W_OK) != 0)
+            return;
+	}
+	std::fstream file;
+	file.open(path.c_str(), std::ios::app);
+	std::string log = clientEndpoint + " - " + HttpResponse::getCurrentDate() + " " + SERVER_NAME + 	
+ 	request.getMethod() + to_string(code) + statusCodeMap[code] + "\n";
+	file << log;
+}
 void HttpResponse::init()
 {
 	if (!statusCodeMap.empty())

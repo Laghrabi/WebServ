@@ -306,7 +306,6 @@ void ConnectionManager::sendClient(Client& client)
 	if (chunk.empty() && response.getHeadersSent() &&
 			response.is_finished)
 	{
-		std::cout << "[MULTI] cunk is empty\n";
 		client.getRequest().removeTmpFile();
 		response.clear();
 		if (response.keep_connection == 0)
@@ -320,6 +319,7 @@ void ConnectionManager::sendClient(Client& client)
 	}
 	if (!chunk.empty() && response.is_ok_send) {
 		ssize_t n = send(client.getFd(), &chunk[0], chunk.size(), 0);
+		// std::cerr << "size n  = " << n << "\n";
 		response.eraseSendBytes(n);
 	}
 }
@@ -347,7 +347,6 @@ void ConnectionManager::run()
 			int type = data->type;
 			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)
 			{
-				exit(20);
 				std::cout << "type " << (type == CLIENT_SOCK) << "\n";
 				disconnect(m_clients.find(fd)->second);
 				--ready;

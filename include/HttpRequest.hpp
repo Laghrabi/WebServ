@@ -43,9 +43,6 @@ class HttpRequest {
         size_t                              _contentLength;
         size_t                              _chunkedSize;
         std::vector<char>                   _body;
-        // static const size_t                 _MAX_BODY_SIZE = 10485760;
-        // static const size_t                 _DEFAULT_BODY_SIZE = 1048576;
-        // size_t                              _client_max_body_size;
         const Server*                       _server;
         Config::ServerRange                 _serverRange;
         std::ofstream _bodyStream;

@@ -1,6 +1,9 @@
 #include "CgiHandler.hpp"
 #include "HttpStatus.hpp"
 #include "HttpStatus.hpp"
+#include "webserver.hpp"
+#include <cctype>
+#include <cstdio>
 
 
 CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
@@ -19,30 +22,59 @@ CgiHandler::CgiHandler(const CgiHandler& other) :
 	m_response(other.m_response),
 	m_send_buffer(other.m_send_buffer),
 	m_pid(other.m_pid),
-	m_ok(other.m_ok)
+	m_ok(other.m_ok),
+	m_last_read(other.m_last_read)
 {
 }
 
+template <typename T> void appendStringToVec(T& c, typename T::iterator it, const std::string& str) {
+	c.insert(it, str.begin(), str.end());
+}
+
+bool CgiHandler::checkTimeOut() {
+	std::size_t current_time = std::time(NULL);
+	std::size_t differ_time = current_time - m_last_read;
+	if (differ_time > 10) {
+		// std::cout << "[CGI] timeout script " << differ_time << "\n"<< m_cgi_script << "\n";
+		return (true);
+	}
+	return (false);
+}
 
 void CgiHandler::checkProcessState() {
-	int status = waitForProcess();
-	if (status && !m_reading_body) {
+	if (checkTimeOut()) {
+		killProcess();
+	}
+	int pid = waitForProcess();
+	// std::cout << "[CGI] status  = " << pid << "\n";
+	if (pid > 0 && !m_reading_body) {
 		m_response.is_ok_send = true;
 		m_response.is_finished = true;
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+	}
+	else if (pid > 0 && m_reading_body && m_ok) {
+		if (m_state == STORE_BODY)
+			appendStringToVec(m_send_buffer, m_send_buffer.end(), "0\r\n\r\n");
+		m_response.is_ok_send = true;
+		m_response.is_finished = true;
+		std::cout << "[CGI] script competed sed \\r\\n0\\r\\n.\n";
+	}
+	else if (pid == -1) {
+		m_response.is_ok_send = true;
+		m_response.is_finished = true;
 	}
 }
 
 int CgiHandler::waitForProcess() {
 	int status = 0;
-	int success;
-	if ((success = waitpid(m_pid, &status, WNOHANG)) == 0) {
+	int pid;
+	if ((pid = waitpid(m_pid, &status, WNOHANG)) == 0) {
 		// std::cout << "[CGI] no change in state\n";
 	}
-	else if (status > 0) {
+	else if (pid > 0) {
 		std::cout << "[CGI] process terminate " << m_cgi_script << "\n";
 	}
-	return (status);
+	return (pid);
 }
 
 void CgiHandler::killProcess() {
@@ -105,6 +137,7 @@ int CgiHandler::execute(void) {
 	if (m_pid == 0) { // child
 		handleChild();
 	}
+	m_last_read = std::time(NULL);
 	close(m_pipe_fds[1]);
 	return (m_pipe_fds[0]);
 }
@@ -157,20 +190,32 @@ void CgiHandler::parseStatus(const std::string& field_value) {
 	m_status = field_value;
 }
 
+bool compare_header(const std::string& h1, const std::string& h2) {
+	std::size_t size = h1.size();
+	if (size != h2.size())
+		return (false);
+	for (std::size_t idx = 0; idx < size; idx++) {
+		if (std::toupper(h1.at(idx)) != std::toupper(h2[idx])) {
+			return (false);
+		}
+	}
+	return (true);
+}
+
 bool CgiHandler::isCgiField(const std::string& field_name, const std::string& field_value) {
 	if (field_name == "Location" || field_name == "Status" ||
 			field_name == "Content-Type") {
-		if (field_name == "Location")	 {
+		if (compare_header(field_name, "location"))	 {
 			if (!m_location.empty())
 				throw (std::runtime_error("got location two times\n"));
 			m_location = field_value;
 		}
-		if (field_name == "Content-Type") {
+		if (compare_header(field_name, "Content-type"))	 {
 			if (!m_content_type.empty())
 				throw (std::runtime_error("got Content Type two times\n"));
 			m_content_type = field_value;
 		}
-		if (field_name == "Status")	 {
+		if (compare_header(field_name, "status"))	 {
 			if (!m_status.empty())
 				throw (std::runtime_error("got status two times\n"));
 			parseStatus(field_value);
@@ -180,8 +225,13 @@ bool CgiHandler::isCgiField(const std::string& field_name, const std::string& fi
 	return (false);
 }
 
-template <typename T> void appendStringToVec(T& c, typename T::iterator it, const std::string& str) {
-	c.insert(it, str.begin(), str.end());
+bool CgiHandler::isHeaderEgnored(const std::string& field_name) {
+	if (compare_header(field_name, "connection") ||
+			compare_header(field_name, "date") ||
+			compare_header(field_name, "server")) {
+		return (true);
+	}
+	return (false);
 }
 
 // status void
@@ -190,12 +240,16 @@ void CgiHandler::checkHeader(const std::string& header) {
 	std::string &field_name = pair.first;
 	std::string &field_value = pair.second;
 
+	if (isHeaderEgnored(field_name)) {
+		return ;
+	}
+
 	bool is_cgi_field = isCgiField(field_name, field_value);
 	if (!is_cgi_field || (is_cgi_field && field_name != "Status")) {
 		std::cout << "[CGI] insert a new header: [" << field_name << "]\n";
 		VecIter end = m_send_buffer.end();
 		m_send_buffer.insert(end, header.begin(), header.end());
-		std::cout << "[CGI] appending \\r\\n to the header to put in in buffer send\n";
+		// std::cout << "[CGI] appending \\r\\n to the header to put in in buffer send\n";
 		appendStringToVec(m_send_buffer, m_send_buffer.end(), "\r\n");
 	}
 }
@@ -213,10 +267,10 @@ template<typename T> void appendCRLF(T& c, typename  T::iterator it) {
 void CgiHandler::setChunckedBody() {
 	std::size_t chunck_size = m_data.size();
 	std::cout << "[CGI] body chunck size " << chunck_size << "\n";
-	// exit (20);
 	std::string chunck_hex = toHex(chunck_size);
 	appendStringToVec(m_send_buffer, m_send_buffer.end(), chunck_hex + "\r\n");
 	m_send_buffer.insert(m_send_buffer.end(), m_data.begin(), m_data.end());
+	std::cout << "[CGI] insert data\n";
 	appendCRLF(m_send_buffer, m_send_buffer.end());
 }
 
@@ -231,13 +285,48 @@ void CgiHandler::addEssentialHeaders() {
 	appendStringToVec(m_send_buffer, m_send_buffer.end(),
 			"Server: 1337-webserver\r\n");
 	appendStringToVec(m_send_buffer, m_send_buffer.end(),
-			HttpResponse::getCurrentDate());
+			"Date: " + HttpResponse::getCurrentDate() + "\r\n");
+	if (compare_header(m_request.getHeader("connection"), "keep-alive")) {
+		appendStringToVec(m_send_buffer, m_send_buffer.end(), "Connection: keep-alive\r\n");
+		m_response.keep_connection = true;
+	}
+	else{
+		appendStringToVec(m_send_buffer, m_send_buffer.end(), "Connection: close\r\n");
+		m_response.keep_connection = false;
+	}
 }
 
 
+void CgiHandler::appendToSendBuffer(std::vector<char>::iterator it, const std::string& str) {
+	appendStringToVec(m_send_buffer, it, str);
+}
+
+void CgiHandler::handleLocation() {
+	appendStringToVec(m_send_buffer, m_send_buffer.begin(), "HTTP/1.1 302 Found \r\n");
+	std::string body = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"
+		"<html><head>"
+		"<title>302 Found</title>"
+		"</head><body>"
+		"<h1>Found</h1>"
+		"<p>The document has moved <a href=\"" + std::string(m_location) + "\">here</a>.</p>"
+		"<hr>"
+		"</body></html>";
+	appendToSendBuffer(m_send_buffer.end(), "Content-Lenght: " + to_string(body.size()) + "\r\n");
+	appendToSendBuffer(m_send_buffer.end(), "Content-Type: text/html\r\n\r\n");
+	appendToSendBuffer(m_send_buffer.end(), body);
+}
+
 void CgiHandler::setBodyState() {
 	std::cout << "[CGI] STORE BODY NORMALLY\n";
+	if (m_location.empty() && m_status.empty()
+			&& m_content_type.empty()) {
+		std::cout << "[CGI] ERROR [cgi fileds are not set]\n";
+		m_send_buffer.clear();
+		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+		m_ok = false;
+	}
 	m_state = STORE_BODY;
+	addEssentialHeaders();
 	if (!m_status.empty()) {
 		std::cout << "[CGI] status: " << m_status << "\n";
 		m_status += "\r\n";
@@ -245,17 +334,22 @@ void CgiHandler::setBodyState() {
 		appendStringToVec(m_send_buffer, m_send_buffer.begin(), "HTTP/1.1 ");
 	}
 	else if (!m_location.empty()) {
+		handleLocation();
 		// appendStringToVec(m_send_buffer, m_send_buffer, );
 		m_state = BODY_NOT_USEFUL;
 	}
 	else {
 		appendStringToVec(m_send_buffer, m_send_buffer.begin(), "HTTP/1.1 200 OK\r\n");
 	}
+	if (m_state == STORE_BODY) {
+		appendStringToVec(m_send_buffer, m_send_buffer.end(), "Transfer-Encoding: chunked\r\n");
+	}
 	appendStringToVec(m_send_buffer, m_send_buffer.end(), "\r\n");
 }
 
 
 void CgiHandler::parse(const std::vector<char>& data) {
+	m_last_read = std::time(NULL);
 	if (!m_ok)
 		return ;
 	m_data.insert(m_data.end(), data.begin(), data.end());
@@ -294,14 +388,34 @@ void CgiHandler::parse(const std::vector<char>& data) {
 			}
 		}
 	}
-	if (m_reading_body) {
+	if (m_reading_body && !m_data.empty()) {
 		parseBody();
 		m_data.clear();
 	}
 }
 
 CgiHandler& CgiHandler::operator=(const CgiHandler& other) {
-	(void)(other);
+if (this != &other)
+    {
+        m_state = other.m_state;
+        m_headers = other.m_headers;
+        // m_bodyBytes = other.m_bodyBytes;
+        m_status = other.m_status;
+        m_location = other.m_location;
+        m_content_type = other.m_content_type;
+        m_reading_body = other.m_reading_body;
+        m_data = other.m_data;
+        m_cgi_script = other.m_cgi_script;
+
+        m_pipe_fds[0] = other.m_pipe_fds[0];
+        m_pipe_fds[1] = other.m_pipe_fds[1];
+
+        m_pid = other.m_pid;
+        m_ok = other.m_ok;
+        m_last_read = other.m_last_read;
+    }
+
+
 	return (*this);
 }
 

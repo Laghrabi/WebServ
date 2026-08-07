@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for i in $*
+do
+        sudo wget [^1^][1] $i
+done
+echo "done"

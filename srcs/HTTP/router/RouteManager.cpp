@@ -98,7 +98,7 @@ void RouteManager::processRequest(HttpRequest& request) {
 	std::cout << "PHYSICAL PATH ==> " << physicalPath << std::endl;
 	if (physicalPath.empty()) {
 		setResult(NOT_FOUND, ACTION_ERROR, "", result);
-		// return ?
+		return ;
 	}
 
 	if (result.route->isCgiEnable()) {

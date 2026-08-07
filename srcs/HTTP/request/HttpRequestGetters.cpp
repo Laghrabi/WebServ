@@ -152,3 +152,7 @@ const Server::IPort& HttpRequest::getClientIPort() const {
 const std::string& HttpRequest::getHost() const {
 	return (_host);
 }
+
+const Config::ServerRange& HttpRequest::getServerRange() const {
+	return (_serverRange);
+}

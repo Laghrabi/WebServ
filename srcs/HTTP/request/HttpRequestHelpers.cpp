@@ -1,4 +1,4 @@
-#include "webserver.hpp"
+#include "HttpRequest.hpp"
 
 /**
  * @brief Safely converts a given character to lowercase.
@@ -120,7 +120,7 @@ void HttpRequest::reset() {
     _contentLength = 0;
     _chunkedSize = 0;
     _bodyBytesWritten = 0;
-    _client_max_body_size = _DEFAULT_BODY_SIZE;
+    // _client_max_body_size = _DEFAULT_BODY_SIZE;
     _server = NULL;
     _routeResult.action = NONE;
     _routeResult.statusCode = OK;
@@ -128,6 +128,7 @@ void HttpRequest::reset() {
 }
 
 void HttpRequest::printHttpStatus(HttpStatus status) {
+    std::cout << "**********HTTP PARSING RESULT**********" << std::endl;
     switch (status) {
         case OK:
             std::cout << "Status [200]: OK\n";
@@ -265,4 +266,17 @@ void HttpRequest::printBodyContent() const {
     std::cout << "\n=========== BODY CONTENT END ===========\n";
     
     inFile.close();
+}
+
+void HttpRequest::debugPrintHeaders(const std::map<std::string, std::string>& headers) const {
+    
+    std::cout << "---HTTP HEADERS---" << std::endl;
+    
+    std::map<std::string, std::string>::const_iterator it;
+    
+    for (it = headers.begin(); it != headers.end(); ++it) {
+        std::cout << it->first << ": " << it->second << std::endl;
+    }
+    
+    std::cout << "--------------------" << std::endl;
 }

@@ -2,6 +2,8 @@
 #define CONNECTIONMANAGER_HPP
 
 #include "webserver.hpp"
+#include "HttpResponse.hpp"
+#include "HttpRequestHandler.hpp"
 #include "Config.hpp"
 #include "ListeningSocket.hpp"
 #include "ClientSocket.hpp"
@@ -48,6 +50,7 @@ public:
     void				disconnect(Client& client);
     void				ChangeClientEvent(int fd, uint32_t event);
     void				AddSocketToEpfd(int fd, SockType type, uint32_t event);
+    void                handleCgi(Client& client);
 
 public:
 

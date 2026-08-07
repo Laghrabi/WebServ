@@ -1,8 +1,7 @@
 #ifndef CGIHANDLER_HPP
 #define CGIHANDLER_HPP
-#include <iostream>
-#include <vector>
 
+#include "webserver.hpp"
 
 #include "CgiRequest.hpp"
 #include "HttpRequest.hpp"
@@ -21,6 +20,7 @@ class CgiHandler {
 		typedef std::vector<char> Vec;
 		typedef std::vector<char>::iterator VecIter;
 		typedef std::vector<char>::const_iterator VecConstIter;
+
 		
 		CgiBodyParsingState m_state;
 		std::map<std::string, std::string> m_headers;
@@ -35,6 +35,8 @@ class CgiHandler {
 		int m_pipe_fds[2];
 		HttpResponse &m_response;
 		Vec& m_send_buffer;
+		int m_pid;
+		int m_ok;
 
 		CgiHandler& operator=(const CgiHandler& other);
 		void checkHeader(const std::string& header);
@@ -43,7 +45,12 @@ class CgiHandler {
 		bool isCgiField(const std::string& field_name, const std::string& field_value);
 		void addEssentialHeaders();
 		void setChunckedBody();
+		void parseStatus(const std::string& field_value);
+		int waitForProcess();
+		void handleChild();
 	public:
+		void killProcess();
+		void checkProcessState();
 		CgiHandler(const HttpRequest& cgiRequest, HttpResponse& m_response);
 		CgiHandler(const CgiHandler& other);
 		int execute(void);

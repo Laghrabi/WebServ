@@ -32,10 +32,14 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 # include <sys/stat.h>
 #include <netdb.h>
 #include <sys/epoll.h>
 #include <dirent.h>
+
+
+#include "ctime"
 
 #include <sys/stat.h>
 
@@ -49,10 +53,13 @@ typedef std::vector<token> TokenCont;
 
 #include "HttpStatus.hpp"
 
+int safeClose(int fd);
 
 #include "UnorderedMultiMap.hpp"
 
+
 #include "utils.tpp"
+#include "toNum.tpp"
 #include "./FileStatus.hpp"
 #include "./MimeTypesExt.hpp"
 #include "RouteConfig.hpp"
@@ -65,17 +72,14 @@ typedef std::vector<token> TokenCont;
 #include "IPort.hpp"
 #include "IPortV4.hpp"
 #include "IPortV6.hpp"
-#include "HttpRequest.hpp"
 #include "StringUtils.hpp"
-// #include "CgiRequest.hpp"
-#include "HttpResponse.hpp"
-// #include "HttpRequestHandler.hpp"
 
 std::string to_string(std::size_t num);
-
 void copyArrayToVec(char* first, std::size_t n, std::vector<char>& vec);
 
 #define DEFAULT_ADDR 0
 #define DEFAULT_PORT 80
+
+#define SERVER_NAME "1337-webserver"
 
 #endif

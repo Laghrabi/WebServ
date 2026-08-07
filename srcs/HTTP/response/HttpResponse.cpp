@@ -1,6 +1,15 @@
 #include "HttpResponse.hpp"
 #include "webserver.hpp"
+
 std::map<HttpStatus, std::string> 	HttpResponse::statusCodeMap;
+
+std::string HttpResponse::getCurrentDate()
+{
+	std::time_t now = std::time(NULL);
+	char buf[100];
+	std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", std::gmtime(&now));
+	return std::string(buf);
+}
 
 HttpResponse::HttpResponse(const Config& Config):
 	bufferBytesSent(0),
@@ -11,7 +20,8 @@ HttpResponse::HttpResponse(const Config& Config):
 	headersSent(false),
 	config(Config),
 	buffer(),
-	is_finished(false)
+	is_finished(false),
+	is_ok_send(false)
 {
 	buffer.reserve(SENDSIZE);
 	init();
@@ -26,7 +36,8 @@ HttpResponse::HttpResponse(const HttpResponse& other):
 	headersSent(other.headersSent),
 	config(other.config),
 	buffer(other.buffer),
-	is_finished(other.is_finished)
+	is_finished(other.is_finished),
+	is_ok_send(other.is_ok_send)
 {
 	buffer.reserve(SENDSIZE);
 	init();
@@ -44,6 +55,7 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& other) {
 		headersSent = other.headersSent;
 		buffer.reserve(SENDSIZE);
 		is_finished = other.is_finished;
+		is_ok_send = other.is_ok_send;
 	}
 	return *this;
 }
@@ -188,6 +200,30 @@ std::vector<char> HttpResponse::assembleResponse() {
 	}
 
 	return buffer;
+}
+
+void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
+{
+	is_ok_send = true;
+	std::cout << "[CGI]: making error for the CGI" << std::endl;
+	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + getStatusCodeMap().find(code)->second + "\r\n";
+	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
+	setBodySource(BODY_BUFFER);
+	std::string connection = request.getHeader("connection");
+	keep_connection = 1;
+	if (connection == "" || connection == "keep-alive")
+	{
+		connection = "keep-alive";
+	}
+	else if (connection == "close")
+	{
+		keep_connection = 0;
+	}
+	setHeader("Connection", connection, buffer);
+	setHeader("Date", HttpResponse::getCurrentDate(), buffer);
+	setHeader("server", SERVER_NAME, buffer);
+	std::string newline("\r\n");
+	buffer.insert(buffer.end(), newline.begin(), newline.end());
 }
 
 void HttpResponse::init()

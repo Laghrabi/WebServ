@@ -1,16 +1,6 @@
 #ifndef HTTP_REQUEST_HPP
 # define HTTP_REQUEST_HPP
 
-# include <iostream>
-# include <vector>
-# include <map>
-# include <string>
-# include <sstream>
-# include <fstream>
-# include <algorithm>
-# include <ctime>
-# include <cstdio>
-#include <cctype>
 #include "webserver.hpp"
 #include "RouteResult.hpp"
 
@@ -53,10 +43,9 @@ class HttpRequest {
         size_t                              _contentLength;
         size_t                              _chunkedSize;
         std::vector<char>                   _body;
-        size_t								_bodyBytesWritten;
-        static const size_t                 _MAX_BODY_SIZE = 10485760;
-        static const size_t                 _DEFAULT_BODY_SIZE = 1048576;
-        size_t                              _client_max_body_size;
+        // static const size_t                 _MAX_BODY_SIZE = 10485760;
+        // static const size_t                 _DEFAULT_BODY_SIZE = 1048576;
+        // size_t                              _client_max_body_size;
         const Server*                       _server;
         Config::ServerRange                 _serverRange;
         std::ofstream _bodyStream;
@@ -82,19 +71,21 @@ class HttpRequest {
         bool openBodyStream();
         
         public:
-        static bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
+        size_t								_bodyBytesWritten;
+        RouteResult                         _routeResult;
+
         HttpRequest();
         HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint);
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
         ~HttpRequest();
-    
+        
         void	parse(const std::vector<char>& rawBuffer);
         void    reset();
-
+        
+        static bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
         static void printHttpStatus(HttpStatus status);
         
-        RouteResult                         _routeResult;
 
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;
@@ -103,6 +94,7 @@ class HttpRequest {
         const std::vector<char>& getBody() const;
         const std::map<std::string, std::string>& getHeaders() const;
 		const std::string& getRouteUri() const;
+        const std::string& getHost() const;
     	const std::string& getQueryString() const;
         std::string getHeader(const std::string& key) const;
         ParseState getCurrentState() const;
@@ -115,8 +107,11 @@ class HttpRequest {
         const std::string& getBodyFilePath() const;
         const std::ofstream& getBodyStream() const;
         void printBodyContent() const;
+        void debugPrintHeaders(const std::map<std::string, std::string>& headers) const;
 		const Server::IPort& getServerIPort() const;
 		const Server::IPort& getClientIPort() const;
+
+			void removeTmpFile(void);
 };
 
 char	safeToLower(char c);

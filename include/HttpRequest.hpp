@@ -52,6 +52,7 @@ class HttpRequest {
         std::string _bodyFilePath;
         Server::IPort                       _clientEndPoint;
 
+        HttpRequest();
         bool	parseRequestLine();
 		bool	parseHeaders();
         bool    validateHeaders();
@@ -74,7 +75,6 @@ class HttpRequest {
         size_t								_bodyBytesWritten;
         RouteResult                         _routeResult;
 
-        HttpRequest();
         HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint);
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
@@ -86,7 +86,7 @@ class HttpRequest {
         static bool    normalizeUriHelper(std::string& uri,std::vector<std::string>& stack);
         static void printHttpStatus(HttpStatus status);
         
-
+        const Config::ServerRange& getServerRange() const;
         std::vector<char> getLeftoverData() const;
         const std::string& getMethod() const;
         const std::string& getUri() const;

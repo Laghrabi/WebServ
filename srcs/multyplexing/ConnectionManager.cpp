@@ -314,7 +314,7 @@ void ConnectionManager::sendClient(Client& client)
 			return;
 		}
 		ChangeClientEvent(client.getFd(), EPOLLIN);
-		client.getRequest() = HttpRequest();
+		client.getRequest() = HttpRequest(client.getRequest().getServerRange(), client.getRequest().getClientIPort());
 		return;
 	}
 	if (!chunk.empty() && response.is_ok_send) {

@@ -39,7 +39,6 @@ class CgiHandler {
 		int m_ok;
 		std::size_t m_last_read;
 
-		CgiHandler& operator=(const CgiHandler& other);
 		void checkHeader(const std::string& header);
 		void parseBody(void);
 		void setBodyState();
@@ -54,6 +53,7 @@ class CgiHandler {
 		void appendToSendBuffer(std::vector<char>::iterator it, const std::string& str);
 		bool checkTimeOut();
 	public:
+		CgiHandler& operator=(const CgiHandler& other);
 		void killProcess();
 		void checkProcessState();
 		CgiHandler(const HttpRequest& cgiRequest, HttpResponse& m_response);

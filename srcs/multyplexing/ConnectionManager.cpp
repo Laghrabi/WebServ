@@ -268,7 +268,7 @@ void ConnectionManager::receiveClient(Client& client)
 	int state = client.getRequest().getCurrentState(); 
 	HttpRequest& request = client.getRequest();
 	if (state == FINISHED) {
-		std::cout << "[recieve]: http request recieved completly" << std::endl; 
+		std::cout << "[receive]: http request recieved completly" << std::endl; 
 		request.debugPrintHeaders(request.getHeaders());
 		request.printBodyContent();
 		RouteManager route_manager;
@@ -314,7 +314,9 @@ void ConnectionManager::sendClient(Client& client)
 			return;
 		}
 		ChangeClientEvent(client.getFd(), EPOLLIN);
-		client.getRequest() = HttpRequest(client.getRequest().getServerRange(), client.getRequest().getClientIPort());
+		client = Client(client.getFd(), client.getListener(), 
+				client.getRequest().getClientIPort(), client.getRequest().getServerRange(), 
+				response.config);
 		return;
 	}
 	if (!chunk.empty() && response.is_ok_send) {

@@ -39,7 +39,6 @@ class HttpResponse
 		size_t										filebytesSent;
 		bool 										headersSent;
 		static std::map<HttpStatus, std::string> 	statusCodeMap;
-		HttpResponse& operator=(const HttpResponse& other);
 		
 	public:
 		const Config&								config;
@@ -49,6 +48,7 @@ class HttpResponse
 		HttpResponse(const Config& config);
 		HttpResponse(const HttpResponse& other);
 		~HttpResponse();
+		HttpResponse& operator=(const HttpResponse& other);
 		
 		std::vector<char> assembleResponse();
 		bool is_finished;

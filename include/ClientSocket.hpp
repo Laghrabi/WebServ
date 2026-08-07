@@ -17,7 +17,6 @@ class Client
         HttpRequest         m_request;
         HttpResponse        m_response;
         
-        Client& operator=(const Client& other);
       public:
         
         int                 m_pipefd;

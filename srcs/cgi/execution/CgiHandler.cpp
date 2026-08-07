@@ -395,7 +395,27 @@ void CgiHandler::parse(const std::vector<char>& data) {
 }
 
 CgiHandler& CgiHandler::operator=(const CgiHandler& other) {
-	(void)(other);
+if (this != &other)
+    {
+        m_state = other.m_state;
+        m_headers = other.m_headers;
+        // m_bodyBytes = other.m_bodyBytes;
+        m_status = other.m_status;
+        m_location = other.m_location;
+        m_content_type = other.m_content_type;
+        m_reading_body = other.m_reading_body;
+        m_data = other.m_data;
+        m_cgi_script = other.m_cgi_script;
+
+        m_pipe_fds[0] = other.m_pipe_fds[0];
+        m_pipe_fds[1] = other.m_pipe_fds[1];
+
+        m_pid = other.m_pid;
+        m_ok = other.m_ok;
+        m_last_read = other.m_last_read;
+    }
+
+
 	return (*this);
 }
 

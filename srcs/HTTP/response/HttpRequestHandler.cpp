@@ -185,12 +185,6 @@ void HttpRequestHandler::handleGet()
 {
 	const RouteResult &result = request._routeResult;
 
-    if (result.route || !result.route->isAllowed("GET"))
-    {
-        makeError(METHOD_NOT_ALLOWED);
-        return;
-    }
-
 	std::cout << "im gonna handle GIT" << std::endl; 
 	switch (result.action)
 	{
@@ -216,11 +210,6 @@ void HttpRequestHandler::handleDelete()
     const std::string &filePath = result.targetPath;
     struct stat st;
 
-    if (!result.route->isAllowed("DELETE"))
-    {
-        makeError(METHOD_NOT_ALLOWED);
-        return;
-    }
 	if (stat(filePath.c_str(), &st) != 0)
 	{
 		makeError(NOT_FOUND);
@@ -254,11 +243,7 @@ void HttpRequestHandler::handlePost()
 {
     const RouteResult &result = request._routeResult;
     const std::string &filePath = result.targetPath;
-    if (!result.route->isAllowed("POST"))
-    {
-        makeError(METHOD_NOT_ALLOWED);
-        return;
-    }
+
 	std::cout << "trying to handle post" << std::endl;
     struct stat st;
     int created = 201;

@@ -51,7 +51,8 @@ void HttpRequestHandler::serveFile()
 	std::cout << "serving file" << std::endl;
 	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
-	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
+	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
+	response.last_code = result.statusCode;
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setHeader("Content-Length", to_string(st.st_size), buffer);
 	response.setHeader("Content-Type", response.config.m_types.getMimeType(filePath), buffer);
@@ -92,7 +93,8 @@ void HttpRequestHandler::generateAutoIndex()
 	std::string connection = checkConnection();
 	std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
 	std::vector<char>& buffer = response.buffer;
-	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
+	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
+	response.last_code = result.statusCode;
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);//hamza chof had l3iba
 	response.setHeader("Content-Length", to_string(autoIndexHtml.size()), response.buffer);
@@ -108,6 +110,7 @@ void HttpRequestHandler::makeRedirect()
 
     std::map<HttpStatus, std::string>::const_iterator it = response.getStatusCodeMap().find(request.getStatusCode());
 	std::string assemble = "HTTP/1.1 " + to_string(it->first) + " " + it->second + "\r\n";
+	response.last_code =  it->first;
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 
 	std::string connection = checkConnection();
@@ -146,9 +149,9 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	// here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
 	// if no i will creat i simple html error page with the code and the message
 	
+	response.last_code =  code;
 	response.setBodySource(BODY_BUFFER);
 	std::string errorHtml = generateErrorPage(code);
-
 	response.setHeader("Content-Length", to_string(errorHtml.size()), buffer);
 	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);
 	std::string connection = checkConnection();
@@ -232,7 +235,8 @@ void HttpRequestHandler::handleDelete()
 	std::cout << "[DELETE]: delete file " << filePath.c_str();
 	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
-	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
+	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
+	response.last_code = result.statusCode;
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Content-Length", "0", response.buffer);
@@ -270,30 +274,66 @@ void HttpRequestHandler::handlePost()
     {
 		switch (errno)
 		{
+			case EXDEV: //diffrent file system
+			{
+				std::ifstream src(request.getBodyFilePath().c_str(),
+				std::ios::binary);
+				std::ofstream dst(result.targetPath.c_str(),
+				std::ios::binary | std::ios::trunc);
+				if (!src.is_open() || !dst.is_open())
+				{
+					makeError(INTERNAL_SERVER_ERROR);
+					return;
+				}
+				char buffer[8192];
+				while (src.read(buffer, sizeof(buffer)) || src.gcount() > 0)
+				{
+					std::streamsize bytes = src.gcount();
+					dst.write(buffer, bytes);
+					if (!dst.good())
+					{
+						dst.close();
+						remove(result.targetPath.c_str());
+						makeError(INTERNAL_SERVER_ERROR);
+						return;
+					}
+				}
+				src.close();
+				dst.close();
+				remove(request.getBodyFilePath().c_str());
+				break;
+			}
+
 			case ENOENT:
 				// Source file doesn't exist or destination directory doesn't exist.
 				// For uploads, this usually means the target directory is missing.
 				makeError(CONFLICT);
-				break;
+				return;
 
 			case ENOSPC:
 				// Disk is full.
 				makeError(INSUFFICIENT_STORAGE);
-				break;
+				return;
 
 			default:
+				std::cout << "im here" << std::endl;
 				makeError(INTERNAL_SERVER_ERROR);
-				break;
+				return;
 		}
-    	return;
     }
     std::vector<char> &bufferResponse = response.buffer;
 	std::string connection = checkConnection();
-	std::string assemble = "HTTP/1.1 " + to_string(created);
+	std::string assemble = "HTTP/1.1 " ;
     if (created == 201)
-        assemble += " Created\r\n";
+	{
+        assemble += to_string(created) + " Created\r\n";
+		response.last_code = CREATED;
+	}
     else
-        assemble += " OK\r\n";
+	{
+        assemble += to_string(OK) + " OK\r\n";
+		response.last_code = OK;
+	}
     bufferResponse.insert(bufferResponse.end(),
                         assemble.begin(), assemble.end());
 

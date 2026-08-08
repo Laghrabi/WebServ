@@ -41,6 +41,7 @@ class HttpResponse
 		static std::map<HttpStatus, std::string> 	statusCodeMap;
 		
 	public:
+		HttpStatus									last_code;
 		const Config&								config;
 		int keep_connection;
 		std::vector<char>							buffer;

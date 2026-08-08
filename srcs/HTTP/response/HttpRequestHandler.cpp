@@ -68,12 +68,14 @@ std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directo
 {
 	DIR* p = opendir(directoryPath.c_str());
     if (!p)
-    {
-        makeError(INTERNAL_SERVER_ERROR);
-    }
+		return "";
+
 	struct dirent* l;
 	std::string html;
+
 	while ((l = readdir(p))) {
+		if (std::string(l->d_name) == "." || std::string(l->d_name) == "..")
+    		continue;
 		html += "<a href=\"" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
 	}
 	closedir(p);
@@ -92,6 +94,11 @@ void HttpRequestHandler::generateAutoIndex()
 	std::cout << "generating autoindexing" << std::endl;
 	std::string connection = checkConnection();
 	std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
+	if (autoIndexHtml == "")
+	{
+		makeError(FORBIDDEN);
+		return;
+	}
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
 	response.last_code = result.statusCode;
@@ -108,12 +115,12 @@ void HttpRequestHandler::makeRedirect()
 	const RouteResult &result = request._routeResult;
 	std::vector<char>& buffer = response.buffer;
 
-    std::map<HttpStatus, std::string>::const_iterator it = response.getStatusCodeMap().find(request.getStatusCode());
+    std::map<HttpStatus, std::string>::const_iterator it = response.getStatusCodeMap().find(request._routeResult.statusCode);
 	std::string assemble = "HTTP/1.1 " + to_string(it->first) + " " + it->second + "\r\n";
 	response.last_code =  it->first;
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 
-	std::string connection = checkConnection();
+	std::string connection = checkConnection();response.setHeader("Location", result.targetPath, buffer);
 	std::cout << "make rediraction" << std::endl;
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Location", result.targetPath, buffer);
@@ -178,7 +185,7 @@ void HttpRequestHandler::handleGet()
 {
 	const RouteResult &result = request._routeResult;
 
-    if (!result.route->isAllowed("GET"))
+    if (result.route || !result.route->isAllowed("GET"))
     {
         makeError(METHOD_NOT_ALLOWED);
         return;

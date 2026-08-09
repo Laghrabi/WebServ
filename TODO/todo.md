@@ -3,3 +3,4 @@
 * duplicate location 
 * if server directive has no listen default is 0.0.0.0:80;
 
+* print the addr of the client when he disconnect

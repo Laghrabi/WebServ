@@ -41,6 +41,7 @@ class HttpResponse
 		static std::map<HttpStatus, std::string> 	statusCodeMap;
 		
 	public:
+		HttpStatus									last_code;
 		const Config&								config;
 		int keep_connection;
 		std::vector<char>							buffer;
@@ -50,7 +51,7 @@ class HttpResponse
 		~HttpResponse();
 		HttpResponse& operator=(const HttpResponse& other);
 		
-		std::vector<char> assembleResponse();
+		size_t assembleResponse();
 		bool is_finished;
 		bool is_ok_send;
 
@@ -79,6 +80,7 @@ class HttpResponse
 		size_t getBytesSent() const;
 		void makeErrorCgi(HttpStatus code, const HttpRequest& reques);
 		const std::map<HttpStatus, std::string>&  getStatusCodeMap();
+		void setLog(HttpStatus code, const HttpRequest& request);
 
 	};
 

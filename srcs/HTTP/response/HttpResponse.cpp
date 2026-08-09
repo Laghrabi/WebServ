@@ -167,23 +167,10 @@ void HttpResponse::clear()
 	headersSent = false;
 }
 
-std::vector<char> HttpResponse::assembleResponse() {
-	if (getBodySource() == BODY_PIPE) {
-		return (buffer);
-		// NOTE: check if buffer is 
-	}
-	if (!getHeadersSent()) {
-		if (!buffer.empty()) {
-			if (buffer.size() <= SENDSIZE)
-				return std::vector<char>(buffer.begin(), buffer.end());
-			return std::vector<char>(buffer.begin(), buffer.begin() + SENDSIZE);
-		}
-		else {
-			setHeadersSent(true);
-			buffer.clear();
-		}
-	}
-	if (getBodySource() == BODY_FILE) {
+size_t HttpResponse::assembleResponse() {
+	if (!getHeadersSent() && buffer.empty())
+		setHeadersSent(true);
+	if (getBodySource() == BODY_FILE && getHeadersSent()) {
 		if (buffer.empty())
 		{
 			char buf[SENDSIZE + 1];
@@ -194,12 +181,10 @@ std::vector<char> HttpResponse::assembleResponse() {
 				copyArrayToVec(buf, size, buffer);
 		}
 	}
-
-	if (buffer.empty()) {
+	if (buffer.empty() && getBodySource() != BODY_PIPE) {
 		is_finished = true;
 	}
-
-	return buffer;
+	return buffer.size() < SENDSIZE ? buffer.size() : SENDSIZE;
 }
 
 void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
@@ -226,6 +211,25 @@ void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 	buffer.insert(buffer.end(), newline.begin(), newline.end());
 }
 
+void HttpResponse::setLog(HttpStatus code, const HttpRequest& request)
+{
+	std::string path = request._routeResult.route->getAccessLog();
+	std::string clientEndpoint = request.getClientIPort().getIpStr();
+
+	struct stat st;
+    if (stat(filePath.c_str(), &st) == 0)
+	{
+		if (!S_ISREG(st.st_mode))
+			return;
+		if (access(filePath.c_str(), W_OK) != 0)
+            return;
+	}
+	std::fstream file;
+	file.open(path.c_str(), std::ios::app);
+	std::string log = clientEndpoint + " - " + HttpResponse::getCurrentDate() + " " + SERVER_NAME + 	
+ 	request.getMethod() + to_string(code) + statusCodeMap[code] + "\n";
+	file << log;
+}
 void HttpResponse::init()
 {
 	if (!statusCodeMap.empty())

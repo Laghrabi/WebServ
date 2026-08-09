@@ -18,7 +18,6 @@ m_pipefd(-1),
 m_cgi_handler(m_request, m_response)
 {
 }
-    //here if sacr needs the addr and port of the client i cant call the extraPort and extractip ,
 
 Client::Client(const Client& other):
     m_fd(other.m_fd),

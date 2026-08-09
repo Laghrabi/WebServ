@@ -117,19 +117,23 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 void ConnectionManager::disconnect(Client& client)
 {
 	std::cout << "[DISCONNECT]: "<< "client " << client.getFd() << " disconnect"<< std::endl;
+	client.m_cgi_handler.killProcess();
+	if (client.m_pipefd != -1)
+	{
+		epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
+		delete (m_events.find(client.m_pipefd)->second);
+		m_client_pipes.erase(client.m_pipefd);
+		safeClose(client.m_pipefd);
+	}
 	if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
 	{
 		perror("epoll_ctl failed to delete");
 	}
 	int clientFd = client.getFd();
-	int pipeFd = client.m_pipefd;
-	client.m_cgi_handler.killProcess();
-	m_client_pipes.erase(client.m_pipefd);
 	delete (m_events.find(clientFd)->second);
 	m_events.erase(clientFd);
 	m_clients.erase(clientFd);
 	safeClose(clientFd);
-	safeClose(pipeFd);
 }
 
 
@@ -194,7 +198,7 @@ void ConnectionManager::ChangeClientEvent(int fd, uint32_t event)
 	}
 }
 
-void ConnectionManager::receivePipe(Client& client)
+void ConnectionManager::																																				receivePipe(Client& client)
 {
 	if (receive(client, client.m_pipefd))
 		return;
@@ -295,17 +299,15 @@ void ConnectionManager::receiveClient(Client& client)
 	ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
 
-
-
 void ConnectionManager::sendClient(Client& client)
 {
 	client.checkCgiState();
 	HttpResponse& response = client.getResponse();
-	std::vector<char> chunk = response.assembleResponse();
+	size_t size = response.assembleResponse();
 
-	if (chunk.empty() && response.getHeadersSent() &&
-			response.is_finished)
+	if (response.is_finished)
 	{
+		
 		client.getRequest().removeTmpFile();
 		response.clear();
 		if (response.keep_connection == 0)
@@ -319,9 +321,8 @@ void ConnectionManager::sendClient(Client& client)
 				response.config);
 		return;
 	}
-	if (!chunk.empty() && response.is_ok_send) {
-		ssize_t n = send(client.getFd(), &chunk[0], chunk.size(), 0);
-		// std::cerr << "size n  = " << n << "\n";
+	if (size != 0 && response.is_ok_send) {
+		ssize_t n = send(client.getFd(), &response.buffer[0], size, 0);
 		response.eraseSendBytes(n);
 	}
 }

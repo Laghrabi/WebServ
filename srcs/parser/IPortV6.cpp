@@ -1,9 +1,12 @@
 #include "webserver.hpp"
 #include <netinet/in.h>
+#include <stdexcept>
+#include <sys/socket.h>
 
 Server::IPortV6::IPortV6() : IPort(AF_INET6, sizeof(sockType)) {
 	m_addr = reinterpret_cast<sockType *>(&(IPort::m_addr));
 	m_addr->sin6_family = m_family;
+	// TODO: 
 	// here i need to add ip mybe 0
 	// m_addr->sin6_addr
 	m_addr->sin6_port = htons(DEFAULT_PORT);
@@ -18,7 +21,7 @@ Server::IPortV6::IPortV6(const sockType& addr) : IPort(AF_INET6, sizeof(sockType
 	setPortString();
 }
 
-Server::IPortV6::IPortV6(const std::string& ip, const std::string& port) {
+Server::IPortV6::IPortV6(const std::string& ip, const std::string& port) : IPort(AF_INET6, sizeof(sockType)) {
 	m_addr = reinterpret_cast<sockType *>(&(IPort::m_addr));
 	setIp(ip);
 	setPort(port);
@@ -71,7 +74,9 @@ void Server::IPortV6::setPort(const std::string& port_str) {
 	in_port_t port;
 	std::stringstream ss(port_str);
 	m_port_str = ss.str();
-	ss >> port;
+	if (!(ss >> port)) {
+		throw (std::runtime_error("malformed port ipv6"));
+	}
 	m_addr->sin6_port = htons(port);
 }
 

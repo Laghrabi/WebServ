@@ -1,5 +1,7 @@
+#include "ParseConfig.hpp"
 #include "webserver.hpp"
 #include <netinet/in.h>
+#include <stdexcept>
 
 Server::IPortV4::IPortV4() : IPort(AF_INET, sizeof(sockType)) {
 	m_addr = reinterpret_cast<sockType *>(&(IPort::m_addr));
@@ -76,7 +78,10 @@ void Server::IPortV4::setPort(const std::string& port_str) {
 	in_port_t port;
 	std::stringstream ss(port_str);
 	m_port_str = ss.str();
-	ss >> port;
+	if (!(ss >> port))
+		{
+			throw (std::runtime_error("malformed port ipv4"));
+			}
 	m_addr->sin_port = htons(port);
 }
 

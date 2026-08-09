@@ -49,6 +49,7 @@ class Server : public RouteConfig {
 		void buildRouteTree();
 		const std::vector<IPort>& getAddrs(void) const;
 		bool hasServerName(const std::string& name) const;
+		void setDefaultIport();
 		~Server();
 
 
@@ -58,6 +59,8 @@ class Server : public RouteConfig {
 		std::vector<LocationType> m_locations;
 		RouteNode m_route_tree;
 	private:	
+		void parseIPortV4(IPort& iport, ContIter& begin);
+		void parseIPortV6(IPort& iport, ContIter& begin);
 		std::map<int, std::string> m_error_pages;
 		std::vector<IPort> m_addr;
 		std::vector<std::string> m_hosts;

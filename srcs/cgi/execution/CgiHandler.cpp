@@ -34,7 +34,7 @@ template <typename T> void appendStringToVec(T& c, typename T::iterator it, cons
 bool CgiHandler::checkTimeOut() {
 	std::size_t current_time = std::time(NULL);
 	std::size_t differ_time = current_time - m_last_read;
-	if (differ_time > 10) {
+	if (differ_time > 100) {
 		// std::cout << "[CGI] timeout script " << differ_time << "\n"<< m_cgi_script << "\n";
 		return (true);
 	}
@@ -190,17 +190,6 @@ void CgiHandler::parseStatus(const std::string& field_value) {
 	m_status = field_value;
 }
 
-bool compare_header(const std::string& h1, const std::string& h2) {
-	std::size_t size = h1.size();
-	if (size != h2.size())
-		return (false);
-	for (std::size_t idx = 0; idx < size; idx++) {
-		if (std::toupper(h1.at(idx)) != std::toupper(h2[idx])) {
-			return (false);
-		}
-	}
-	return (true);
-}
 
 bool CgiHandler::isCgiField(const std::string& field_name, const std::string& field_value) {
 	if (field_name == "Location" || field_name == "Status" ||
@@ -232,6 +221,10 @@ bool CgiHandler::isHeaderEgnored(const std::string& field_name) {
 		return (true);
 	}
 	return (false);
+}
+
+void CgiHandler::addHeader(const std::string& header) {
+	appendToSendBuffer(m_send_buffer.end(), header + "\r\n")	;
 }
 
 // status void
@@ -311,8 +304,9 @@ void CgiHandler::handleLocation() {
 		"<p>The document has moved <a href=\"" + std::string(m_location) + "\">here</a>.</p>"
 		"<hr>"
 		"</body></html>";
-	appendToSendBuffer(m_send_buffer.end(), "Content-Lenght: " + to_string(body.size()) + "\r\n");
-	appendToSendBuffer(m_send_buffer.end(), "Content-Type: text/html\r\n\r\n");
+	addHeader("Content-Lenght: " + to_string(body.size()));
+	addHeader("Content-Lenght: text/html");
+	appendCRLF(m_send_buffer, m_send_buffer.end());
 	appendToSendBuffer(m_send_buffer.end(), body);
 }
 

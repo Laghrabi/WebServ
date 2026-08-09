@@ -108,8 +108,10 @@ RouteConfig::RouteConfig() {
 	}
 
 bool RouteConfig::validExtention(const std::string& ext, std::string& err_msg) {
-	if (ext.empty())
+	if (ext.empty()) {
+		err_msg = "empty extention in cgi directive";
 		return false;
+	}
 	if (ext[0] != '.')
 	{
 		err_msg = "extention is not valid: because it does not begin with .";
@@ -145,7 +147,10 @@ void RouteConfig::parseAutoIndex(ContIter &begin) {
 }
 
 void RouteConfig::parseIndex(ContIter &begin) {
+	// check empty string
 	while (begin->is(WORD)) {
+		if (begin->value.empty())
+			throw (ParseConfigType::ConfigExcept("empty index", begin->line));
 		m_indexes.push_back(begin->value);
 		++begin;
 	}
@@ -197,6 +202,8 @@ void RouteConfig::parseAccessLog(ContIter &begin) {
 void RouteConfig::parseAllowedMethods(ContIter &begin) {
 	std::string err_msg;
 	while (begin->is(WORD)) {
+		if (begin->value.empty())
+			throw (ParseConfig::ConfigExcept("empty allowed_methods value", begin->line));
 		try {
 			addMethod(begin->value);
 		} catch (const std::exception& e) {

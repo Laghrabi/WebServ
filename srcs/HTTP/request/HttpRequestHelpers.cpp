@@ -219,20 +219,26 @@ std::string HttpRequest::generateSecureFileName(const std::string& directory, co
  */
 bool HttpRequest::openBodyStream() {
     if (!_bodyStream.is_open()) {
-        _bodyFilePath = generateSecureFileName("/tmp/", ".bin");
-        
-        if (_bodyFilePath.empty()) {
-            _statusCode = INTERNAL_SERVER_ERROR;
-            _currentState = ERROR;
-            return false;
+        if (_routeResult.action != ACTION_ERROR && _routeResult.action != ACTION_EXECUTE_CGI && _method == "POST") {
+            _bodyStream.open(_routeResult.targetPath.c_str(), std::ios_base::out | std::ios_base::binary);
+            std::cout << "open file: " << _routeResult.targetPath.c_str() << "\n";
         }
-
-        _bodyStream.open(_bodyFilePath.c_str(), std::ios::binary);
-        
         if (!_bodyStream.is_open()) {
-            _statusCode = INTERNAL_SERVER_ERROR;
-            _currentState = ERROR;
-            return false;
+            _bodyFilePath = generateSecureFileName("/tmp/", ".bin");
+            
+            if (_bodyFilePath.empty()) {
+                _statusCode = INTERNAL_SERVER_ERROR;
+                _currentState = ERROR;
+                return false;
+            }
+    
+            _bodyStream.open(_bodyFilePath.c_str(), std::ios::binary);
+            
+            if (!_bodyStream.is_open()) {
+                _statusCode = INTERNAL_SERVER_ERROR;
+                _currentState = ERROR;
+                return false;
+            }
         }
     }
     

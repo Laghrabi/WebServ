@@ -80,7 +80,7 @@ class HttpResponse
 		size_t getBytesSent() const;
 		void makeErrorCgi(HttpStatus code, const HttpRequest& reques);
 		const std::map<HttpStatus, std::string>&  getStatusCodeMap();
-		void setLog(HttpStatus code, const HttpRequest& request);
+		void setLog(const HttpRequest& request);
 
 	};
 

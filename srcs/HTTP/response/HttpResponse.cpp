@@ -211,7 +211,7 @@ void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 	buffer.insert(buffer.end(), newline.begin(), newline.end());
 }
 
-void HttpResponse::setLog(HttpStatus code, const HttpRequest& request)
+void HttpResponse::setLog(const HttpRequest& request)
 {
 	std::string path = request._routeResult.route->getAccessLog();
 	std::string clientEndpoint = request.getClientIPort().getIpStr();
@@ -226,8 +226,8 @@ void HttpResponse::setLog(HttpStatus code, const HttpRequest& request)
 	}
 	std::fstream file;
 	file.open(path.c_str(), std::ios::app);
-	std::string log = clientEndpoint + " - " + HttpResponse::getCurrentDate() + " " + SERVER_NAME + 	
- 	request.getMethod() + to_string(code) + statusCodeMap[code] + "\n";
+	std::string log = clientEndpoint + " - " + HttpResponse::getCurrentDate() + " " + SERVER_NAME + " " +
+ 	request.getMethod() + " " + to_string(last_code) + " " + statusCodeMap[last_code] + "\n";
 	file << log;
 }
 void HttpResponse::init()

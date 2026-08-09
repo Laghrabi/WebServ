@@ -35,7 +35,7 @@ bool CgiHandler::checkTimeOut() {
 	std::size_t current_time = std::time(NULL);
 	std::size_t differ_time = current_time - m_last_read;
 	if (differ_time > 100) {
-		// std::cout << "[CGI] timeout script " << differ_time << "\n"<< m_cgi_script << "\n";
+		std::cout << "[CGI] timeout script " << differ_time << "\n"<< m_cgi_script << "\n";
 		return (true);
 	}
 	return (false);

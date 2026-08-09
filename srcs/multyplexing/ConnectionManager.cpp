@@ -119,14 +119,16 @@ void ConnectionManager::disconnect(Client& client)
 {
 	std::cout << "[DISCONNECT]: "<< "client " << client.getFd() << " disconnect"<< std::endl;
 
-	if (client.m_pipefd != -1)
-	{
-		client.m_cgi_handler.killProcess();
-		epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
-		m_client_pipes.erase(client.m_pipefd);
-		safeClose(client.m_pipefd);
-		// client.m_pipefd = -1;
-	}
+
+	// if (client.m_pipefd != -1)
+	// {
+	// 	epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
+	// 	m_events.erase(client.m_pipefd);
+	// 	delete (m_events.find(client.m_pipefd)->second);
+	// 	m_client_pipes.erase(client.m_pipefd);
+	// 	safeClose(client.m_pipefd);
+	// 	client.m_pipefd = -1;
+	// }
 	if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
 	{
 		perror("epoll_ctl failed to delete");
@@ -154,6 +156,9 @@ int ConnectionManager::receive(Client& client, int fd)
 	{
 	    bytes = read(fd, buffer, SENDSIZE);
 		std::cout << "[RECV]: from pipe" << buffer << std::endl;
+		if (bytes == 0) {
+			std::cout << "==========================************************================\n";
+		}
 	}
 
 	if (bytes > 0)
@@ -262,7 +267,7 @@ void ConnectionManager::handleCgi(Client& client) {
 			std::cerr << "action cgi " << client.m_pipefd;
 			AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
 			m_client_pipes.insert(
-					std::make_pair(client.m_pipefd, &client));
+			std::make_pair(client.m_pipefd, &client));
 	}
 }
 
@@ -305,21 +310,7 @@ void ConnectionManager::receiveClient(Client& client)
 	ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
 
-void ConnectionManager::deleteCgi(Client& client)
-{
-	std::cout << "cgi fd " << client.m_pipefd << "\n";
-	// note: check that
-	client.m_cgi_handler.killProcess();
-	if (client.m_pipefd != -1)
-	{
-		epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
-		// delete (m_events.find(client.m_pipefd)->second);
-		// m_events.erase(client.m_pipefd);
-		m_client_pipes.erase(client.m_pipefd);
-		safeClose(client.m_pipefd);
-		client.m_pipefd = -1;
-	}
-}
+
 
 void ConnectionManager::sendClient(Client& client)
 {
@@ -339,7 +330,7 @@ void ConnectionManager::sendClient(Client& client)
 		response.setLog(client.getRequest());
 		client.getRequest().removeTmpFile();
 		response.clear();
-		deleteCgi(client);
+		// client.m_cgi_handler.
 		if (response.keep_connection == 0)
 		{
 			disconnect(client);
@@ -353,6 +344,34 @@ void ConnectionManager::sendClient(Client& client)
 		return;
 	}
 
+}
+
+// void ConnectionManager::deleteCgi(Client& client)
+// {
+// 	client.checkCgiState();
+// 	std::cout << "[CGI] deleting cgi resources\n";
+// 	std::cout << "cgi fd " << client.m_pipefd << "\n";
+// 	if (client.m_pipefd != -1)
+// 	{
+// 		epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
+// 		delete (m_events.find(client.m_pipefd)->second);
+// 		m_events.erase(client.m_pipefd);
+// 		m_client_pipes.erase(client.m_pipefd);
+// 		safeClose(client.m_pipefd);
+// 		client.m_pipefd = -1;
+// 	}
+// }
+void ConnectionManager::deleteCgi(EventData *data, int fd)
+{
+	// client.checkCgiState();
+	std::cout << "[CGI] deleting cgi resources\n";
+	std::cout << "cgi fd " << fd << "\n";
+
+		epoll_ctl(epfd, EPOLL_CTL_DEL,  fd, NULL);
+		delete (data);
+		m_events.erase(fd);
+		m_client_pipes.erase(fd);
+		safeClose(fd);
 }
 
 void ConnectionManager::run()
@@ -376,14 +395,14 @@ void ConnectionManager::run()
 			EventData *data = static_cast<EventData *>(evlist[i].data.ptr);
 			int fd = data->fd;
 			int type = data->type;
-			std::cout << "fd = " << fd << "\n";
-			std::cout << (events & (EPOLLERR | EPOLLHUP)) << "\n";
-			if (m_events.count(fd) == 0)
-			{
-				// exit (20);
-				--ready;
-				continue;
-			}
+			// std::cout << "fd = " << fd << "\n";
+			// std::cout << (events & (EPOLLERR | EPOLLHUP)) << "\n";
+			// if (m_events.count(fd) == 0)
+			// {
+			// 	// exit (20);
+			// 	--ready;
+			// 	continue;
+			// }
 			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)
 			{
 				std::cout << "type " << (type == CLIENT_SOCK) << "\n";
@@ -391,11 +410,15 @@ void ConnectionManager::run()
 				--ready;
 				continue;
 			}
-			if (events & (EPOLLERR | EPOLLHUP) && type == CGI_PIPE)
+			if (events & EPOLLHUP && type == CGI_PIPE)
 			{
-				delete data;
-						// delete (m_events.find(client.m_pipefd)->second);
-				m_events.erase(fd);
+				char buff[SENDSIZE];
+				int i = read(fd, buff, SENDSIZE);
+				std::cout << "read i = " << i << "\n";
+				std::cout << EPOLLHUP << "\n";
+				deleteCgi(data, fd);
+
+				std::cout << "EPOLLHUB                            KLASJFKLASJDFLKJASKLDFJALKSDJF\n";
 				--ready;
 				continue;
 			}
@@ -408,7 +431,7 @@ void ConnectionManager::run()
 					receiveClient(m_clients.find(fd)->second);
 				}
 				else if (type == CLIENT_SOCK && (events & EPOLLOUT)) {
-					std::cout << fd << "\n";
+					// std::cout << fd << "\n";
 					sendClient(m_clients.find(fd)->second);
 				}
 				else if (type == (CGI_PIPE)) {

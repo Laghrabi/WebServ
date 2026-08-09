@@ -51,7 +51,7 @@ public:
     void				ChangeClientEvent(int fd, uint32_t event);
     void				AddSocketToEpfd(int fd, SockType type, uint32_t event);
     void                handleCgi(Client& client);
-    void                deleteCgi(Client& client);
+    void                deleteCgi(EventData *data, int fd);
 
 public:
 

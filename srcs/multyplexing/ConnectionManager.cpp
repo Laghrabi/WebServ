@@ -141,7 +141,7 @@ void ConnectionManager::disconnect(Client& client)
 
 int ConnectionManager::receive(Client& client, int fd)
 {
-	char    buffer[4096] = {0};
+	char    buffer[SENDSIZE] = {0};
 	ssize_t bytes;
 	// std::cerr << "cgi fd = " << fd << "\n";
 	// NOTE: DO SOMETHING HERE that is special to pipe

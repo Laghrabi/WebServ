@@ -323,6 +323,7 @@ void CgiHandler::setBodyState() {
 		m_send_buffer.clear();
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
 		m_ok = false;
+		return ;
 	}
 	m_state = STORE_BODY;
 	addEssentialHeaders();

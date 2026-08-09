@@ -53,11 +53,12 @@ void CgiHandler::checkProcessState() {
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
 	}
 	else if (pid > 0 && m_reading_body && m_ok) {
-		if (m_state == STORE_BODY)
+		if (m_state == STORE_BODY)  {
+			std::cout << "[CGI] script competed set \\r\\n0\\r\\n.\n";
 			appendStringToVec(m_send_buffer, m_send_buffer.end(), "0\r\n\r\n");
+		}
 		m_response.is_ok_send = true;
 		m_response.is_finished = true;
-		std::cout << "[CGI] script competed sed \\r\\n0\\r\\n.\n";
 	}
 	else if (pid == -1) {
 		m_response.is_ok_send = true;
@@ -126,7 +127,11 @@ void CgiHandler::handleChild() {
 int CgiHandler::execute(void) {
 	std::cerr << "[CGI] start setup executing scrip\n";
 	m_cgi_script = m_request._routeResult.targetPath;
-	pipe(m_pipe_fds);
+	int fail = pipe(m_pipe_fds);
+	if (fail)
+	{
+exit (100);
+	}
 	std::cout << "[CGI] opening file for the script to read " << m_request.getBodyFilePath().c_str() << std::endl;
 
 	m_pid = fork();
@@ -279,13 +284,13 @@ void CgiHandler::addEssentialHeaders() {
 			"Server: 1337-webserver\r\n");
 	appendStringToVec(m_send_buffer, m_send_buffer.end(),
 			"Date: " + HttpResponse::getCurrentDate() + "\r\n");
-	if (compare_header(m_request.getHeader("connection"), "keep-alive")) {
-		appendStringToVec(m_send_buffer, m_send_buffer.end(), "Connection: keep-alive\r\n");
-		m_response.keep_connection = true;
+	if (compare_header(m_request.getHeader("connection"), "close")) {
+		addHeader("Connection: close");
+		m_response.keep_connection = false;
 	}
 	else{
-		appendStringToVec(m_send_buffer, m_send_buffer.end(), "Connection: close\r\n");
-		m_response.keep_connection = false;
+		addHeader("Connection: keep-alive");
+		m_response.keep_connection = true;
 	}
 }
 
@@ -346,6 +351,9 @@ void CgiHandler::parse(const std::vector<char>& data) {
 	m_last_read = std::time(NULL);
 	if (!m_ok)
 		return ;
+	std::cout << "=================================my data\n";
+	write (1, &data[0], data.size());
+	std::cout << "=================================my data\n";
 	m_data.insert(m_data.end(), data.begin(), data.end());
 	if (!m_reading_body) {
 		while (true){

@@ -51,7 +51,8 @@ void HttpRequestHandler::serveFile()
 	std::cout << "serving file" << std::endl;
 	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
-	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
+	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
+	response.last_code = result.statusCode;
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setHeader("Content-Length", to_string(st.st_size), buffer);
 	response.setHeader("Content-Type", response.config.m_types.getMimeType(filePath), buffer);
@@ -67,12 +68,17 @@ std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directo
 {
 	DIR* p = opendir(directoryPath.c_str());
     if (!p)
-    {
-        makeError(INTERNAL_SERVER_ERROR);
-    }
+		return "";
+
 	struct dirent* l;
 	std::string html;
+
 	while ((l = readdir(p))) {
+		if (std::string(l->d_name) == "." || std::string(l->d_name) == "..") {
+		html += "<a href=\"./" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
+	
+    		continue;
+				}
 		html += "<a href=\"" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
 	}
 	closedir(p);
@@ -91,8 +97,14 @@ void HttpRequestHandler::generateAutoIndex()
 	std::cout << "generating autoindexing" << std::endl;
 	std::string connection = checkConnection();
 	std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
+	if (autoIndexHtml == "")
+	{
+		makeError(FORBIDDEN);
+		return;
+	}
 	std::vector<char>& buffer = response.buffer;
-	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
+	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
+	response.last_code = result.statusCode;
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);//hamza chof had l3iba
 	response.setHeader("Content-Length", to_string(autoIndexHtml.size()), response.buffer);
@@ -106,11 +118,12 @@ void HttpRequestHandler::makeRedirect()
 	const RouteResult &result = request._routeResult;
 	std::vector<char>& buffer = response.buffer;
 
-    std::map<HttpStatus, std::string>::const_iterator it = response.getStatusCodeMap().find(request.getStatusCode());
+    std::map<HttpStatus, std::string>::const_iterator it = response.getStatusCodeMap().find(request._routeResult.statusCode);
 	std::string assemble = "HTTP/1.1 " + to_string(it->first) + " " + it->second + "\r\n";
+	response.last_code =  it->first;
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 
-	std::string connection = checkConnection();
+	std::string connection = checkConnection();response.setHeader("Location", result.targetPath, buffer);
 	std::cout << "make rediraction" << std::endl;
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Location", result.targetPath, buffer);
@@ -146,9 +159,9 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	// here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
 	// if no i will creat i simple html error page with the code and the message
 	
+	response.last_code =  code;
 	response.setBodySource(BODY_BUFFER);
 	std::string errorHtml = generateErrorPage(code);
-
 	response.setHeader("Content-Length", to_string(errorHtml.size()), buffer);
 	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);
 	std::string connection = checkConnection();
@@ -175,12 +188,6 @@ void HttpRequestHandler::handleGet()
 {
 	const RouteResult &result = request._routeResult;
 
-    if (!result.route->isAllowed("GET"))
-    {
-        makeError(METHOD_NOT_ALLOWED);
-        return;
-    }
-
 	std::cout << "im gonna handle GIT" << std::endl; 
 	switch (result.action)
 	{
@@ -206,11 +213,6 @@ void HttpRequestHandler::handleDelete()
     const std::string &filePath = result.targetPath;
     struct stat st;
 
-    if (!result.route->isAllowed("DELETE"))
-    {
-        makeError(METHOD_NOT_ALLOWED);
-        return;
-    }
 	if (stat(filePath.c_str(), &st) != 0)
 	{
 		makeError(NOT_FOUND);
@@ -232,7 +234,8 @@ void HttpRequestHandler::handleDelete()
 	std::cout << "[DELETE]: delete file " << filePath.c_str();
 	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
-	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " OK\r\n";
+	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
+	response.last_code = result.statusCode;
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	response.setBodySource(BODY_NONE);
 	response.setHeader("Content-Length", "0", response.buffer);
@@ -242,61 +245,33 @@ void HttpRequestHandler::handleDelete()
 void HttpRequestHandler::handlePost()
 {
     const RouteResult &result = request._routeResult;
-    const std::string &filePath = result.targetPath;
-    if (!result.route->isAllowed("POST"))
-    {
-        makeError(METHOD_NOT_ALLOWED);
-        return;
-    }
 	std::cout << "trying to handle post" << std::endl;
-    struct stat st;
-    int created = 201;
-    if (stat(filePath.c_str(), &st) == 0)
-    {
-        if (!S_ISREG(st.st_mode))
-        {
-            makeError(CONFLICT);
-            return;
-        }
-        if (access(filePath.c_str(), W_OK) != 0)
-        {
-            makeError(FORBIDDEN);
-            return;
-        }
-        created = 200;
-    }
-    if (rename(request.getBodyFilePath().c_str(),
-           result.targetPath.c_str()) != 0)
-    {
-		switch (errno)
-		{
-			case ENOENT:
-				// Source file doesn't exist or destination directory doesn't exist.
-				// For uploads, this usually means the target directory is missing.
-				makeError(CONFLICT);
-				break;
 
-			case ENOSPC:
-				// Disk is full.
-				makeError(INSUFFICIENT_STORAGE);
-				break;
+    // {
+	// 	switch (errno)
+	// 	{
+	// 		case ENOSPC:
+	// 			// Disk is full.
+	// 			makeError(INSUFFICIENT_STORAGE);
+	// 			return;
 
-			default:
-				makeError(INTERNAL_SERVER_ERROR);
-				break;
-		}
-    	return;
-    }
+	// 		default:
+	// 			std::cout << "im here" << std::endl;
+	// 			makeError(INTERNAL_SERVER_ERROR);
+	// 			return;
+	// 	}
+    // }
+	if (result.statusCode == CREATED || result.statusCode == OK)
+	{
+		request.clearBodyFilePath();
+	}
     std::vector<char> &bufferResponse = response.buffer;
 	std::string connection = checkConnection();
-	std::string assemble = "HTTP/1.1 " + to_string(created);
-    if (created == 201)
-        assemble += " Created\r\n";
-    else
-        assemble += " OK\r\n";
+	std::string assemble = "HTTP/1.1 " ;
+	assemble += to_string(result.statusCode)  + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
+	response.last_code = result.statusCode;
     bufferResponse.insert(bufferResponse.end(),
                         assemble.begin(), assemble.end());
-
     response.setBodySource(BODY_NONE);
     response.setHeader("Content-Length", "0", bufferResponse);
 	standardHeader(bufferResponse, connection);

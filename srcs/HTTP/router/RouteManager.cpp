@@ -62,6 +62,28 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 	return (false);
 }
 
+void RouteManager::checkPostPath(const std::string& Path, HttpRequest& request)
+{
+	RouteResult& _routeResult = request._routeResult;
+	struct 	stat st;
+	HttpStatus status = CREATED;
+	if (stat(Path.c_str(), &st) == 0)
+	{
+		if (!S_ISREG(st.st_mode))
+		{
+			setResult(CONFLICT, ACTION_ERROR, "", _routeResult);
+			return;
+		}
+		if (access(Path.c_str(), W_OK) != 0)
+		{
+			setResult(FORBIDDEN, ACTION_ERROR, "", _routeResult);
+			return;
+		}
+		status = OK;
+	}
+	setResult(status, ACTION_UPLOAD_FILE, Path, _routeResult);
+}
+
 /**
  * @brief Processes an HTTP request to determine the appropriate routing action.
  * * Orchestrates the full request lifecycle: matches the URI to a configuration,
@@ -111,14 +133,14 @@ void RouteManager::processRequest(HttpRequest& request) {
 	}
 
 	if (request.getMethod() == "POST") {
-		if (result.route->getUploadDir().empty()) {
-			std::cout << "ERROR ==> NO UPLOAD DIRECTIVE FOUND" << std::endl;
-			setResult(FORBIDDEN, ACTION_ERROR, "", result);
-			return ;
-		}
-		std::string uploadsPath = resolveUploadPath(request.getRouteUri(), LocationMatch, result.route->getUploadDir());
-		std::cout << "UPLOAD PATH ==> " << uploadsPath << std::endl;
-		setResult(OK, ACTION_UPLOAD_FILE, uploadsPath, result);
+		// if (result.route->getUploadDir().empty()) {
+		// 	std::cout << "ERROR ==> NO UPLOAD DIRECTIVE FOUND" << std::endl;
+		// 	setResult(FORBIDDEN, ACTION_ERROR, "", result);
+		// 	return ;
+		// }
+		std::string uploadPath = resolveUploadPath(request.getRouteUri(), LocationMatch, result.route->getUploadDir());
+		std::cout << "UPLOAD PATH ==> " << uploadPath << std::endl;
+		checkPostPath(uploadPath, request);
 		return ;
 	}
 

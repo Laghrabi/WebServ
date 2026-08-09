@@ -1,4 +1,5 @@
 #include "HttpRequest.hpp"
+#include "RouteManager.hpp"
 
 HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
 	_contentLength(0),  _chunkedSize(0), _server(NULL), _bodyBytesWritten(0){}
@@ -90,6 +91,11 @@ void HttpRequest::removeTmpFile(void) {
 }
 
 
+void HttpRequest::clearBodyFilePath()
+{
+	_bodyFilePath = "";
+}
+
 /**
  * @brief Destructor.
  */
@@ -148,7 +154,7 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
 }
 
 /**
- * @brief Extracts the HTTP method, URI, and version from the first line.
+ * @brief Extracts the HTTP method, URI, and version from the first line.	_headers.erase("host");
  * 
  * @return true if the request line is fully parsed; false if incomplete or malformed.
  */
@@ -328,6 +334,8 @@ bool	HttpRequest::validateHeaders() {
 				_savedData.begin() + _bufferIndex);
 		_bufferIndex = 0;
 	}
+	RouteManager route_manager;
+	route_manager.processRequest(*this);
 	return (true);
 }
 

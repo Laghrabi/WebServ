@@ -74,8 +74,11 @@ std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directo
 	std::string html;
 
 	while ((l = readdir(p))) {
-		if (std::string(l->d_name) == "." || std::string(l->d_name) == "..")
+		if (std::string(l->d_name) == "." || std::string(l->d_name) == "..") {
+		html += "<a href=\"./" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
+	
     		continue;
+				}
 		html += "<a href=\"" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
 	}
 	closedir(p);
@@ -242,93 +245,33 @@ void HttpRequestHandler::handleDelete()
 void HttpRequestHandler::handlePost()
 {
     const RouteResult &result = request._routeResult;
-    const std::string &filePath = result.targetPath;
-
 	std::cout << "trying to handle post" << std::endl;
-    struct stat st;
-    int created = 201;
-    if (stat(filePath.c_str(), &st) == 0)
-    {
-        if (!S_ISREG(st.st_mode))
-        {
-            makeError(CONFLICT);
-            return;
-        }
-        if (access(filePath.c_str(), W_OK) != 0)
-        {
-            makeError(FORBIDDEN);
-            return;
-        }
-        created = 200;
-    }
-    if (rename(request.getBodyFilePath().c_str(),
-           result.targetPath.c_str()) != 0)
-    {
-		switch (errno)
-		{
-			case EXDEV: //diffrent file system
-			{
-				std::ifstream src(request.getBodyFilePath().c_str(),
-				std::ios::binary);
-				std::ofstream dst(result.targetPath.c_str(),
-				std::ios::binary | std::ios::trunc);
-				if (!src.is_open() || !dst.is_open())
-				{
-					makeError(INTERNAL_SERVER_ERROR);
-					return;
-				}
-				char buffer[8192];
-				while (src.read(buffer, sizeof(buffer)) || src.gcount() > 0)
-				{
-					std::streamsize bytes = src.gcount();
-					dst.write(buffer, bytes);
-					if (!dst.good())
-					{
-						dst.close();
-						remove(result.targetPath.c_str());
-						makeError(INTERNAL_SERVER_ERROR);
-						return;
-					}
-				}
-				src.close();
-				dst.close();
-				remove(request.getBodyFilePath().c_str());
-				break;
-			}
 
-			case ENOENT:
-				// Source file doesn't exist or destination directory doesn't exist.
-				// For uploads, this usually means the target directory is missing.
-				makeError(CONFLICT);
-				return;
+    // {
+	// 	switch (errno)
+	// 	{
+	// 		case ENOSPC:
+	// 			// Disk is full.
+	// 			makeError(INSUFFICIENT_STORAGE);
+	// 			return;
 
-			case ENOSPC:
-				// Disk is full.
-				makeError(INSUFFICIENT_STORAGE);
-				return;
-
-			default:
-				std::cout << "im here" << std::endl;
-				makeError(INTERNAL_SERVER_ERROR);
-				return;
-		}
-    }
+	// 		default:
+	// 			std::cout << "im here" << std::endl;
+	// 			makeError(INTERNAL_SERVER_ERROR);
+	// 			return;
+	// 	}
+    // }
+	if (result.statusCode == CREATED || result.statusCode == OK)
+	{
+		request.clearBodyFilePath();
+	}
     std::vector<char> &bufferResponse = response.buffer;
 	std::string connection = checkConnection();
 	std::string assemble = "HTTP/1.1 " ;
-    if (created == 201)
-	{
-        assemble += to_string(created) + " Created\r\n";
-		response.last_code = CREATED;
-	}
-    else
-	{
-        assemble += to_string(OK) + " OK\r\n";
-		response.last_code = OK;
-	}
+	assemble += to_string(result.statusCode)  + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
+	response.last_code = result.statusCode;
     bufferResponse.insert(bufferResponse.end(),
                         assemble.begin(), assemble.end());
-
     response.setBodySource(BODY_NONE);
     response.setHeader("Content-Length", "0", bufferResponse);
 	standardHeader(bufferResponse, connection);

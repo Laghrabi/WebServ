@@ -275,8 +275,8 @@ void ConnectionManager::receiveClient(Client& client)
 		std::cout << "[receive]: http request recieved completly" << std::endl; 
 		request.debugPrintHeaders(request.getHeaders());
 		request.printBodyContent();
-		RouteManager route_manager;
-		route_manager.processRequest(request);
+		// RouteManager route_manager;
+		// route_manager.processRequest(request);
 		RouteResult result = request._routeResult;
 		RouteManager::printRouteAction(result.action);
 		HttpRequest::printHttpStatus(result.statusCode);
@@ -307,7 +307,7 @@ void ConnectionManager::sendClient(Client& client)
 
 	if (response.is_finished)
 	{
-		
+		response.setLog(client.getRequest());
 		client.getRequest().removeTmpFile();
 		response.clear();
 		if (response.keep_connection == 0)

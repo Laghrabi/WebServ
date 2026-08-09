@@ -28,7 +28,7 @@ class RouteManager {
 		std::string _basePath; // if uri is /bin/bash and root is /usr/ /bin/ is location so _basePath = /usr/bin/
 													 // if it is aliased to ur/bin/ so _basePath = /usr/bin/
 		std::string _resource;
-
+		void checkPostPath(const std::string& Path, HttpRequest& request);
 	public:
 		RouteManager();
 		RouteManager(const RouteManager& other);

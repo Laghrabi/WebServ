@@ -45,8 +45,8 @@ class HttpRequest {
         std::vector<char>                   _body;
         const Server*                       _server;
         Config::ServerRange                 _serverRange;
-        std::ofstream _bodyStream;
-        std::string _bodyFilePath;
+        std::ofstream                       _bodyStream;
+        std::string                         _bodyFilePath;
         Server::IPort                       _clientEndPoint;
 
         HttpRequest();
@@ -71,6 +71,8 @@ class HttpRequest {
         public:
         size_t								_bodyBytesWritten;
         RouteResult                         _routeResult;
+
+        void clearBodyFilePath();
 
         HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint);
         HttpRequest(const HttpRequest& other);

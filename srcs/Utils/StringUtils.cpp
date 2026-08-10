@@ -13,12 +13,15 @@
 #include "../../include/webserver.hpp"
 
 std::string	trimSpaces(const std::string& str) {
-	size_t start = str.find_first_not_of(" \t");
+	if (!str.empty()) {
+		size_t start = str.find_first_not_of(" \t");
+		if (start == std::string::npos)
+			return ("");
 	
-	if (start == std::string::npos)
+		size_t	end = str.find_last_not_of(" \t");
+		std::string trimed = str.substr(start, end - start + 1);
+		return (trimed);
+	} else {
 		return ("");
-
-	size_t	end = str.find_last_not_of(" \t");
-	
-	return (str.substr(start, end - start + 1));
+	}
 }

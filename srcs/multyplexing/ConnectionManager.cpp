@@ -299,12 +299,12 @@ void ConnectionManager::sendClient(Client& client)
 	size_t size = response.assembleResponse();
 
 	if (size != 0 && response.is_ok_send) {
-		ssize_t n = send(client.getFd(), &response.buffer[0], size, 0);
+		ssize_t n = send(client.getFd(), &response.buffer[0], size, MSG_NOSIGNAL);
+		if (n == -1)
+			return;
 		response.eraseSendBytes(n);
 		std::cout << "[connection manager] sending data " << n << "\n";
 	}
-	// std::cout << "it segefault here" << std::endl;
-
 	// std::cout << response.is_finished<< std::endl;
 	// if (response.is_finished && response.buffer.size())
 	// 	exit (200);
@@ -363,21 +363,51 @@ void ConnectionManager::deleteCgi(EventData *data, int fd)
 		safeClose(fd);
 }
 
+volatile sig_atomic_t g_running = 1;
+
+void handleSignal(int signal)
+{
+    (void)signal;
+    g_running = 0;
+}
+
+void ConnectionManager::free_resources()
+{
+	for (ListenerContainer::iterator it = m_listeners.begin(); it != m_listeners.end(); it++)
+		close(it->first);
+	for (ClientContainer::iterator it = m_clients.begin(); it != m_clients.end(); it++)
+	{
+		close(it->first);	
+		if (it->second.m_pipefd != -1)
+			close(it->second.m_pipefd);
+	}
+	    typedef std::map<int, EventData*> EventContainer;
+	for (EventContainer::iterator it = m_events.begin(); it != m_events.begin(); it++)
+	{
+		delete(it->second);
+	}
+}
+
 void ConnectionManager::run()
 {
 	struct epoll_event evlist[MAX_EVENTS];
 	while (true)
 	{
 		int ready;
+		if (!g_running)
+		{
+			free_resources();
+			return;
+		}
 
 		ready = epoll_wait(epfd, evlist, MAX_EVENTS, -1);
 		if (ready < 0)
 		{
 			if (errno == EINTR)
 				continue;
-			throw std::runtime_error("epoll() failed");
-		}
-
+				throw std::runtime_error("epoll() failed");
+			}
+			
 		// std::cout << "sir tn\n";
 		for (std::size_t i = 0; i < MAX_EVENTS && ready > 0; ++i)
 		{

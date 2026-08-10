@@ -5,7 +5,6 @@
 #include <cctype>
 #include <cstdio>
 
-
 CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
 	m_reading_body(false),
 	m_request(request),
@@ -57,6 +56,8 @@ void CgiHandler::checkProcessState() {
 			std::cout << "[CGI] script competed set \\r\\n0\\r\\n.\n";
 			appendStringToVec(m_send_buffer, m_send_buffer.end(), "0\r\n\r\n");
 		}
+		if (m_status.empty() && m_location.empty())
+			m_response.last_code = OK;
 		m_response.is_ok_send = true;
 		m_response.is_finished = true;
 	}
@@ -82,6 +83,7 @@ void CgiHandler::killProcess() {
 	if (m_pid != -1) {
 		kill (m_pid, SIGKILL);
 		waitForProcess();
+		std::cout << "[CGI] the process terminate\n";
 	}
 }
 
@@ -192,13 +194,16 @@ void CgiHandler::parseStatus(const std::string& field_value) {
 	else {
 		throw (std::runtime_error("status error"));
 	}
+	m_response.last_code = (HttpStatus)val;
+	std::cout << "[CGI] set code to " << val << "\n";
 	m_status = field_value;
 }
 
 
 bool CgiHandler::isCgiField(const std::string& field_name, const std::string& field_value) {
-	if (field_name == "Location" || field_name == "Status" ||
-			field_name == "Content-Type") {
+	if (compare_header(field_name, "location") || 
+			compare_header(field_name, "status") ||
+			compare_header(field_name, "content-type")) {
 		if (compare_header(field_name, "location"))	 {
 			if (!m_location.empty())
 				throw (std::runtime_error("got location two times\n"));
@@ -313,6 +318,7 @@ void CgiHandler::handleLocation() {
 	addHeader("Content-Lenght: text/html");
 	appendCRLF(m_send_buffer, m_send_buffer.end());
 	appendToSendBuffer(m_send_buffer.end(), body);
+	m_response.last_code = FOUND;
 }
 
 void CgiHandler::setBodyState() {
@@ -320,8 +326,11 @@ void CgiHandler::setBodyState() {
 	if (m_location.empty() && m_status.empty()
 			&& m_content_type.empty()) {
 		std::cout << "[CGI] ERROR [cgi fileds are not set]\n";
+		killProcess();
 		m_send_buffer.clear();
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+		m_response.is_finished = true;
+		m_response.is_ok_send = true;
 		m_ok = false;
 		return ;
 	}
@@ -367,7 +376,8 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					std::cerr << "[CGI] reading body phase" << std::endl;
 					m_response.setHeadersSent(true);
 					m_response.is_ok_send = true;
-					m_reading_body = true;
+					if (m_ok)
+						m_reading_body = true;
 					break ;
 				}
 				try {
@@ -417,7 +427,6 @@ if (this != &other)
         m_ok = other.m_ok;
         m_last_read = other.m_last_read;
     }
-
 
 	return (*this);
 }

@@ -1,6 +1,6 @@
 CPP = c++
 
-CPP_FLAGS =  -std=c++98 -Wall -Wextra -Werror -g
+CPP_FLAGS =  -std=c++98 -Wall -Wextra -Werror# -g -fsanitize=address
 
 SRCS := $(wildcard ./srcs/parser/*.cpp) \
 				$(wildcard ./srcs/util/*.cpp) \

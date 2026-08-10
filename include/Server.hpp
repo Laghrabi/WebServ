@@ -58,6 +58,7 @@ class Server : public RouteConfig {
 
 		std::vector<LocationType> m_locations;
 		RouteNode m_route_tree;
+		std::string getErrorPage(HttpStatus) const;
 	private:	
 		void parseIPortV4(IPort& iport, ContIter& begin);
 		void parseIPortV6(IPort& iport, ContIter& begin);

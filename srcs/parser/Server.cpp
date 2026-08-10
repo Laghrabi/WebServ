@@ -279,3 +279,13 @@ void Server::buildRouteTree() {
 		*currentNode->config = m_locations[i]; 
 	}
 }
+
+
+std::string Server::getErrorPage(HttpStatus code) const {
+	std::map<int, std::string>::const_iterator it = m_error_pages.find(code);
+if (it != m_error_pages.end())
+{
+	return (it->second);
+}
+return ("");
+}

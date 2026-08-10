@@ -158,7 +158,6 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
 	// here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
 	// if no i will creat i simple html error page with the code and the message
-	
 	response.last_code =  code;
 	response.setBodySource(BODY_BUFFER);
 	std::string errorHtml = generateErrorPage(code);
@@ -171,11 +170,11 @@ void HttpRequestHandler::makeError(HttpStatus code)
 		std::set<std::string> allowed_methods = config->getAllowedMethods();
 		std::string methods;
 		for (std::set<std::string>::const_iterator it = allowed_methods.begin();
-			it != allowed_methods.end();
-			++it)
+		it != allowed_methods.end();
+		++it)
 		{
 			if (!methods.empty())
-				methods += ", ";
+			methods += ", ";
 			methods += *it;
 		}
 		response.setHeader("Allow", methods, buffer);

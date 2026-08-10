@@ -322,12 +322,14 @@ void ConnectionManager::sendClient(Client& client)
 		ssize_t n = send(client.getFd(), &response.buffer[0], size, 0);
 		response.eraseSendBytes(n);
 	}
+	std::cout << "it segefault here" << std::endl;
 
+	std::cout << response.is_finished<< std::endl;
 	if (response.is_finished)
 	{
-		// remove that line
-		response.last_code = OK;
-		response.setLog(client.getRequest());
+		if (client.getRequest().getCurrentState() == FINISHED)
+			response.setLog(client.getRequest());
+		
 		client.getRequest().removeTmpFile();
 		response.clear();
 		// client.m_cgi_handler.

@@ -213,9 +213,10 @@ void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 
 void HttpResponse::setLog(const HttpRequest& request)
 {
+	
 	std::string path = request._routeResult.route->getAccessLog();
 	std::string clientEndpoint = request.getClientIPort().getIpStr();
-
+	std::cout << path << "   "  << clientEndpoint << std::endl;
 	struct stat st;
     if (stat(filePath.c_str(), &st) == 0)
 	{

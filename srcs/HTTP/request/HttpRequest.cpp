@@ -91,11 +91,6 @@ void HttpRequest::removeTmpFile(void) {
 }
 
 
-void HttpRequest::clearBodyFilePath()
-{
-	_bodyFilePath = "";
-}
-
 /**
  * @brief Destructor.
  */
@@ -171,31 +166,72 @@ bool	HttpRequest::parseRequestLine()
 		return (false);
 
 	std::string	requestLine(_savedData.begin() + _bufferIndex, it);
-	std::istringstream iss(requestLine);
 
-	if (iss >> _method >> _uri >> _version)
-	{
-		if (iss >> trailingGarbage) {
-			_statusCode = BAD_REQUEST;
-			_currentState = ERROR;
-			return (false);
-		}
-		if (_uri.at(0) != '/')
-		{
-			_statusCode = BAD_REQUEST;
-			_currentState = ERROR;
-			return (false);
-		}
-		_bufferIndex += requestLine.size() + 2;
-		_currentState = READING_HEADERS;
-		return (true);
-	}
-	else
-	{
-		_statusCode = BAD_REQUEST;
-		_currentState = ERROR;
-		return (false);
-	}
+	size_t spaceOne = requestLine.find(' ');
+    if (spaceOne == std::string::npos)
+    {
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return (false);
+    }
+
+    size_t spaceTwo = requestLine.find(' ', spaceOne + 1);
+    if (spaceTwo == std::string::npos)
+    {
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return (false);
+    }
+
+    if (spaceTwo == spaceOne + 1 || requestLine.find(' ', spaceTwo + 1) != std::string::npos)
+    {
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return (false);
+    }
+
+    _method = requestLine.substr(0, spaceOne);
+    _uri = requestLine.substr(spaceOne + 1, spaceTwo - spaceOne - 1);
+    _version = requestLine.substr(spaceTwo + 1);
+
+    if (_uri.empty() || _uri.at(0) != '/')
+    {
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return (false);
+    }
+
+    _bufferIndex += requestLine.size() + 2;
+    _currentState = READING_HEADERS;
+    _savedData.erase(_savedData.begin(),
+            _savedData.begin() + _bufferIndex);
+    _bufferIndex = 0;
+    return (true);
+	// std::istringstream iss(requestLine);
+
+	// if (iss >> _method >> _uri >> _version)
+	// {
+	// 	if (iss >> trailingGarbage) {
+	// 		_statusCode = BAD_REQUEST;
+	// 		_currentState = ERROR;
+	// 		return (false);
+	// 	}
+	// 	if (_uri.at(0) != '/')
+	// 	{
+	// 		_statusCode = BAD_REQUEST;
+	// 		_currentState = ERROR;
+	// 		return (false);
+	// 	}
+	// 	_bufferIndex += requestLine.size() + 2;
+	// 	_currentState = READING_HEADERS;
+	// 	return (true);
+	// }
+	// else
+	// {
+	// 	_statusCode = BAD_REQUEST;
+	// 	_currentState = ERROR;
+	// 	return (false);
+	// }
 }
 
 /**
@@ -244,6 +280,11 @@ bool	HttpRequest::parseHeaders()
 		}
 
 		std::string	value = headerLine.substr(colonPos + 1);
+		if (value.empty()) {
+            _statusCode = BAD_REQUEST;
+            _currentState = ERROR;
+            return (false);
+        }
 		std::transform(key.begin(), key.end(), key.begin(), safeToLower);
 
 		if (_currentState == READING_TRAILERS) {
@@ -334,6 +375,9 @@ bool	HttpRequest::validateHeaders() {
 				_savedData.begin() + _bufferIndex);
 		_bufferIndex = 0;
 	}
+	_savedData.erase(_savedData.begin(),
+            _savedData.begin() + _bufferIndex);
+    _bufferIndex = 0;
 	RouteManager route_manager;
 	route_manager.processRequest(*this);
 	return (true);

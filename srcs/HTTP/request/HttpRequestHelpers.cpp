@@ -126,8 +126,11 @@ void HttpRequest::reset() {
     _routeResult.action = NONE;
     _routeResult.statusCode = OK;
     _routeResult.targetPath.clear();
-    // _serverRange
-    // _clientEndPoint
+}
+
+void HttpRequest::clearBodyFilePath()
+{
+	_bodyFilePath = "";
 }
 
 void HttpRequest::printHttpStatus(HttpStatus status) {

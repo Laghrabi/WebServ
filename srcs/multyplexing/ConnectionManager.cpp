@@ -261,7 +261,7 @@ void ConnectionManager::receiveClient(Client& client)
 	HttpRequest& request = client.getRequest();
 	if (state == FINISHED) {
 		std::cout << "[receive]: http request recieved completly" << std::endl; 
-		request.debugPrintHeaders(request.getHeaders());
+		request.debugPrintHeaders();
 		request.printBodyContent();
 		// RouteManager route_manager;
 		// route_manager.processRequest(request);

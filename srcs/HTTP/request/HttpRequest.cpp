@@ -155,6 +155,7 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
  */
 bool	HttpRequest::parseRequestLine()
 {
+	// std::cout << "parseRequestLine()\n";
 	const std::string	crlf = "\r\n";
 	std::string			trailingGarbage;
 
@@ -169,7 +170,7 @@ bool	HttpRequest::parseRequestLine()
 
 	size_t spaceOne = requestLine.find(' ');
     if (spaceOne == std::string::npos)
-    {
+    {;
         _statusCode = BAD_REQUEST;
         _currentState = ERROR;
         return (false);
@@ -207,31 +208,6 @@ bool	HttpRequest::parseRequestLine()
             _savedData.begin() + _bufferIndex);
     _bufferIndex = 0;
     return (true);
-	// std::istringstream iss(requestLine);
-
-	// if (iss >> _method >> _uri >> _version)
-	// {
-	// 	if (iss >> trailingGarbage) {
-	// 		_statusCode = BAD_REQUEST;
-	// 		_currentState = ERROR;
-	// 		return (false);
-	// 	}
-	// 	if (_uri.at(0) != '/')
-	// 	{
-	// 		_statusCode = BAD_REQUEST;
-	// 		_currentState = ERROR;
-	// 		return (false);
-	// 	}
-	// 	_bufferIndex += requestLine.size() + 2;
-	// 	_currentState = READING_HEADERS;
-	// 	return (true);
-	// }
-	// else
-	// {
-	// 	_statusCode = BAD_REQUEST;
-	// 	_currentState = ERROR;
-	// 	return (false);
-	// }
 }
 
 /**
@@ -246,6 +222,7 @@ bool	HttpRequest::parseRequestLine()
  */
 bool	HttpRequest::parseHeaders()
 {
+	// std::cout << "parseHeaders()\n";
 	const std::string	crlf = "\r\n";
 	std::vector<char>::iterator it = std::search(
 			_savedData.begin() + _bufferIndex, _savedData.end(),
@@ -280,6 +257,7 @@ bool	HttpRequest::parseHeaders()
 		}
 
 		std::string	value = headerLine.substr(colonPos + 1);
+		value = trimSpaces(value);
 		if (value.empty()) {
             _statusCode = BAD_REQUEST;
             _currentState = ERROR;
@@ -301,9 +279,9 @@ bool	HttpRequest::parseHeaders()
 				_currentState = ERROR;
 				return (false);
 			}
-			_headers[key] += ", " + trimSpaces(value);
+			_headers[key] += ", " + value;
 		} else {
-			_headers[key] = trimSpaces(value);
+			_headers[key] = value;
 		}
 		_bufferIndex += headerLine.size() + 2;
 		return(true);
@@ -324,6 +302,7 @@ bool	HttpRequest::parseHeaders()
  * which immediately transitions the FSM to the ERROR state.
  */
 bool	HttpRequest::validateHeaders() {
+	// std::cout << "validateHeaders()\n";
 	std::map<std::string, std::string>::iterator itHost = _headers.find("host");
 	std::map<std::string, std::string>::iterator itContentLength = _headers.find("content-length");
 	std::map<std::string, std::string>::iterator itTransferEncoding = _headers.find("transfer-encoding");
@@ -392,6 +371,7 @@ bool	HttpRequest::validateHeaders() {
  */
 bool	HttpRequest::parseBody()
 {
+	// std::cout << "parseBody()\n";
 	if (_contentLength == 0) {
 		_savedData.erase(_savedData.begin(), _savedData.begin() + _bufferIndex);
 		_bufferIndex = 0;

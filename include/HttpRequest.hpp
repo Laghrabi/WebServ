@@ -106,7 +106,7 @@ class HttpRequest {
         const std::string& getBodyFilePath() const;
         const std::ofstream& getBodyStream() const;
         void printBodyContent() const;
-        void debugPrintHeaders(const std::map<std::string, std::string>& headers) const;
+        void debugPrintHeaders() const;
 		const Server::IPort& getServerIPort() const;
 		const Server::IPort& getClientIPort() const;
 

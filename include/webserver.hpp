@@ -74,7 +74,7 @@ int safeClose(int fd);
 #include "IPortV6.hpp"
 #include "StringUtils.hpp"
 
-std::string to_string(std::size_t num);
+std::string to_string(int num);
 void copyArrayToVec(char* first, std::size_t n, std::vector<char>& vec);
 bool compare_header(const std::string& h1, const std::string& h2);
 

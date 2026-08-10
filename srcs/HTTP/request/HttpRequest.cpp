@@ -91,11 +91,6 @@ void HttpRequest::removeTmpFile(void) {
 }
 
 
-void HttpRequest::clearBodyFilePath()
-{
-	_bodyFilePath = "";
-}
-
 /**
  * @brief Destructor.
  */
@@ -160,6 +155,7 @@ void HttpRequest::parse(const std::vector<char>& rawBuffer)
  */
 bool	HttpRequest::parseRequestLine()
 {
+	// std::cout << "parseRequestLine()\n";
 	const std::string	crlf = "\r\n";
 	std::string			trailingGarbage;
 
@@ -171,31 +167,47 @@ bool	HttpRequest::parseRequestLine()
 		return (false);
 
 	std::string	requestLine(_savedData.begin() + _bufferIndex, it);
-	std::istringstream iss(requestLine);
 
-	if (iss >> _method >> _uri >> _version)
-	{
-		if (iss >> trailingGarbage) {
-			_statusCode = BAD_REQUEST;
-			_currentState = ERROR;
-			return (false);
-		}
-		if (_uri.at(0) != '/')
-		{
-			_statusCode = BAD_REQUEST;
-			_currentState = ERROR;
-			return (false);
-		}
-		_bufferIndex += requestLine.size() + 2;
-		_currentState = READING_HEADERS;
-		return (true);
-	}
-	else
-	{
-		_statusCode = BAD_REQUEST;
-		_currentState = ERROR;
-		return (false);
-	}
+	size_t spaceOne = requestLine.find(' ');
+    if (spaceOne == std::string::npos)
+    {;
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return (false);
+    }
+
+    size_t spaceTwo = requestLine.find(' ', spaceOne + 1);
+    if (spaceTwo == std::string::npos)
+    {
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return (false);
+    }
+
+    if (spaceTwo == spaceOne + 1 || requestLine.find(' ', spaceTwo + 1) != std::string::npos)
+    {
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return (false);
+    }
+
+    _method = requestLine.substr(0, spaceOne);
+    _uri = requestLine.substr(spaceOne + 1, spaceTwo - spaceOne - 1);
+    _version = requestLine.substr(spaceTwo + 1);
+
+    if (_uri.empty() || _uri.at(0) != '/')
+    {
+        _statusCode = BAD_REQUEST;
+        _currentState = ERROR;
+        return (false);
+    }
+
+    _bufferIndex += requestLine.size() + 2;
+    _currentState = READING_HEADERS;
+    _savedData.erase(_savedData.begin(),
+            _savedData.begin() + _bufferIndex);
+    _bufferIndex = 0;
+    return (true);
 }
 
 /**
@@ -210,6 +222,7 @@ bool	HttpRequest::parseRequestLine()
  */
 bool	HttpRequest::parseHeaders()
 {
+	// std::cout << "parseHeaders()\n";
 	const std::string	crlf = "\r\n";
 	std::vector<char>::iterator it = std::search(
 			_savedData.begin() + _bufferIndex, _savedData.end(),
@@ -244,6 +257,12 @@ bool	HttpRequest::parseHeaders()
 		}
 
 		std::string	value = headerLine.substr(colonPos + 1);
+		value = trimSpaces(value);
+		if (value.empty()) {
+            _statusCode = BAD_REQUEST;
+            _currentState = ERROR;
+            return (false);
+        }
 		std::transform(key.begin(), key.end(), key.begin(), safeToLower);
 
 		if (_currentState == READING_TRAILERS) {
@@ -260,9 +279,9 @@ bool	HttpRequest::parseHeaders()
 				_currentState = ERROR;
 				return (false);
 			}
-			_headers[key] += ", " + trimSpaces(value);
+			_headers[key] += ", " + value;
 		} else {
-			_headers[key] = trimSpaces(value);
+			_headers[key] = value;
 		}
 		_bufferIndex += headerLine.size() + 2;
 		return(true);
@@ -283,6 +302,7 @@ bool	HttpRequest::parseHeaders()
  * which immediately transitions the FSM to the ERROR state.
  */
 bool	HttpRequest::validateHeaders() {
+	// std::cout << "validateHeaders()\n";
 	std::map<std::string, std::string>::iterator itHost = _headers.find("host");
 	std::map<std::string, std::string>::iterator itContentLength = _headers.find("content-length");
 	std::map<std::string, std::string>::iterator itTransferEncoding = _headers.find("transfer-encoding");
@@ -334,6 +354,9 @@ bool	HttpRequest::validateHeaders() {
 				_savedData.begin() + _bufferIndex);
 		_bufferIndex = 0;
 	}
+	_savedData.erase(_savedData.begin(),
+            _savedData.begin() + _bufferIndex);
+    _bufferIndex = 0;
 	RouteManager route_manager;
 	route_manager.processRequest(*this);
 	return (true);
@@ -348,6 +371,7 @@ bool	HttpRequest::validateHeaders() {
  */
 bool	HttpRequest::parseBody()
 {
+	// std::cout << "parseBody()\n";
 	if (_contentLength == 0) {
 		_savedData.erase(_savedData.begin(), _savedData.begin() + _bufferIndex);
 		_bufferIndex = 0;

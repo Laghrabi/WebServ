@@ -126,8 +126,11 @@ void HttpRequest::reset() {
     _routeResult.action = NONE;
     _routeResult.statusCode = OK;
     _routeResult.targetPath.clear();
-    // _serverRange
-    // _clientEndPoint
+}
+
+void HttpRequest::clearBodyFilePath()
+{
+	_bodyFilePath = "";
 }
 
 void HttpRequest::printHttpStatus(HttpStatus status) {
@@ -244,7 +247,6 @@ bool HttpRequest::openBodyStream() {
         }
     }
 		std::cout << "HOLLO\n";
-		debugPrintHeaders(this->getHeaders());
     return (true);
 }
 
@@ -280,13 +282,13 @@ void HttpRequest::printBodyContent() const {
     inFile.close();
 }
 
-void HttpRequest::debugPrintHeaders(const std::map<std::string, std::string>& headers) const {
+void HttpRequest::debugPrintHeaders() const {
     
     std::cout << "---HTTP HEADERS---" << std::endl;
     
     std::map<std::string, std::string>::const_iterator it;
     
-    for (it = headers.begin(); it != headers.end(); ++it) {
+    for (it = _headers.begin(); it != _headers.end(); ++it) {
         std::cout << it->first << ": " << it->second << std::endl;
     }
     

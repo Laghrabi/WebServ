@@ -209,7 +209,7 @@ void ConnectionManager::ChangeClientEvent(int fd, uint32_t event)
 	}
 }
 
-void ConnectionManager::receivePipe(Client& client, int fd)
+bool ConnectionManager::receivePipe(Client& client, int fd)
 {
 	char    buffer[SENDSIZE + 1] = {0};
 	ssize_t bytes;
@@ -218,18 +218,20 @@ void ConnectionManager::receivePipe(Client& client, int fd)
 	bytes = read (fd, buffer, SENDSIZE);
 	if (bytes == 0) {
 		std::cout << "[recieve pipe] 0 byte\n";
+		// exit (100);
+		return (false);
 	}
 	else if (bytes < 0) {
 		perror("recieve pipe");
 		std::cout << (EINTR == errno) << "\n";
 		std::cout << "[recieve pipe] < 0 byte\n";
-		return ;
+		return false;
 	}
-	// std::cout << std::string(100, '=') << "\n";
-	// std::cout << buffer << "\n";
-	// std::cout << std::string(100, '=') << "\n";
+
 	std::vector<char> vec(buffer, buffer + bytes);
+	std::cout << "879asdf8as89dfa8sdf  jaskldjflkasj "<< vec.size() << "\n";
 	client.m_cgi_handler.parse(vec);
+	return (true);
 }
 
 void ConnectionManager::handleCgi(Client& client) { 
@@ -262,7 +264,7 @@ void ConnectionManager::receiveClient(Client& client)
 	HttpRequest& request = client.getRequest();
 	if (state == FINISHED) {
 		std::cout << "[receive]: http request recieved completly" << std::endl; 
-		request.debugPrintHeaders(request.getHeaders());
+		request.debugPrintHeaders();
 		request.printBodyContent();
 		// RouteManager route_manager;
 		// route_manager.processRequest(request);
@@ -297,9 +299,9 @@ void ConnectionManager::sendClient(Client& client)
 	size_t size = response.assembleResponse();
 
 	if (size != 0 && response.is_ok_send) {
-		std::cout << "[connection manager] sending data " << size << "\n";
 		ssize_t n = send(client.getFd(), &response.buffer[0], size, 0);
 		response.eraseSendBytes(n);
+		std::cout << "[connection manager] sending data " << n << "\n";
 	}
 	// std::cout << "it segefault here" << std::endl;
 
@@ -376,6 +378,7 @@ void ConnectionManager::run()
 			throw std::runtime_error("epoll() failed");
 		}
 
+		// std::cout << "sir tn\n";
 		for (std::size_t i = 0; i < MAX_EVENTS && ready > 0; ++i)
 		{
 			short events = evlist[i].events;
@@ -392,21 +395,22 @@ void ConnectionManager::run()
 			// }
 			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)
 			{
-				std::cout << "client send disconnect epollhub\n";
+				std::cout << "client send disconnect epollhub" << std::endl;
 				disconnect(m_clients.find(fd)->second);
 				--ready;
 				continue;
 			}
 			if ((events & (EPOLLHUP | EPOLLERR)) && type == CGI_PIPE)
 			{
-				char buff[SENDSIZE];
-				int i = read(fd, buff, SENDSIZE);
-				write(1, buff, i);
-				std::cout << "read i = " << i << "\n";
-				std::cout << EPOLLHUP << "\n";
-				deleteCgi(data, fd);
+				std::vector<char>& c = m_client_pipes.at(fd)->getResponse().buffer;
+				std::cout << "set finished================\n";
+				std::cout << "m_send_size buffer" << c.size() << "\n";
+				if (!receivePipe(*m_client_pipes.at(fd), fd)) {
+					std::string hey = "0\r\n\r\n"	;
+					c.insert(c.end(), hey.begin(), hey.end());
+					deleteCgi(data, fd);
+				}
 
-				std::cout << "EPOLLHUB                            KLASJFKLASJDFLKJASKLDFJALKSDJF\n";
 				--ready;
 				continue;
 			}

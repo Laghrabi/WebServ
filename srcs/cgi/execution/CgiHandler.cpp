@@ -4,6 +4,7 @@
 #include "webserver.hpp"
 #include <cctype>
 #include <cstdio>
+#include <netinet/in.h>
 
 CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
 	m_reading_body(false),
@@ -34,13 +35,12 @@ template <typename T> void appendStringToVec(T& c, typename T::iterator it, cons
 bool CgiHandler::checkTimeOut() {
 	std::size_t current_time = std::time(NULL);
 	std::size_t relative_time = current_time - m_last_read;
-		std::cout << "[CGI] timeout script " << relative_time << "\n"<< m_cgi_script << "\n";
-	if (relative_time > 5) {
+	if (relative_time > 50000) {
 		std::cout << "[CGI] timeout script " << relative_time << "\n"<< m_cgi_script << "\n";
 		return (true);
 	}
 	std::size_t absolute_time = current_time - m_start_time;
-if (absolute_time > 10) {
+if (absolute_time > 1000000) {
 		std::cout << "[CGI] timeout script " << relative_time << "\n"<< m_cgi_script << "\n";
 		return (true);
 	}
@@ -56,22 +56,23 @@ void CgiHandler::checkProcessState() {
 	if (pid > 0 && !m_reading_body) {
 		std::cout << "[CGI] internel server errror\n";
 		m_response.is_ok_send = true;
-		m_response.is_finished = true;
+		// m_response.is_finished = true;
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
 	}
 	else if (pid > 0 && m_reading_body && m_ok) {
 		if (m_state == STORE_BODY)  {
 			std::cout << "[CGI] adding \\r\\n0\\r\\n.\n";
 			std::cout << m_send_buffer.size() << "\n";
-			appendStringToVec(m_send_buffer, m_send_buffer.end(), "0\r\n\r\n");
+			// appendStringToVec(m_send_buffer, m_send_buffer.end(), "0\r\n\r\n");
 			std::cout << m_send_buffer.size() << "\n";
 		}
 		if (m_status.empty() && m_location.empty())
 			m_response.last_code = OK;
 		m_response.is_ok_send = true;
-		m_response.is_finished = true;
+		// m_response.is_finished = true;
 	}
 	else if (pid == -1) {
+		m_response.last_code = INTERNAL_SERVER_ERROR;
 		m_response.is_ok_send = true;
 		m_response.is_finished = true;
 	}
@@ -93,6 +94,7 @@ void CgiHandler::killProcess() {
 	if (m_pid != -1) {
 		kill (m_pid, SIGKILL);
 		waitForProcess();
+		std::cout << "[CGI] the process terminate\n";
 	}
 }
 

@@ -241,7 +241,8 @@ bool HttpRequest::openBodyStream() {
             }
         }
     }
-    
+		std::cout << "HOLLO\n";
+		debugPrintHeaders(this->getHeaders());
     return (true);
 }
 

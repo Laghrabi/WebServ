@@ -22,7 +22,8 @@ CgiHandler::CgiHandler(const CgiHandler& other) :
 	m_send_buffer(other.m_send_buffer),
 	m_pid(other.m_pid),
 	m_ok(other.m_ok),
-	m_last_read(other.m_last_read)
+	m_last_read(other.m_last_read),
+	m_start_time(other.m_start_time)
 {
 }
 
@@ -32,29 +33,38 @@ template <typename T> void appendStringToVec(T& c, typename T::iterator it, cons
 
 bool CgiHandler::checkTimeOut() {
 	std::size_t current_time = std::time(NULL);
-	std::size_t differ_time = current_time - m_last_read;
-	if (differ_time > 100) {
-		std::cout << "[CGI] timeout script " << differ_time << "\n"<< m_cgi_script << "\n";
+	std::size_t relative_time = current_time - m_last_read;
+		std::cout << "[CGI] timeout script " << relative_time << "\n"<< m_cgi_script << "\n";
+	if (relative_time > 5) {
+		std::cout << "[CGI] timeout script " << relative_time << "\n"<< m_cgi_script << "\n";
 		return (true);
 	}
+	std::size_t absolute_time = current_time - m_start_time;
+if (absolute_time > 10) {
+		std::cout << "[CGI] timeout script " << relative_time << "\n"<< m_cgi_script << "\n";
+		return (true);
+	}
+
 	return (false);
 }
 
 void CgiHandler::checkProcessState() {
 	if (checkTimeOut()) {
-		killProcess();
+		kill (m_pid, SIGKILL);
 	}
 	int pid = waitForProcess();
-	// std::cout << "[CGI] status  = " << pid << "\n";
 	if (pid > 0 && !m_reading_body) {
+		std::cout << "[CGI] internel server errror\n";
 		m_response.is_ok_send = true;
 		m_response.is_finished = true;
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
 	}
 	else if (pid > 0 && m_reading_body && m_ok) {
 		if (m_state == STORE_BODY)  {
-			std::cout << "[CGI] script competed set \\r\\n0\\r\\n.\n";
+			std::cout << "[CGI] adding \\r\\n0\\r\\n.\n";
+			std::cout << m_send_buffer.size() << "\n";
 			appendStringToVec(m_send_buffer, m_send_buffer.end(), "0\r\n\r\n");
+			std::cout << m_send_buffer.size() << "\n";
 		}
 		if (m_status.empty() && m_location.empty())
 			m_response.last_code = OK;
@@ -83,7 +93,6 @@ void CgiHandler::killProcess() {
 	if (m_pid != -1) {
 		kill (m_pid, SIGKILL);
 		waitForProcess();
-		std::cout << "[CGI] the process terminate\n";
 	}
 }
 
@@ -132,7 +141,6 @@ int CgiHandler::execute(void) {
 	int fail = pipe(m_pipe_fds);
 	if (fail)
 	{
-exit (100);
 	}
 	std::cout << "[CGI] opening file for the script to read " << m_request.getBodyFilePath().c_str() << std::endl;
 
@@ -145,6 +153,7 @@ exit (100);
 		handleChild();
 	}
 	m_last_read = std::time(NULL);
+	m_start_time = m_last_read;
 	close(m_pipe_fds[1]);
 	return (m_pipe_fds[0]);
 }
@@ -227,7 +236,10 @@ bool CgiHandler::isCgiField(const std::string& field_name, const std::string& fi
 bool CgiHandler::isHeaderEgnored(const std::string& field_name) {
 	if (compare_header(field_name, "connection") ||
 			compare_header(field_name, "date") ||
-			compare_header(field_name, "server")) {
+			compare_header(field_name, "server") ||
+			compare_header(field_name, "content-length") ||
+			compare_header(field_name, "transfer-encoding"))
+			{
 		return (true);
 	}
 	return (false);
@@ -279,8 +291,8 @@ void CgiHandler::setChunckedBody() {
 
 void CgiHandler::parseBody() {
 	if (m_state == STORE_BODY) {
-		std::cout << m_data.size() << "[CGI] saving body to Send Buffer\n";
 		setChunckedBody();
+		std::cout << "[CGI] saving body to Send Buffer\n";
 	}
 }
 
@@ -362,6 +374,7 @@ void CgiHandler::parse(const std::vector<char>& data) {
 	if (!m_ok)
 		return ;
 	std::cout << "=================================my data\n";
+	std::cout << waitForProcess() << "|n\n";
 	write (1, &data[0], data.size());
 	std::cout << "=================================my data\n";
 	m_data.insert(m_data.end(), data.begin(), data.end());
@@ -388,6 +401,7 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					std::cout << "[CGI] malformed header, clearing send buffer and set internel server error\n";
 					m_send_buffer.clear();
 					m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+					killProcess();
 					m_response.is_finished = true;
 					m_ok = false;
 					// NOTE: here internel server errror
@@ -426,6 +440,7 @@ if (this != &other)
         m_pid = other.m_pid;
         m_ok = other.m_ok;
         m_last_read = other.m_last_read;
+				m_start_time = other.m_start_time;
     }
 
 	return (*this);

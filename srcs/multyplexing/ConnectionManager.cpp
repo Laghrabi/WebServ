@@ -123,6 +123,7 @@ void ConnectionManager::disconnect(Client& client)
 {
 	std::cout << "[DISCONNECT]: "<< "client " << client.getFd() << " disconnect"<< std::endl;
 
+	client.m_cgi_handler.killProcess();
 
 	// if (client.m_pipefd != -1)
 	// {
@@ -154,7 +155,7 @@ int ConnectionManager::receive(Client& client, int fd)
 	// if (client.m_pipefd == -1)
 	// {
 	    bytes = recv(fd, buffer, SENDSIZE, 0);
-		std::cout << "[RECV]: from client" << fd << buffer << std::endl;
+		// std::cout << "[RECV]: from client" << fd << buffer << std::endl;
 	// }
 	// else
 	// {
@@ -212,7 +213,7 @@ void ConnectionManager::receivePipe(Client& client, int fd)
 {
 	char    buffer[SENDSIZE + 1] = {0};
 	ssize_t bytes;
-	std::cout << "client m_pipefd = " << fd << std::endl;
+	// std::cout << "client m_pipefd = " << fd << std::endl;
 
 	bytes = read (fd, buffer, SENDSIZE);
 	if (bytes == 0) {
@@ -224,9 +225,9 @@ void ConnectionManager::receivePipe(Client& client, int fd)
 		std::cout << "[recieve pipe] < 0 byte\n";
 		return ;
 	}
-	std::cout << std::string(100, '=') << "\n";
-	std::cout << buffer << "\n";
-	std::cout << std::string(100, '=') << "\n";
+	// std::cout << std::string(100, '=') << "\n";
+	// std::cout << buffer << "\n";
+	// std::cout << std::string(100, '=') << "\n";
 	std::vector<char> vec(buffer, buffer + bytes);
 	client.m_cgi_handler.parse(vec);
 }
@@ -296,14 +297,18 @@ void ConnectionManager::sendClient(Client& client)
 	size_t size = response.assembleResponse();
 
 	if (size != 0 && response.is_ok_send) {
+		std::cout << "[connection manager] sending data " << size << "\n";
 		ssize_t n = send(client.getFd(), &response.buffer[0], size, 0);
 		response.eraseSendBytes(n);
 	}
 	// std::cout << "it segefault here" << std::endl;
 
 	// std::cout << response.is_finished<< std::endl;
-	if (response.is_finished)
+	// if (response.is_finished && response.buffer.size())
+	// 	exit (200);
+	if (response.is_finished && response.buffer.empty())
 	{
+		std::cout << "cgi request finished\n";
 		if (client.getRequest().getCurrentState() == FINISHED) {
 			std::cout << "[CONNECTION MANGER] write access log\n";
 			response.setLog(client.getRequest());

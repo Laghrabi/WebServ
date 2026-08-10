@@ -38,6 +38,7 @@ class CgiHandler {
 		int m_pid;
 		int m_ok;
 		std::size_t m_last_read;
+		std::size_t m_start_time;
 
 		void checkHeader(const std::string& header);
 		void parseBody(void);

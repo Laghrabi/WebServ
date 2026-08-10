@@ -122,10 +122,20 @@ void HttpRequestHandler::makeRedirect()
 	std::string assemble = "HTTP/1.1 " + to_string(it->first) + " " + it->second + "\r\n";
 	response.last_code =  it->first;
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
-
-	std::string connection = checkConnection();response.setHeader("Location", result.targetPath, buffer);
+	std::string errorHtml = request.getServer()->getErrorPage(response.last_code);
+	FileStatus file(errorHtml);
+	if (errorHtml == "" || file.isDir() || !file.exist())
+	{
+		errorHtml = generateErrorPage(response.last_code);
+		response.setBodySource(BODY_BUFFER);
+	}
+	else {
+		response.setBodySource(BODY_FILE);
+		response.fileBody.open(errorHtml.c_str());
+	}
+	std::string connection = checkConnection();
+	response.setHeader("Location", result.targetPath, buffer);
 	std::cout << "make rediraction" << std::endl;
-	response.setBodySource(BODY_NONE);
 	response.setHeader("Location", result.targetPath, buffer);
 	response.setHeader("Content-Length", "0", buffer);
 	// response.setHeader("Content-Type", );
@@ -155,12 +165,19 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	std::cout << "making error" << std::endl;
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + response.getStatusCodeMap().find(code)->second + "\r\n";
-	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
-	// here i should check if there is a custom error page for this code and if yes i should set the filebody to that page
-	// if no i will creat i simple html error page with the code and the message
+	buffer.insert(buffer.end(), assemble.begin(), assemble.end()); 
 	response.last_code =  code;
-	response.setBodySource(BODY_BUFFER);
-	std::string errorHtml = generateErrorPage(code);
+	std::string errorHtml = request.getServer()->getErrorPage(code);
+	FileStatus file(errorHtml);
+	if (errorHtml == "" || file.isDir() || !file.exist())
+	{
+		errorHtml = generateErrorPage(code);
+		response.setBodySource(BODY_BUFFER);
+	}
+	else {
+		response.setBodySource(BODY_FILE);
+		response.fileBody.open(errorHtml.c_str());
+	}
 	response.setHeader("Content-Length", to_string(errorHtml.size()), buffer);
 	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);
 	std::string connection = checkConnection();

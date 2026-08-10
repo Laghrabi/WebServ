@@ -10,7 +10,8 @@ Server::Server(const Server& other)
 	m_locations(other.m_locations),
 	m_route_tree(other.m_route_tree),
 	m_addr(other.m_addr),
-	m_hosts(other.m_hosts)
+	m_hosts(other.m_hosts),
+	m_error_pages(other.m_error_pages)
 {
 }
 
@@ -21,6 +22,7 @@ Server& Server::operator=(const Server& other)
 	m_route_tree = other.m_route_tree;
 	m_addr = other.m_addr;
 	m_hosts = other.m_hosts;
+	m_error_pages = other.m_error_pages;
 	return *this;
 }
 

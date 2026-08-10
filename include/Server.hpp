@@ -62,9 +62,9 @@ class Server : public RouteConfig {
 	private:	
 		void parseIPortV4(IPort& iport, ContIter& begin);
 		void parseIPortV6(IPort& iport, ContIter& begin);
-		std::map<int, std::string> m_error_pages;
 		std::vector<IPort> m_addr;
 		std::vector<std::string> m_hosts;
+		std::map<int, std::string> m_error_pages;
 };
 
 std::ostream& operator<<(std::ostream& out, const Server::IPort& iport);

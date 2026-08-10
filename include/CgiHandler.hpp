@@ -52,6 +52,8 @@ class CgiHandler {
 		void handleLocation();
 		void appendToSendBuffer(std::vector<char>::iterator it, const std::string& str);
 		bool checkTimeOut();
+
+		void addHeader(const std::string& header);
 	public:
 		CgiHandler& operator=(const CgiHandler& other);
 		void killProcess();

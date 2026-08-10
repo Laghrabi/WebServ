@@ -1,4 +1,4 @@
-#include "../../include/UnorderedMultiMap.hpp"
+#include "../../include/webserver.hpp"
 #include <map>
 int main() {
 	typedef UnorderedMultiMap<int, std::string> type;
@@ -26,12 +26,13 @@ int main() {
 
 for (type::const_iterator it = l.begin(); it != l.end(); it = l.upper_bound(it->first)) {
 		std::cout << "first = " << it->first <<" it->second = " << it->second << "\n";
+		(*it);
 	}
 
 	std::pair<type::iterator, type::iterator> p = h.equal_range(5);
 
 	std::cout << "\n\n";
 for (type::iterator it = p.first; it != h.end(); it = ++it) {
-		std::cout << "first = " << it->first <<" it->second = " << it->second << "\n";
+		std::cout << "first = " << *it <<" it->second = " << it->second << "\n";
 	}
 }

@@ -5,7 +5,6 @@
 #include <cctype>
 #include <cstdio>
 
-
 CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
 	m_reading_body(false),
 	m_request(request),
@@ -34,8 +33,8 @@ template <typename T> void appendStringToVec(T& c, typename T::iterator it, cons
 bool CgiHandler::checkTimeOut() {
 	std::size_t current_time = std::time(NULL);
 	std::size_t differ_time = current_time - m_last_read;
-	if (differ_time > 10) {
-		// std::cout << "[CGI] timeout script " << differ_time << "\n"<< m_cgi_script << "\n";
+	if (differ_time > 100) {
+		std::cout << "[CGI] timeout script " << differ_time << "\n"<< m_cgi_script << "\n";
 		return (true);
 	}
 	return (false);
@@ -53,11 +52,14 @@ void CgiHandler::checkProcessState() {
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
 	}
 	else if (pid > 0 && m_reading_body && m_ok) {
-		if (m_state == STORE_BODY)
+		if (m_state == STORE_BODY)  {
+			std::cout << "[CGI] script competed set \\r\\n0\\r\\n.\n";
 			appendStringToVec(m_send_buffer, m_send_buffer.end(), "0\r\n\r\n");
+		}
+		if (m_status.empty() && m_location.empty())
+			m_response.last_code = OK;
 		m_response.is_ok_send = true;
 		m_response.is_finished = true;
-		std::cout << "[CGI] script competed sed \\r\\n0\\r\\n.\n";
 	}
 	else if (pid == -1) {
 		m_response.is_ok_send = true;
@@ -81,6 +83,7 @@ void CgiHandler::killProcess() {
 	if (m_pid != -1) {
 		kill (m_pid, SIGKILL);
 		waitForProcess();
+		std::cout << "[CGI] the process terminate\n";
 	}
 }
 
@@ -126,7 +129,11 @@ void CgiHandler::handleChild() {
 int CgiHandler::execute(void) {
 	std::cerr << "[CGI] start setup executing scrip\n";
 	m_cgi_script = m_request._routeResult.targetPath;
-	pipe(m_pipe_fds);
+	int fail = pipe(m_pipe_fds);
+	if (fail)
+	{
+exit (100);
+	}
 	std::cout << "[CGI] opening file for the script to read " << m_request.getBodyFilePath().c_str() << std::endl;
 
 	m_pid = fork();
@@ -187,24 +194,16 @@ void CgiHandler::parseStatus(const std::string& field_value) {
 	else {
 		throw (std::runtime_error("status error"));
 	}
+	m_response.last_code = (HttpStatus)val;
+	std::cout << "[CGI] set code to " << val << "\n";
 	m_status = field_value;
 }
 
-bool compare_header(const std::string& h1, const std::string& h2) {
-	std::size_t size = h1.size();
-	if (size != h2.size())
-		return (false);
-	for (std::size_t idx = 0; idx < size; idx++) {
-		if (std::toupper(h1.at(idx)) != std::toupper(h2[idx])) {
-			return (false);
-		}
-	}
-	return (true);
-}
 
 bool CgiHandler::isCgiField(const std::string& field_name, const std::string& field_value) {
-	if (field_name == "Location" || field_name == "Status" ||
-			field_name == "Content-Type") {
+	if (compare_header(field_name, "location") || 
+			compare_header(field_name, "status") ||
+			compare_header(field_name, "content-type")) {
 		if (compare_header(field_name, "location"))	 {
 			if (!m_location.empty())
 				throw (std::runtime_error("got location two times\n"));
@@ -232,6 +231,10 @@ bool CgiHandler::isHeaderEgnored(const std::string& field_name) {
 		return (true);
 	}
 	return (false);
+}
+
+void CgiHandler::addHeader(const std::string& header) {
+	appendToSendBuffer(m_send_buffer.end(), header + "\r\n")	;
 }
 
 // status void
@@ -286,13 +289,13 @@ void CgiHandler::addEssentialHeaders() {
 			"Server: 1337-webserver\r\n");
 	appendStringToVec(m_send_buffer, m_send_buffer.end(),
 			"Date: " + HttpResponse::getCurrentDate() + "\r\n");
-	if (compare_header(m_request.getHeader("connection"), "keep-alive")) {
-		appendStringToVec(m_send_buffer, m_send_buffer.end(), "Connection: keep-alive\r\n");
-		m_response.keep_connection = true;
+	if (compare_header(m_request.getHeader("connection"), "close")) {
+		addHeader("Connection: close");
+		m_response.keep_connection = false;
 	}
 	else{
-		appendStringToVec(m_send_buffer, m_send_buffer.end(), "Connection: close\r\n");
-		m_response.keep_connection = false;
+		addHeader("Connection: keep-alive");
+		m_response.keep_connection = true;
 	}
 }
 
@@ -311,9 +314,11 @@ void CgiHandler::handleLocation() {
 		"<p>The document has moved <a href=\"" + std::string(m_location) + "\">here</a>.</p>"
 		"<hr>"
 		"</body></html>";
-	appendToSendBuffer(m_send_buffer.end(), "Content-Lenght: " + to_string(body.size()) + "\r\n");
-	appendToSendBuffer(m_send_buffer.end(), "Content-Type: text/html\r\n\r\n");
+	addHeader("Content-Lenght: " + to_string(body.size()));
+	addHeader("Content-Lenght: text/html");
+	appendCRLF(m_send_buffer, m_send_buffer.end());
 	appendToSendBuffer(m_send_buffer.end(), body);
+	m_response.last_code = FOUND;
 }
 
 void CgiHandler::setBodyState() {
@@ -321,9 +326,13 @@ void CgiHandler::setBodyState() {
 	if (m_location.empty() && m_status.empty()
 			&& m_content_type.empty()) {
 		std::cout << "[CGI] ERROR [cgi fileds are not set]\n";
+		killProcess();
 		m_send_buffer.clear();
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+		m_response.is_finished = true;
+		m_response.is_ok_send = true;
 		m_ok = false;
+		return ;
 	}
 	m_state = STORE_BODY;
 	addEssentialHeaders();
@@ -352,6 +361,9 @@ void CgiHandler::parse(const std::vector<char>& data) {
 	m_last_read = std::time(NULL);
 	if (!m_ok)
 		return ;
+	std::cout << "=================================my data\n";
+	write (1, &data[0], data.size());
+	std::cout << "=================================my data\n";
 	m_data.insert(m_data.end(), data.begin(), data.end());
 	if (!m_reading_body) {
 		while (true){
@@ -364,7 +376,8 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					std::cerr << "[CGI] reading body phase" << std::endl;
 					m_response.setHeadersSent(true);
 					m_response.is_ok_send = true;
-					m_reading_body = true;
+					if (m_ok)
+						m_reading_body = true;
 					break ;
 				}
 				try {
@@ -414,7 +427,6 @@ if (this != &other)
         m_ok = other.m_ok;
         m_last_read = other.m_last_read;
     }
-
 
 	return (*this);
 }

@@ -76,6 +76,7 @@ int safeClose(int fd);
 
 std::string to_string(std::size_t num);
 void copyArrayToVec(char* first, std::size_t n, std::vector<char>& vec);
+bool compare_header(const std::string& h1, const std::string& h2);
 
 #define DEFAULT_ADDR 0
 #define DEFAULT_PORT 80

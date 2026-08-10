@@ -17,17 +17,19 @@ void ParseConfig::make_pair(const Server& server) {
 
 Config ParseConfig::parse(void) {
 	int server_begin_line;
+	bool one_server = false;
 	while (m_it->is(WORD)) {
 
 		ServerType server;
 		if (m_it->is("server")) {
+			one_server = true;
 			server_begin_line = m_it->line;
 			parseContext(server, &ParseConfig::parseServer, "server");
 			std::string server_name;
+			server.setDefaultIport();
 			if (checkServerConflict(m_config.m_servers.begin(), m_config.m_servers.end(), server, server_name))
 				throw (ParseConfig::ConfigExcept("conflict Server Name '" + server_name + "'", server_begin_line));
 			server.buildRouteTree();
-			// server.copyLocationRouteConfig();
 			m_config.m_servers.push_back(server);
 			make_pair(server);
 		}
@@ -38,7 +40,9 @@ Config ParseConfig::parse(void) {
 			break ;
 		}
 	}
-	// TODO: check if there is at least one server
+	if (!one_server) {
+				throw (ParseConfig::ConfigExcept("no servers at all :)", server_begin_line));
+	}
  	return (m_config);
 }
 
@@ -130,6 +134,10 @@ template <typename T> void ParseConfig::parseServerSimpleDir(T& context, const s
 	if (m_it->is_eof() || !m_it->is(WORD)) {
 		err_msg = "";
 		throw (ParseConfig::ConfigExcept("expected " + name + " simple directive value", m_it->line));
+	}
+	if (m_it->value.empty())
+	{
+		throw (ParseConfig::ConfigExcept("empty directive value: " + directive_name, m_it->line));
 	}
 	(context.*handler)(m_it);
 	if (m_it->is_eof() || !m_it->is(SEMICOLON)) {

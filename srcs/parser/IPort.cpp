@@ -1,6 +1,9 @@
 #include "webserver.hpp"
+#include <sys/socket.h>
 
 Server::IPort::IPort() {
+	m_family = AF_INET;
+	m_size = sizeof(sockaddr_in);
 	std::memset(&m_addr, 0, sizeof(m_addr));
 }
 

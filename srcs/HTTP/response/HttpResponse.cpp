@@ -196,26 +196,27 @@ void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 	setBodySource(BODY_BUFFER);
 	std::string connection = request.getHeader("connection");
 	keep_connection = 1;
-	if (connection == "" || connection == "keep-alive")
-	{
-		connection = "keep-alive";
-	}
-	else if (connection == "close")
+	if (connection == "close")
 	{
 		keep_connection = 0;
+	}
+	else {
+		connection = "keep-alive";
 	}
 	setHeader("Connection", connection, buffer);
 	setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	setHeader("server", SERVER_NAME, buffer);
 	std::string newline("\r\n");
 	buffer.insert(buffer.end(), newline.begin(), newline.end());
+	last_code = code;
 }
 
 void HttpResponse::setLog(const HttpRequest& request)
 {
+	
 	std::string path = request._routeResult.route->getAccessLog();
 	std::string clientEndpoint = request.getClientIPort().getIpStr();
-
+	std::cout << path << "   "  << clientEndpoint << std::endl;
 	struct stat st;
     if (stat(filePath.c_str(), &st) == 0)
 	{
@@ -227,8 +228,8 @@ void HttpResponse::setLog(const HttpRequest& request)
 	std::fstream file;
 	file.open(path.c_str(), std::ios::app);
 	std::string log = clientEndpoint + " - " + HttpResponse::getCurrentDate() + " " + SERVER_NAME + " " +
- 	request.getMethod() + " " + to_string(last_code) + " " + statusCodeMap[last_code] + "\n";
-	file << log;
+ 	request.getMethod() + " " + to_string(last_code) + " " + statusCodeMap[last_code];
+	file << log << std::endl;
 }
 void HttpResponse::init()
 {

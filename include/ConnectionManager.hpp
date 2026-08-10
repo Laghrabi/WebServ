@@ -46,11 +46,12 @@ public:
     void				receiveClient(Client& client);
     void				sendClient(Client& client);
     int					receive(Client& client, int fd);
-    void				receivePipe(Client& client);
+    void				receivePipe(Client& client, int fd);
     void				disconnect(Client& client);
     void				ChangeClientEvent(int fd, uint32_t event);
     void				AddSocketToEpfd(int fd, SockType type, uint32_t event);
     void                handleCgi(Client& client);
+    void                deleteCgi(EventData *data, int fd);
 
 public:
 

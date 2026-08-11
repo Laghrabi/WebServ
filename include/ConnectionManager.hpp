@@ -54,6 +54,7 @@ public:
     void                handleCgi(Client& client);
     void                deleteCgi(EventData *data, int fd);
     void                free_resources();
+		void				handleCgiDeath(int fd);
 
 public:
 

@@ -206,6 +206,7 @@ void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 	setHeader("Connection", connection, buffer);
 	setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	setHeader("server", SERVER_NAME, buffer);
+	setHeader("Content-Length", "0", buffer);
 	std::string newline("\r\n");
 	buffer.insert(buffer.end(), newline.begin(), newline.end());
 	last_code = code;
@@ -216,7 +217,6 @@ void HttpResponse::setLog(const HttpRequest& request)
 	
 	std::string path = request._routeResult.route->getAccessLog();
 	std::string clientEndpoint = request.getClientIPort().getIpStr();
-	std::cout << path << "   "  << clientEndpoint << std::endl;
 	struct stat st;
     if (stat(filePath.c_str(), &st) == 0)
 	{

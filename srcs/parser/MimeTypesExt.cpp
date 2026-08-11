@@ -14,7 +14,6 @@ void MimeTypesExt::parseMimeType(ContIter &begin) {
 
 	if (begin->is_eof() || !begin->is(WORD)) {
 		err_msg = "";
-		// TODO: change that msg to indicate extention have not been provided
 		throw (ParseConfig::ConfigExcept("expected " + type + " simple directive value", begin->line));
 	}
 

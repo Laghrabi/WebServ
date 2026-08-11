@@ -1,0 +1,11 @@
+#!/bin/bash
+
+
+printf "Content-type: html/text\n\n"
+printf "hello\n\n"
+printf "hello\n\n"
+printf "hello\n\n"
+printf "hello\n\n"
+printf "hello\n\n"
+printf "hello\n\n"
+printf "hello\n\n"

@@ -44,7 +44,7 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 		else
 			resource = uri.substr(base_path.length() + 1);
 	}
-
+	std::cout << "RESOURCE=" << resource << std::endl;
 	if (test) {
 		if (!test->getAlias().empty()) {
 			base_path = test->getAlias();

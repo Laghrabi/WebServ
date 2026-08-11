@@ -4,6 +4,7 @@
 #include "webserver.hpp"
 #include <cctype>
 #include <cstdio>
+#include <exception>
 #include <netinet/in.h>
 
 CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
@@ -37,13 +38,13 @@ template <typename T> void appendStringToVec(T& c, typename T::iterator it, cons
 bool CgiHandler::checkTimeOut() {
 	std::size_t current_time = std::time(NULL);
 	std::size_t relative_time = current_time - m_last_read;
-	if (relative_time > 3) {
-		// std::cout << "[CGI] timeout script " << relative_time << "\n"<< m_cgi_script << "\n";
+	if (relative_time > 10) {
+		std::cout << "[CGI] timeout script relative time " << relative_time << "\n"<< m_cgi_script << "\n";
 		return (true);
 	}
 	std::size_t absolute_time = current_time - m_start_time;
-	if (absolute_time > 10) {
-		// std::cout << "[CGI] timeout script relative " << relative_time << "\n"<< m_cgi_script << "\n";
+	if (absolute_time > 100) {
+		std::cout << "[CGI] timeout script absolute time " << relative_time << "\n"<< m_cgi_script << "\n";
 		return (true);
 	}
 
@@ -78,7 +79,6 @@ void CgiHandler::setCgiResponse() {
 	}
 	m_response.is_ok_send = true;
 	m_response.is_finished = true;
-
 }
 
 int CgiHandler::waitForProcess() {
@@ -108,53 +108,58 @@ void CgiHandler::handleChild() {
 	CgiRequest cgi_request(m_request);
 	std::string fileIn = m_request.getBodyFilePath().c_str();
 	int fd = -1;
+		close(m_pipe_fds[0]);
 	if (!fileIn.empty())
 	{
-		if ((fd= open(fileIn.c_str(), O_RDONLY))) {
-			;
+		if ((fd = open(fileIn.c_str(), O_RDONLY)) == -1)
+		{
+			close (m_pipe_fds[1]);
+			throw (std::exception());
 		}
-		if (dup2(fd, 0))
+		if (dup2(fd, 0) == -1)
 		{
 			close (fd);
-			//NOTE: internel server errror
-			std::cerr << "[CGI] fail to dup file to 0 " << m_request.getBodyFilePath().c_str() << "\n";
+			close (m_pipe_fds[1]);
+			throw (std::exception());
 		}
-		else
-			close (fd);
+		close (fd);
 	}
+	if (dup2(m_pipe_fds[1], 1) == -1)
+	{
+			safeClose (fd);
+			close (m_pipe_fds[1]);
+			throw (std::exception());
+	}
+	close (m_pipe_fds[1]);
 	std::string wdir = m_cgi_script.substr(0, m_cgi_script.find_last_of('/'));
 	if (wdir.empty()) wdir = "/";
-	std::cout << "[CGI] setting working dir to " << wdir << std::endl;
-	chdir(wdir.c_str());
-	// if (fd == -1) {
-	// 	std::cerr << "[CGI] can't open file " << m_request.getBodyFilePath().c_str() << "\n";
-	// }
-
-	if (dup2(m_pipe_fds[1], 1))
-	{
-		// TODO: do something here exit is not an option maybe
+	if (chdir(wdir.c_str()) == -1) {
+			close (fd);
+			close (m_pipe_fds[0]);
+			throw (std::exception());
 	}
-
-	close (m_pipe_fds[1]);
 	CString l(m_cgi_script);
 	char *const var[] = {l.getCstr(), NULL};
-	int sucess = execve(m_cgi_script.c_str(), var, cgi_request.getEnvp());
-	(void)sucess;
-	std::cerr << "[CGI] execution for script " << m_cgi_script << " failed\n";
+	execve(m_cgi_script.c_str(), var, cgi_request.getEnvp());
+	throw (std::exception());
 }
 
 int CgiHandler::execute(void) {
 	std::cerr << "[CGI] start setup executing scrip\n";
 	m_cgi_script = m_request._routeResult.targetPath;
 	int fail = pipe(m_pipe_fds);
-	if (fail)
+	if (fail == -1)
 	{
+		m_is_alive = false;
+		setCgiResponse();
+		return (-1);
 	}
-	std::cout << "[CGI] opening file for the script to read " << m_request.getBodyFilePath().c_str() << std::endl;
 
 	m_pid = fork();
-	if (m_pid != -1) {
-		// internel server error
+	if (m_pid == -1) {
+		m_is_alive = false;
+		setCgiResponse();
+		return (-1);
 	}
 
 	if (m_pid == 0) { // child
@@ -227,7 +232,7 @@ bool CgiHandler::isCgiField(const std::string& field_name, const std::string& fi
 				throw (std::runtime_error("got location two times\n"));
 			m_location = field_value;
 		}
-		if (compare_header(field_name, "Content-type"))	 {
+		if (compare_header(field_name, "content-type"))	 {
 			if (!m_content_type.empty())
 				throw (std::runtime_error("got Content Type two times\n"));
 			m_content_type = field_value;
@@ -237,6 +242,7 @@ bool CgiHandler::isCgiField(const std::string& field_name, const std::string& fi
 				throw (std::runtime_error("got status two times\n"));
 			parseStatus(field_value);
 		}
+		std::cout << "[CGI] adding cgi field header\n";
 		return (true);
 	}
 	return (false);
@@ -336,14 +342,13 @@ void CgiHandler::handleLocation() {
 		"<hr>"
 		"</body></html>";
 	addHeader("Content-Lenght: " + to_string(body.size()));
-	addHeader("Content-Lenght: text/html");
+	addHeader("Content-type: text/html");
 	appendCRLF(m_send_buffer, m_send_buffer.end());
 	appendToSendBuffer(m_send_buffer.end(), body);
 	m_response.last_code = FOUND;
 }
 
 void CgiHandler::setBodyState() {
-	std::cout << "[CGI] STORE BODY NORMALLY\n";
 	if (m_location.empty() && m_status.empty()
 			&& m_content_type.empty()) {
 		std::cout << "[CGI] ERROR [cgi fileds are not set]\n";
@@ -355,6 +360,7 @@ void CgiHandler::setBodyState() {
 		m_ok = false;
 		return ;
 	}
+	std::cout << "[CGI] STORE BODY NORMALLY\n";
 	m_state = STORE_BODY;
 	addEssentialHeaders();
 	if (!m_status.empty()) {
@@ -384,7 +390,6 @@ void CgiHandler::parse(const std::vector<char>& data) {
 	if (!m_ok)
 		return ;
 	std::cout << "=================================my data\n";
-	std::cout << waitForProcess() << "|n\n";
 	write (1, &data[0], data.size());
 	std::cout << "=================================my data\n";
 	m_data.insert(m_data.end(), data.begin(), data.end());
@@ -408,14 +413,13 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					m_data.erase(m_data.begin(), nl + 1);
 				}
 				catch (const std::runtime_error& e) {
+					std::cout << e.what() << "\n";
 					std::cout << "[CGI] malformed header, clearing send buffer and set internel server error\n";
 					m_send_buffer.clear();
 					m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
 					killProcess();
 					m_response.is_finished = true;
 					m_ok = false;
-					// NOTE: here internel server errror
-					// terminate the script
 					std::cout << "[CGI] "<< e.what() << "\n";
 					break ;
 				}

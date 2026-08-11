@@ -6,9 +6,6 @@
 Server::IPortV6::IPortV6() : IPort(AF_INET6, sizeof(sockType)) {
 	m_addr = reinterpret_cast<sockType *>(&(IPort::m_addr));
 	m_addr->sin6_family = m_family;
-	// TODO: 
-	// here i need to add ip mybe 0
-	// m_addr->sin6_addr
 	m_addr->sin6_port = htons(DEFAULT_PORT);
 	setIpString();
 	setPortString();

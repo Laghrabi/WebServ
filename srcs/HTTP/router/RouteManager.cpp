@@ -36,6 +36,7 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 
 	UriContConstIter it = script_path.begin();
 	for (; it != script_path.end(); ++it) {
+		std::cout << "hey akljsdflkajsdlkf " << *it << "\n";
 		test_path += "/" + *it;
 		result.cgiInfo.scriptName += "/" + *it;
 		status.set(test_path);
@@ -123,10 +124,11 @@ void RouteManager::processRequest(HttpRequest& request) {
 	}
 
 	if (result.route->isCgiEnable()) {
-		std::cout << "rousource: " <<  _resource << "\n";
 		std::vector<std::string> vec;
 		HttpRequest::normalizeUriHelper(_resource, vec);
 		if (isCgi(vec, result, _basePath)) {
+			std::string encoded_uri = request.getEncodedUri();
+			result.cgiInfo.pathInfo += (encoded_uri.at(encoded_uri.size() - 1) == '/') ? "/" : "";
 			return ;
 		}
 	}

@@ -71,6 +71,7 @@ bool RouteConfig::RedirectCode(int code) const {
 }
 
 void RouteConfig::parseRedirection(ContIter& begin) {
+	// NOTE: do something here
 	std::stringstream ss;
 	ss << begin->value;
 	int tmp; ss>>tmp;

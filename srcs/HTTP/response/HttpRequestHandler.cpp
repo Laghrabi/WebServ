@@ -72,14 +72,9 @@ std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directo
 
 	struct dirent* l;
 	std::string html;
-
+	std::string url = request.getUri();
 	while ((l = readdir(p))) {
-		if (std::string(l->d_name) == "." || std::string(l->d_name) == "..") {
-		html += "<a href=\"./" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
-	
-    		continue;
-				}
-		html += "<a href=\"" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
+		html += "<a href=\"" + url + "/" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
 	}
 	closedir(p);
 	return html;
@@ -136,7 +131,6 @@ void HttpRequestHandler::makeRedirect()
 	std::string connection = checkConnection();
 	response.setHeader("Location", result.targetPath, buffer);
 	std::cout << "make rediraction" << std::endl;
-	response.setHeader("Location", result.targetPath, buffer);
 	response.setHeader("Content-Length", "0", buffer);
 	// response.setHeader("Content-Type", );
 	standardHeader(buffer, connection);
@@ -270,22 +264,8 @@ void HttpRequestHandler::handleDelete()
 void HttpRequestHandler::handlePost()
 {
     const RouteResult &result = request._routeResult;
-	std::cout << "trying to handle post" << std::endl;
+	std::cout << "[POST]: handle post" << std::endl;
 
-    // {
-	// 	switch (errno)
-	// 	{
-	// 		case ENOSPC:
-	// 			// Disk is full.
-	// 			makeError(INSUFFICIENT_STORAGE);
-	// 			return;
-
-	// 		default:
-	// 			std::cout << "im here" << std::endl;
-	// 			makeError(INTERNAL_SERVER_ERROR);
-	// 			return;
-	// 	}
-    // }
 	if (result.statusCode == CREATED || result.statusCode == OK)
 	{
 		request.clearBodyFilePath();

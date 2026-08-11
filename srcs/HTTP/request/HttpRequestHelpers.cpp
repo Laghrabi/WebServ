@@ -223,9 +223,8 @@ std::string HttpRequest::generateSecureFileName(const std::string& directory, co
 bool HttpRequest::openBodyStream() {
     if (!_bodyStream.is_open()) {
         if (_routeResult.action != ACTION_ERROR && _routeResult.action != ACTION_EXECUTE_CGI && _method == "POST") {
-            std::cout << "helllooo" << std::endl; 
             _bodyStream.open(_routeResult.targetPath.c_str(), std::ios_base::out | std::ios_base::binary);
-            _bodyFilePath = _routeResult.targetPath;
+            // _bodyFilePath = _routeResult.targetPath;
             std::cout << "open file: " << _routeResult.targetPath.c_str() << "\n";
         }
         if (!_bodyStream.is_open()) {

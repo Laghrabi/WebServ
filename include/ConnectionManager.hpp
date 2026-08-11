@@ -33,10 +33,11 @@ public:
     typedef std::map<int, ListeningSocket> ListenerContainer;
     typedef std::map<int, Client> ClientContainer;
     typedef std::map<int, EventData*> EventContainer;
+    typedef std::map<int, Client*> PipeContainer;
 
     const Config&       m_config;
     ListenerContainer   m_listeners;
-	std::map<int, Client*> m_client_pipes;
+	PipeContainer       m_client_pipes;
     ClientContainer     m_clients;
     EventContainer      m_events;
     int epfd;
@@ -52,6 +53,7 @@ public:
     void				AddSocketToEpfd(int fd, SockType type, uint32_t event);
     void                handleCgi(Client& client);
     void                deleteCgi(EventData *data, int fd);
+    void                free_resources();
 
 public:
 

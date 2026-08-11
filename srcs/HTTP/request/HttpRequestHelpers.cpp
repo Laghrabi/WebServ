@@ -246,7 +246,6 @@ bool HttpRequest::openBodyStream() {
             }
         }
     }
-		std::cout << "HOLLO\n";
     return (true);
 }
 

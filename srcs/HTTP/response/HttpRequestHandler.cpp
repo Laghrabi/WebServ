@@ -167,16 +167,25 @@ void HttpRequestHandler::makeError(HttpStatus code)
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + response.getStatusCodeMap().find(code)->second + "\r\n";
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end()); 
 	response.last_code =  code;
-	std::string errorHtml = request.getServer()->getErrorPage(code);
-	FileStatus file(errorHtml);
-	if (errorHtml == "" || file.isDir() || !file.exist())
+	std::string errorHtml;
+	const Server *server = request.getServer();
+	if (server)
 	{
-		errorHtml = generateErrorPage(code);
-		response.setBodySource(BODY_BUFFER);
+		errorHtml = request.getServer()->getErrorPage(code);
+		FileStatus file(errorHtml);
+		if (errorHtml == "" || file.isDir() || !file.exist())
+		{
+			errorHtml = generateErrorPage(code);
+			response.setBodySource(BODY_BUFFER);
+		}
+		else {
+			response.setBodySource(BODY_FILE);
+			response.fileBody.open(errorHtml.c_str());
+		}
 	}
 	else {
-		response.setBodySource(BODY_FILE);
-		response.fileBody.open(errorHtml.c_str());
+		errorHtml = generateErrorPage(code);
+		response.setBodySource(BODY_BUFFER);
 	}
 	response.setHeader("Content-Length", to_string(errorHtml.size()), buffer);
 	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);

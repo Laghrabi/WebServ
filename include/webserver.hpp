@@ -48,6 +48,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <csignal>
 
 typedef std::vector<token> TokenCont;
 

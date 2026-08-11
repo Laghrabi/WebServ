@@ -106,6 +106,7 @@ HttpResponse& Client::getResponse()
 
 void Client::checkCgiState() {
     if (m_pipefd != -1) {
+			if (m_cgi_handler.isAlive())
         m_cgi_handler.checkProcessState();
     }
 }

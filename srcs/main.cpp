@@ -19,14 +19,17 @@ void printRouteTree(RouteNode& route, int tabNum) {
 }
 
 int main(int argc, char **argv){
-	if (argc != 2)
+	if (argc > 2)
 	{
 		std::cerr << "./webserver configfile.conf";
 		return (1);
 	}
 	try {
-		std::vector<token> tokens = lexer::tokenizeFile(argv[1]);
-
+		std::vector<token> tokens;
+		if (argc == 2)
+			tokens = lexer::tokenizeFile(argv[1]);
+		else
+			tokens = lexer::tokenizeFile("test_config/website.conf");
 		ParseConfig parser(tokens);
 		Config conf = parser.parse();
 		ConnectionManager manager(conf);

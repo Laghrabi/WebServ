@@ -10,7 +10,8 @@ Server::Server(const Server& other)
 	m_locations(other.m_locations),
 	m_route_tree(other.m_route_tree),
 	m_addr(other.m_addr),
-	m_hosts(other.m_hosts)
+	m_hosts(other.m_hosts),
+	m_error_pages(other.m_error_pages)
 {
 }
 
@@ -21,6 +22,7 @@ Server& Server::operator=(const Server& other)
 	m_route_tree = other.m_route_tree;
 	m_addr = other.m_addr;
 	m_hosts = other.m_hosts;
+	m_error_pages = other.m_error_pages;
 	return *this;
 }
 
@@ -42,10 +44,10 @@ void Server::parseIPortV6(IPort& res, ContIter& begin) {
 	}
 	std::size_t last_colon = str.find_last_of(":");
 	if (last_colon == std::string::npos ||
-		(port = str.substr(last_colon + 1)).empty()		) {
+			(port = str.substr(last_colon + 1)).empty()		) {
 		throw (ParseConfigType::ConfigExcept("iport format malformed ipv6", begin->line));
 	}
-;
+	;
 
 	IPortV6 ipv6;
 	ipv6.setIp(ip);
@@ -68,7 +70,7 @@ void Server::parseIPortV4(IPort& res, ContIter& begin) {
 		port = iport_str.substr(pos + 1);
 
 		if (ip.empty() || port.empty()) {
-		throw (ParseConfigType::ConfigExcept("iport format malformed ipv4", begin->line));
+			throw (ParseConfigType::ConfigExcept("iport format malformed ipv4", begin->line));
 		}
 		iport.setIp(ip);
 		iport.setPort(port);
@@ -81,7 +83,7 @@ void Server::parseIPortV4(IPort& res, ContIter& begin) {
 		iport.setPort(iport_str);
 	}
 	else {
-iport.setIp(iport_str);
+		iport.setIp(iport_str);
 	}
 	res = iport;
 }
@@ -92,12 +94,12 @@ void Server::parseIPort(ContIter &begin) {
 	}
 	IPort iport;
 	try {
-	if (begin->value.at(0) == '[')   {
-		parseIPortV6(iport, begin);
-	}
-	else {
-		parseIPortV4(iport, begin);
-	}
+		if (begin->value.at(0) == '[')   {
+			parseIPortV6(iport, begin);
+		}
+		else {
+			parseIPortV4(iport, begin);
+		}
 	}
 	catch (const std::runtime_error& err) {
 		throw (ParseConfigType::ConfigExcept(err.what(), begin->line));
@@ -264,10 +266,8 @@ void Server::buildRouteTree() {
 		std::vector<std::string> tokens = tokenizeRoutePath(m_locations[i].getPath());
 		currentNode = &m_route_tree; 
 
-		std::cout << " hey " << m_locations[i].getPath() << tokens.size() << "\n";
 		for (size_t j = 0; j < tokens.size(); ++j) {
 			const std::string& token = tokens[j];
-			std::cout << "token = " << j << token << "\n";
 
 			if (currentNode->children.find(token) == currentNode->children.end()) {
 				currentNode->children.insert(std::make_pair(token, new RouteNode(token)));
@@ -283,9 +283,9 @@ void Server::buildRouteTree() {
 
 std::string Server::getErrorPage(HttpStatus code) const {
 	std::map<int, std::string>::const_iterator it = m_error_pages.find(code);
-if (it != m_error_pages.end())
-{
-	return (it->second);
-}
-return ("");
+	if (it != m_error_pages.end())
+	{
+		return (it->second);
+	}
+	return ("");
 }

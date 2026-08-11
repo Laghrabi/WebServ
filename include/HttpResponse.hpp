@@ -34,13 +34,12 @@ class HttpResponse
 		int 										bufferBytesSent;
 		ResponseBodySource							bodySource;
 		std::string									filePath;
-		std::ifstream								fileBody;
 	    size_t										contentLength;
 		size_t										filebytesSent;
 		bool 										headersSent;
 		static std::map<HttpStatus, std::string> 	statusCodeMap;
 		
-	public:
+		public:
 		HttpStatus									last_code;
 		const Config&								config;
 		int keep_connection;
@@ -51,6 +50,7 @@ class HttpResponse
 		~HttpResponse();
 		HttpResponse& operator=(const HttpResponse& other);
 		
+		std::ifstream								fileBody;
 		size_t assembleResponse();
 		bool is_finished;
 		bool is_ok_send;

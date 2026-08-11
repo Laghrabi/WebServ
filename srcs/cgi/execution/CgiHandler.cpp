@@ -4,6 +4,7 @@
 #include "webserver.hpp"
 #include <cctype>
 #include <cstdio>
+#include <netinet/in.h>
 
 CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
 	m_reading_body(false),
@@ -11,7 +12,8 @@ CgiHandler::CgiHandler(const HttpRequest& request, HttpResponse& response) :
 	m_response(response),
 	m_send_buffer(response.buffer),
 	m_pid(-1),
-	m_ok(true)
+	m_ok(true),
+	m_is_alive(false)
 {
 }
 
@@ -22,7 +24,9 @@ CgiHandler::CgiHandler(const CgiHandler& other) :
 	m_send_buffer(other.m_send_buffer),
 	m_pid(other.m_pid),
 	m_ok(other.m_ok),
-	m_last_read(other.m_last_read)
+	m_last_read(other.m_last_read),
+	m_start_time(other.m_start_time),
+	m_is_alive(other.m_is_alive)
 {
 }
 
@@ -32,55 +36,68 @@ template <typename T> void appendStringToVec(T& c, typename T::iterator it, cons
 
 bool CgiHandler::checkTimeOut() {
 	std::size_t current_time = std::time(NULL);
-	std::size_t differ_time = current_time - m_last_read;
-	if (differ_time > 100) {
-		std::cout << "[CGI] timeout script " << differ_time << "\n"<< m_cgi_script << "\n";
+	std::size_t relative_time = current_time - m_last_read;
+	if (relative_time > 3) {
+		// std::cout << "[CGI] timeout script " << relative_time << "\n"<< m_cgi_script << "\n";
 		return (true);
 	}
+	std::size_t absolute_time = current_time - m_start_time;
+	if (absolute_time > 10) {
+		// std::cout << "[CGI] timeout script relative " << relative_time << "\n"<< m_cgi_script << "\n";
+		return (true);
+	}
+
 	return (false);
 }
 
 void CgiHandler::checkProcessState() {
-	if (checkTimeOut()) {
-		killProcess();
+	if (m_is_alive)
+		if (checkTimeOut()) {
+			killProcess();
+
+			setCgiResponse();
 	}
-	int pid = waitForProcess();
-	// std::cout << "[CGI] status  = " << pid << "\n";
-	if (pid > 0 && !m_reading_body) {
-		m_response.is_ok_send = true;
-		m_response.is_finished = true;
+}
+
+void CgiHandler::setCgiResponse() {
+	if (m_is_alive)
+		killProcess();
+	if (!m_reading_body) {
+		std::cout << "[CGI] internel server errror\n";
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
 	}
-	else if (pid > 0 && m_reading_body && m_ok) {
+	else if (m_reading_body && m_ok) {
 		if (m_state == STORE_BODY)  {
-			std::cout << "[CGI] script competed set \\r\\n0\\r\\n.\n";
+			std::cout << "[CGI] adding \\r\\n0\\r\\n.\n";
 			appendStringToVec(m_send_buffer, m_send_buffer.end(), "0\r\n\r\n");
+			std::cout << m_send_buffer.size() << "\n";
 		}
-		if (m_status.empty() && m_location.empty())
+		if (m_status.empty() && m_location.empty()) {
 			m_response.last_code = OK;
-		m_response.is_ok_send = true;
-		m_response.is_finished = true;
+		}
 	}
-	else if (pid == -1) {
-		m_response.is_ok_send = true;
-		m_response.is_finished = true;
-	}
+	m_response.is_ok_send = true;
+	m_response.is_finished = true;
+
 }
 
 int CgiHandler::waitForProcess() {
 	int status = 0;
 	int pid;
 	if ((pid = waitpid(m_pid, &status, WNOHANG)) == 0) {
-		// std::cout << "[CGI] no change in state\n";
 	}
 	else if (pid > 0) {
+		m_is_alive = false;
 		std::cout << "[CGI] process terminate " << m_cgi_script << "\n";
+	}
+	else if (pid < 0) {
+		exit (20);
 	}
 	return (pid);
 }
 
 void CgiHandler::killProcess() {
-	if (m_pid != -1) {
+	if (m_pid != -1 && m_is_alive) {
 		kill (m_pid, SIGKILL);
 		waitForProcess();
 		std::cout << "[CGI] the process terminate\n";
@@ -132,7 +149,6 @@ int CgiHandler::execute(void) {
 	int fail = pipe(m_pipe_fds);
 	if (fail)
 	{
-exit (100);
 	}
 	std::cout << "[CGI] opening file for the script to read " << m_request.getBodyFilePath().c_str() << std::endl;
 
@@ -145,7 +161,9 @@ exit (100);
 		handleChild();
 	}
 	m_last_read = std::time(NULL);
+	m_start_time = m_last_read;
 	close(m_pipe_fds[1]);
+	m_is_alive = true;
 	return (m_pipe_fds[0]);
 }
 
@@ -227,7 +245,10 @@ bool CgiHandler::isCgiField(const std::string& field_name, const std::string& fi
 bool CgiHandler::isHeaderEgnored(const std::string& field_name) {
 	if (compare_header(field_name, "connection") ||
 			compare_header(field_name, "date") ||
-			compare_header(field_name, "server")) {
+			compare_header(field_name, "server") ||
+			compare_header(field_name, "content-length") ||
+			compare_header(field_name, "transfer-encoding"))
+	{
 		return (true);
 	}
 	return (false);
@@ -279,8 +300,8 @@ void CgiHandler::setChunckedBody() {
 
 void CgiHandler::parseBody() {
 	if (m_state == STORE_BODY) {
-		std::cout << m_data.size() << "[CGI] saving body to Send Buffer\n";
 		setChunckedBody();
+		std::cout << "[CGI] saving body to Send Buffer\n";
 	}
 }
 
@@ -343,6 +364,7 @@ void CgiHandler::setBodyState() {
 		appendStringToVec(m_send_buffer, m_send_buffer.begin(), "HTTP/1.1 ");
 	}
 	else if (!m_location.empty()) {
+		std::cout << "[CGI] handle location 'redirection'\n";
 		handleLocation();
 		// appendStringToVec(m_send_buffer, m_send_buffer, );
 		m_state = BODY_NOT_USEFUL;
@@ -362,6 +384,7 @@ void CgiHandler::parse(const std::vector<char>& data) {
 	if (!m_ok)
 		return ;
 	std::cout << "=================================my data\n";
+	std::cout << waitForProcess() << "|n\n";
 	write (1, &data[0], data.size());
 	std::cout << "=================================my data\n";
 	m_data.insert(m_data.end(), data.begin(), data.end());
@@ -388,6 +411,7 @@ void CgiHandler::parse(const std::vector<char>& data) {
 					std::cout << "[CGI] malformed header, clearing send buffer and set internel server error\n";
 					m_send_buffer.clear();
 					m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
+					killProcess();
 					m_response.is_finished = true;
 					m_ok = false;
 					// NOTE: here internel server errror
@@ -408,28 +432,35 @@ void CgiHandler::parse(const std::vector<char>& data) {
 }
 
 CgiHandler& CgiHandler::operator=(const CgiHandler& other) {
-if (this != &other)
-    {
-        m_state = other.m_state;
-        m_headers = other.m_headers;
-        // m_bodyBytes = other.m_bodyBytes;
-        m_status = other.m_status;
-        m_location = other.m_location;
-        m_content_type = other.m_content_type;
-        m_reading_body = other.m_reading_body;
-        m_data = other.m_data;
-        m_cgi_script = other.m_cgi_script;
+	if (this != &other)
+	{
+		m_state = other.m_state;
+		m_headers = other.m_headers;
+		// m_bodyBytes = other.m_bodyBytes;
+		m_status = other.m_status;
+		m_location = other.m_location;
+		m_content_type = other.m_content_type;
+		m_reading_body = other.m_reading_body;
+		m_data = other.m_data;
+		m_cgi_script = other.m_cgi_script;
 
-        m_pipe_fds[0] = other.m_pipe_fds[0];
-        m_pipe_fds[1] = other.m_pipe_fds[1];
+		m_pipe_fds[0] = other.m_pipe_fds[0];
+		m_pipe_fds[1] = other.m_pipe_fds[1];
 
-        m_pid = other.m_pid;
-        m_ok = other.m_ok;
-        m_last_read = other.m_last_read;
-    }
+		m_pid = other.m_pid;
+		m_ok = other.m_ok;
+		m_last_read = other.m_last_read;
+		m_start_time = other.m_start_time;
+		m_is_alive = other.m_is_alive;
+	}
 
 	return (*this);
 }
 
 CgiHandler::~CgiHandler(void) {
+}
+
+
+bool CgiHandler::isAlive() const {
+	return (m_is_alive);
 }

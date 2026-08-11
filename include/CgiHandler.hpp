@@ -38,6 +38,8 @@ class CgiHandler {
 		int m_pid;
 		int m_ok;
 		std::size_t m_last_read;
+		std::size_t m_start_time;
+		bool m_is_alive;
 
 		void checkHeader(const std::string& header);
 		void parseBody(void);
@@ -54,7 +56,9 @@ class CgiHandler {
 		bool checkTimeOut();
 
 		void addHeader(const std::string& header);
+
 	public:
+		void setCgiResponse();
 		CgiHandler& operator=(const CgiHandler& other);
 		void killProcess();
 		void checkProcessState();
@@ -64,6 +68,7 @@ class CgiHandler {
 
 		void parse(const std::vector<char>& data);
 		std::pair<std::string, std::string> parse_header(const std::string& data);
+		bool isAlive() const;
 		~CgiHandler(void);
 };
 

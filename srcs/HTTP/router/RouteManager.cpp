@@ -133,11 +133,6 @@ void RouteManager::processRequest(HttpRequest& request) {
 	}
 
 	if (request.getMethod() == "POST") {
-		// if (result.route->getUploadDir().empty()) {
-		// 	std::cout << "ERROR ==> NO UPLOAD DIRECTIVE FOUND" << std::endl;
-		// 	setResult(FORBIDDEN, ACTION_ERROR, "", result);
-		// 	return ;
-		// }
 		std::string uploadPath = resolveUploadPath(request.getRouteUri(), LocationMatch, result.route->getUploadDir());
 		std::cout << "UPLOAD PATH ==> " << uploadPath << std::endl;
 		checkPostPath(uploadPath, request);
@@ -161,7 +156,8 @@ void RouteManager::processRequest(HttpRequest& request) {
 }
 
 void RouteManager::determineResourceAction(RouteResult& result, ResourceType type, const std::string& physicalPath, const std::string& routeUri)  {
-    switch (type) {
+    (void)routeUri;
+	switch (type) {
         case RESOURCE_FILE:
 			std::cout << "TYPE ==> RESOURCE_FILE" << std::endl;
 			setResult(OK, ACTION_SERVE_FILE, physicalPath, result);
@@ -169,10 +165,7 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 
         case RESOURCE_DIRECTORY:
 			std::cout << "TYPE ==> RESOURCE_DIRECTORY" << std::endl;
-            if (routeUri[routeUri.length() - 1] != '/') {
-				setResult(MOVED_PERMANENTLY, ACTION_REDIRECT, routeUri + "/", result);
-            } 
-            else if (result.route && result.route->isAutoindex()) {
+            if (result.route && result.route->isAutoindex()) {
 				setResult(OK, ACTION_AUTOINDEX, physicalPath, result);
             }
             else {

@@ -17,5 +17,6 @@
 # include <string>
 
 std::string	trimSpaces(const std::string& str);
+std::string joinPaths(const std::string& path1, const std::string& path2);
 
 #endif

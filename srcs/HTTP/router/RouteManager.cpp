@@ -98,19 +98,19 @@ void RouteManager::processRequest(HttpRequest& request) {
 	result.route = matchRoute(request.getUriSegments(), request.getServer(), _basePath);
 	std::string	LocationMatch = _basePath;
 	std::cout << "LOCATION MATCH ==> " << LocationMatch << std::endl;
-
+	
 	if (result.route->hasMaxBodySize()) {
 		if (request._bodyBytesWritten > result.route->getMaxBodySize()) {
 			setResult(PAYLOAD_TOO_LARGE, ACTION_ERROR, "", result);
 			return ;
 		}
 	}
-
+	
 	if (result.route && !result.route->isAllowed(request.getMethod())) {
 		setResult(METHOD_NOT_ALLOWED, ACTION_ERROR, "", result);
 		return ;
 	}
-
+	
 	if (result.route->doesRedirect()) {
 		setResult(result.route->getRedirection().first, ACTION_REDIRECT, result.targetPath = result.route->getRedirection().second, result);
 		return ;

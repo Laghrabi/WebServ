@@ -125,24 +125,30 @@ void ConnectionManager::disconnect(Client& client)
 
 	client.m_cgi_handler.killProcess();
 
-	// if (client.m_pipefd != -1)
-	// {
-	// 	epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
-	// 	m_events.erase(client.m_pipefd);
-	// 	delete (m_events.find(client.m_pipefd)->second);
-	// 	m_client_pipes.erase(client.m_pipefd);
-	// 	safeClose(client.m_pipefd);
-	// 	client.m_pipefd = -1;
-	// }
-	if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
+	if (client.m_pipefd != -1)
 	{
-		perror("epoll_ctl failed to delete");
+		std::map<int, Client*>::const_iterator it = m_client_pipes.find(client.m_pipefd);
+		if (it != m_client_pipes.end())
+		{
+		epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
+		m_client_pipes.erase(client.m_pipefd);
+		// delete (m_events.find(client.m_pipefd)->second);
+		m_events.erase(client.m_pipefd);
+		safeClose(client.m_pipefd);
+		client.m_pipefd = -1;
+		}
 	}
-	int clientFd = client.getFd();
-	delete (m_events.find(clientFd)->second);
-	m_events.erase(clientFd);
-	m_clients.erase(clientFd);
-	safeClose(clientFd);
+if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
+{
+	perror("epoll_ctl failed to delete");
+}
+int clientFd = client.getFd();
+delete (m_events.find(clientFd)->second);
+m_events.erase(clientFd);
+m_clients.erase(clientFd);
+// shutdown(clientFd, SHUT_RDWR);
+safeClose(clientFd);
+// exit (i);
 }
 
 
@@ -154,8 +160,8 @@ int ConnectionManager::receive(Client& client, int fd)
 	// NOTE: DO SOMETHING HERE that is special to pipe
 	// if (client.m_pipefd == -1)
 	// {
-	    bytes = recv(fd, buffer, SENDSIZE, 0);
-		// std::cout << "[RECV]: from client" << fd << buffer << std::endl;
+	bytes = recv(fd, buffer, SENDSIZE, 0);
+	// std::cout << "[RECV]: from client" << fd << buffer << std::endl;
 	// }
 	// else
 	// {
@@ -229,25 +235,24 @@ bool ConnectionManager::receivePipe(Client& client, int fd)
 	}
 
 	std::vector<char> vec(buffer, buffer + bytes);
-	std::cout << "879asdf8as89dfa8sdf  jaskldjflkasj "<< vec.size() << "\n";
 	client.m_cgi_handler.parse(vec);
 	return (true);
 }
 
 void ConnectionManager::handleCgi(Client& client) { 
-		std::cout << "[CGI] this action is cgi" << std::endl;
-		client.m_pipefd = client.m_cgi_handler.execute();
-		std::cout << "pipe fd = " << client.m_pipefd << "\n";
-			if (client.m_pipefd < 0) {
-				//call the make error function here
-// exit(20);
-			}
-			else {
-			//check what cgi return 
-			std::cerr << "action cgi " << client.m_pipefd;
-			AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
-			m_client_pipes.insert(
-			std::make_pair(client.m_pipefd, &client));
+	std::cout << "[CGI] this action is cgi" << std::endl;
+	client.m_pipefd = client.m_cgi_handler.execute();
+	std::cout << "pipe fd = " << client.m_pipefd << "\n";
+	if (client.m_pipefd < 0) {
+		//call the make error function here
+		// exit(20);
+	}
+	else {
+		//check what cgi return 
+		std::cerr << "action cgi " << client.m_pipefd;
+		AddSocketToEpfd(client.m_pipefd, CGI_PIPE, EPOLLIN);
+		m_client_pipes.insert(
+				std::make_pair(client.m_pipefd, &client));
 	}
 }
 
@@ -274,10 +279,10 @@ void ConnectionManager::receiveClient(Client& client)
 		std::map<HttpStatus, std::string>::const_iterator it = client.getResponse().getStatusCodeMap().find(result.statusCode);
 		std::cout << "result status Code = " << it->second << "\n";
 		std::cout << "target path = " << result.targetPath << "\n";
-			if (result.action == ACTION_EXECUTE_CGI) {
-				handleCgi(client);
-			}
-		
+		if (result.action == ACTION_EXECUTE_CGI) {
+			handleCgi(client);
+		}
+
 	} else if (state == ERROR) {
 		request.printHttpStatus(request.getStatusCode());
 	} else {
@@ -297,12 +302,14 @@ void ConnectionManager::sendClient(Client& client)
 	client.checkCgiState();
 	HttpResponse& response = client.getResponse();
 	size_t size = response.assembleResponse();
-
 	if (size != 0 && response.is_ok_send) {
 		ssize_t n = send(client.getFd(), &response.buffer[0], size, 0);
+	std::cout << "send client = " << size << "\n";
 		response.eraseSendBytes(n);
 		std::cout << "[connection manager] sending data " << n << "\n";
 	}
+	// std::cout << "is finished " << response.is_finished << "\n";
+	// std::cout << "response size " << response.buffer.size() << "\n";
 	// std::cout << "it segefault here" << std::endl;
 
 	// std::cout << response.is_finished<< std::endl;
@@ -315,10 +322,11 @@ void ConnectionManager::sendClient(Client& client)
 			std::cout << "[CONNECTION MANGER] write access log\n";
 			response.setLog(client.getRequest());
 		}
-		
+
 		client.getRequest().removeTmpFile();
 		response.clear();
 		// client.m_cgi_handler.
+		std::cout << "connection " << response.keep_connection << "\n";
 		if (response.keep_connection == 0)
 		{
 			std::cout << "disconnecting from sendClient\n";
@@ -356,11 +364,11 @@ void ConnectionManager::deleteCgi(EventData *data, int fd)
 	std::cout << "[CGI] deleting cgi resources\n";
 	std::cout << "cgi fd " << fd << "\n";
 
-		epoll_ctl(epfd, EPOLL_CTL_DEL,  fd, NULL);
-		delete (data);
-		m_events.erase(fd);
-		m_client_pipes.erase(fd);
-		safeClose(fd);
+	epoll_ctl(epfd, EPOLL_CTL_DEL,  fd, NULL);
+	delete (data);
+	m_events.erase(fd);
+	// m_client_pipes.erase(fd);
+	safeClose(fd);
 }
 
 void ConnectionManager::run()
@@ -378,7 +386,6 @@ void ConnectionManager::run()
 			throw std::runtime_error("epoll() failed");
 		}
 
-		// std::cout << "sir tn\n";
 		for (std::size_t i = 0; i < MAX_EVENTS && ready > 0; ++i)
 		{
 			short events = evlist[i].events;
@@ -402,12 +409,19 @@ void ConnectionManager::run()
 			}
 			if ((events & (EPOLLHUP | EPOLLERR)) && type == CGI_PIPE)
 			{
+				std::map<int, Client*>::iterator it = m_client_pipes.find(fd);
+				if (it == m_client_pipes.end()) {
+					--ready;
+					delete (m_events.find(fd)->second);
+					continue ;
+				}
 				std::vector<char>& c = m_client_pipes.at(fd)->getResponse().buffer;
 				std::cout << "set finished================\n";
 				std::cout << "m_send_size buffer" << c.size() << "\n";
 				if (!receivePipe(*m_client_pipes.at(fd), fd)) {
-					std::string hey = "0\r\n\r\n"	;
-					c.insert(c.end(), hey.begin(), hey.end());
+					Client* client = m_client_pipes.at(fd);
+					client->m_cgi_handler.setCgiResponse();
+					m_client_pipes.erase(fd);
 					deleteCgi(data, fd);
 				}
 
@@ -423,17 +437,14 @@ void ConnectionManager::run()
 					receiveClient(m_clients.find(fd)->second);
 				}
 				else if (type == CLIENT_SOCK && (events & EPOLLOUT)) {
-					// std::cout << fd << "\n";
 					sendClient(m_clients.find(fd)->second);
 				}
 				else if (type == (CGI_PIPE)) {
-					std::cout << "hehehalsdfklasdjflk" << (events & EPOLLIN) << std::endl;
+					std::cout << "normal state\n";
 					// NOTE: something here check if there is client
 					std::map<int, Client*>::iterator it = m_client_pipes.find(fd);
 					if (it != m_client_pipes.end())
 					{
-						// std::cout << m_clients.at(5).m_pipefd << "\n";
-						std::cout << "[IMPORTNAT]fd = " << fd << " " << m_client_pipes.count(fd) << "\n";
 						receivePipe(*it->second, fd);
 					}
 				}

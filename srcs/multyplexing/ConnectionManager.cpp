@@ -167,13 +167,28 @@ void ConnectionManager::disconnect(Client& client)
 	// }
 	if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
 	{
-		perror("epoll_ctl failed to delete");
+		std::map<int, Client*>::const_iterator it = m_client_pipes.find(client.m_pipefd);
+		if (it != m_client_pipes.end())
+		{
+		epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
+		m_client_pipes.erase(client.m_pipefd);
+		// delete (m_events.find(client.m_pipefd)->second);
+		m_events.erase(client.m_pipefd);
+		safeClose(client.m_pipefd);
+		client.m_pipefd = -1;
+		}
 	}
-	int clientFd = client.getFd();
-	delete (m_events.find(clientFd)->second);
-	m_events.erase(clientFd);
-	m_clients.erase(clientFd);
-	safeClose(clientFd);
+if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
+{
+	perror("epoll_ctl failed to delete");
+}
+int clientFd = client.getFd();
+delete (m_events.find(clientFd)->second);
+m_events.erase(clientFd);
+m_clients.erase(clientFd);
+// shutdown(clientFd, SHUT_RDWR);
+safeClose(clientFd);
+// exit (i);
 }
 
 
@@ -336,6 +351,7 @@ void ConnectionManager::sendClient(Client& client)
 		client.getRequest().removeTmpFile();
 		response.clear();
 		// client.m_cgi_handler.
+		std::cout << "connection " << response.keep_connection << "\n";
 		if (response.keep_connection == 0)
 		{
 			std::cout << "[DEBUGGING]:client " << client.getFd() << "closed the connection" << std::endl;

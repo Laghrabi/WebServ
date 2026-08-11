@@ -390,6 +390,7 @@ void CgiHandler::parse(const std::vector<char>& data) {
 	if (!m_ok)
 		return ;
 	std::cout << "=================================my data\n";
+	std::cout << waitForProcess() << "|n\n";
 	write (1, &data[0], data.size());
 	std::cout << "=================================my data\n";
 	m_data.insert(m_data.end(), data.begin(), data.end());

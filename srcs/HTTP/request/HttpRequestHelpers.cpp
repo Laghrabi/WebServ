@@ -139,14 +139,41 @@ void HttpRequest::printHttpStatus(HttpStatus status) {
         case OK:
             std::cout << "Status [200]: OK\n";
             break;
+        case CREATED:
+            std::cout << "Status [201]: Created\n";
+            break;
+        case ACCEPTED:
+            std::cout << "Status [202]: Accepted\n";
+            break;
+        case NO_CONTENT:
+            std::cout << "Status [204]: No Content\n";
+            break;
+        case MULTIPLE_CHOICES:
+            std::cout << "Status [300]: Multiple Choices\n";
+            break;
         case MOVED_PERMANENTLY:
             std::cout << "Status [301]: Moved Permanently\n";
             break;
         case FOUND:
             std::cout << "Status [302]: Found\n";
             break;
+        case SEE_OTHER:
+            std::cout << "Status [303]: See Other\n";
+            break;
+        case NOT_MODIFIED:
+            std::cout << "Status [304]: Not Modified\n";
+            break;
+        case USE_PROXY:
+            std::cout << "Status [305]: Use Proxy\n";
+            break;
+        case UNUSED:
+            std::cout << "Status [306]: (Unused)\n";
+            break;
         case TEMPORARY_REDIRECT:
             std::cout << "Status [307]: Temporary Redirect\n";
+            break;
+        case PERMANENT_REDIRECT:
+            std::cout << "Status [308]: Permanent Redirect\n";
             break;
         case BAD_REQUEST:
             std::cerr << "Error [400]: Bad Request\n";
@@ -160,6 +187,12 @@ void HttpRequest::printHttpStatus(HttpStatus status) {
         case METHOD_NOT_ALLOWED:
             std::cerr << "Error [405]: Method Not Allowed\n";
             break;
+        case REQUEST_TIMEOUT:
+            std::cerr << "Error [408]: Request Timeout\n";
+            break;
+        case CONFLICT:
+            std::cerr << "Error [409]: Conflict\n";
+            break;
         case BODY_LENGTH_REQUIRED:
             std::cerr << "Error [411]: Length Required\n";
             break;
@@ -169,16 +202,31 @@ void HttpRequest::printHttpStatus(HttpStatus status) {
         case URI_TOO_LONG:
             std::cerr << "Error [414]: URI Too Long\n";
             break;
+        case UNSUPPORTED_MEDIA_TYPE:
+            std::cerr << "Error [415]: Unsupported Media Type\n";
+            break;
         case INTERNAL_SERVER_ERROR:
             std::cerr << "Error [500]: Internal Server Error\n";
             break;
         case NOT_IMPLEMENTED:
             std::cerr << "Error [501]: Not Implemented\n";
             break;
+        case BAD_GATEWAY:
+            std::cerr << "Error [502]: Bad Gateway\n";
+            break;
+        case SERVICE_UNAVAILABLE:
+            std::cerr << "Error [503]: Service Unavailable\n";
+            break;
+        case GATEWAY_TIMEOUT:
+            std::cerr << "Error [504]: Gateway Timeout\n";
+            break;
         case HTTP_VERSION_NOT_SUPPORTED:
             std::cerr << "Error [505]: HTTP Version Not Supported\n";
             break;
-            
+        case INSUFFICIENT_STORAGE:
+            std::cerr << "Error [507]: Insufficient Storage\n";
+            break;
+
         default:
             std::cerr << "Error: Unknown HTTP Status Code (" << status << ")\n";
             break;
@@ -269,6 +317,12 @@ bool HttpRequest::openBodyStream() {
         }
     }
     return (true);
+}
+
+void HttpRequest::removeTmpFile(void) {
+	if (!_bodyFilePath.empty()) {
+		remove(_bodyFilePath.c_str());
+	}
 }
 
 void HttpRequest::printBodyContent() const {

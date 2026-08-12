@@ -16,6 +16,10 @@ class Client
         ListeningSocket*    m_listener;
         HttpRequest         m_request;
         HttpResponse        m_response;
+        Cookies             m_cookies;
+
+public:
+
         
       public:
         
@@ -42,6 +46,7 @@ class Client
 
         HttpRequest& getRequest();
         HttpResponse& getResponse();
+        Cookies& getCookies();
 
         void checkCgiState();
 };

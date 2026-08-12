@@ -40,6 +40,7 @@ public:
 	PipeContainer       m_client_pipes;
     ClientContainer     m_clients;
     EventContainer      m_events;
+    SessionManager      m_session;
     int epfd;
 
     void				createListeningSockets();

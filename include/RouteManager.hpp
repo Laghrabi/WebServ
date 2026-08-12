@@ -7,28 +7,13 @@
 
 class HttpRequest;
 
-/**
- * @brief Defines the set of possible actions for the request handler.
- * * Each action corresponds to a specific server response behavior, 
- * ranging from file serving to CGI execution or error reporting.
- */
-
-
-/**
- * @brief Encapsulates the result of the routing process.
- * * Contains the determined action, the physical target path (if applicable),
- * and the HTTP status code for the final response.
- */
-
-
-
 class RouteManager {
 	private:
 		ResourceLocator _locator;
-		std::string _basePath; // if uri is /bin/bash and root is /usr/ /bin/ is location so _basePath = /usr/bin/
-													 // if it is aliased to ur/bin/ so _basePath = /usr/bin/
+		std::string _basePath;
 		std::string _resource;
 		void checkPostPath(const std::string& Path, HttpRequest& request);
+		
 	public:
 		RouteManager();
 		RouteManager(const RouteManager& other);

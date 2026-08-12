@@ -14,6 +14,7 @@ m_writeBuffer(),
 m_listener(listener),
 m_request(serverRange, iport),
 m_response(config),
+m_cookies(),
 m_pipefd(-1),
 m_cgi_handler(m_request, m_response)
 {
@@ -26,6 +27,7 @@ Client::Client(const Client& other):
     m_listener(other.m_listener),
     m_request(other.m_request),
     m_response(other.m_response),
+    m_cookies(other.m_cookies),
 	m_pipefd(other.m_pipefd),
     m_cgi_handler(m_request, m_response)
 {
@@ -102,6 +104,11 @@ HttpRequest& Client::getRequest()
 HttpResponse& Client::getResponse()
 {
     return (m_response);
+}
+
+Cookies& Client::getCookies()
+{
+    return (m_cookies);
 }
 
 void Client::checkCgiState() {

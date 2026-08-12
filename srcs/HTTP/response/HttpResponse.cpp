@@ -97,6 +97,11 @@ void HttpResponse::setHeadersSent(bool sent)
 	headersSent = sent;
 }
 
+void HttpResponse::setbufferBytesSent(int bytes)
+{
+	bufferBytesSent += bytes;
+}
+
 void HttpResponse::eraseSendBytes(size_t bytes)
 {
 	std::vector<char>::iterator vecBegin = buffer.begin();
@@ -217,6 +222,7 @@ void HttpResponse::setLog(const HttpRequest& request)
 	
 	std::string path = request._routeResult.route->getAccessLog();
 	std::string clientEndpoint = request.getClientIPort().getIpStr();
+	std::cout << "[LOGS]: set log" << std::endl;
 	struct stat st;
     if (stat(filePath.c_str(), &st) == 0)
 	{

@@ -7,7 +7,7 @@
 
 
 ConnectionManager::ConnectionManager(const Config& config)
-	: m_config(config)
+	: m_config(config), m_session()
 {
 }
 
@@ -152,7 +152,6 @@ void ConnectionManager::acceptClient(ListeningSocket& listener)
 void ConnectionManager::disconnect(Client& client)
 {
 	std::cout << "[DISCONNECT]: "<< "client " << client.getFd() << " disconnect"<< std::endl;
-	std::cout << client.m_pipefd << "\n";
 
 	client.m_cgi_handler.killProcess();
 
@@ -217,12 +216,10 @@ bool ConnectionManager::receivePipe(Client& client, int fd)
 {
 	char    buffer[SENDSIZE + 1] = {0};
 	ssize_t bytes;
-	// std::cout << "client m_pipefd = " << fd << std::endl;
 
 	bytes = read (fd, buffer, SENDSIZE);
 	if (bytes == 0) {
 		std::cout << "[recieve pipe] 0 byte\n";
-		// exit (100);
 		return (false);
 	}
 	else if (bytes < 0) {
@@ -258,7 +255,8 @@ void ConnectionManager::receiveClient(Client& client)
 {
 	if (receive(client, client.getFd()))
 		return;
-
+	
+	Session *session = NULL;
 	client.getRequest().parse(client.getReadBuffer());
 	int state = client.getRequest().getCurrentState(); 
 	HttpRequest& request = client.getRequest();
@@ -266,6 +264,34 @@ void ConnectionManager::receiveClient(Client& client)
 		std::cout << "[receive]: http request recieved completly" << std::endl; 
 		request.debugPrintHeaders();
 		request.printBodyContent();
+
+		std::string cookieHeader = request.getHeader("cookie");
+		Cookies& cookie = client.getCookies(); 
+
+		if (!cookieHeader.empty())
+		{
+			cookie.parse(cookieHeader);
+		}
+
+		if (cookie.has("session_id"))
+		{
+			std::cout << "[COOKIE]: session_id = " << cookie.get("session_id")<< std::endl;
+		}
+		std::string sessionId;
+
+		if (!cookieHeader.empty() && cookie.has("session_id"))
+		{
+			sessionId = cookie.get("session_id");
+			session = m_session.findSession(sessionId);
+		}
+
+		if (session == NULL)
+		{
+			sessionId = m_session.createSession();
+			session = m_session.findSession(sessionId);
+		}
+		session->visit();
+		std::cout << "[COOKIES AND SESSION MANAGEMET]: number of times this client visit our server: " << session->getVisitCount();
 		RouteResult result = request._routeResult;
 		RouteManager::printRouteAction(result.action);
 		HttpRequest::printHttpStatus(result.statusCode);
@@ -280,9 +306,10 @@ void ConnectionManager::receiveClient(Client& client)
 	} else {
 		return ;
 	}
+
 	HttpResponse& response = client.getResponse();
-	HttpRequestHandler handler(request, response);
-	std::cout << "[DEBUGGING]:" <<request.getStatusCode() << "\n";
+	HttpRequestHandler handler(request, response, session);
+
 	handler.handleRequest();
 	ChangeClientEvent(client.getFd(), EPOLLOUT);
 }
@@ -395,7 +422,7 @@ void ConnectionManager::run()
 			int type = data->type;
 			if (events & (EPOLLERR | EPOLLHUP) && type == CLIENT_SOCK)
 			{
-				std::cout << "client send disconnect epollhub" << std::endl;
+				std::cout << "[DISCONNECT]: client send disconnect epollhub" << std::endl;
 				disconnect(m_clients.find(fd)->second);
 				--ready;
 				continue;
@@ -409,7 +436,6 @@ void ConnectionManager::run()
 					m_events.erase(fd);
 					continue ;
 				}
-				std::cout << (events & EPOLLERR) << "\n";
 				if (!receivePipe(*m_client_pipes.at(fd), fd)) {
 					Client* client = m_client_pipes.at(fd);
 					client->m_cgi_handler.setCgiResponse();

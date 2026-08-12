@@ -85,12 +85,6 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 		}
 
 
-void HttpRequest::removeTmpFile(void) {
-	if (!_bodyFilePath.empty()) {
-		remove(_bodyFilePath.c_str());
-	}
-}
-
 
 /**
  * @brief Destructor.
@@ -337,7 +331,11 @@ bool	HttpRequest::validateHeaders() {
 			_currentState = ERROR;
 			return (false);
 		}
-		_currentState = READING_BODY;
+		if (_contentLength > 0)
+			_currentState = READING_BODY;
+		else
+			_currentState = FINISHED;
+
 	} 
 	else if (itTransferEncoding != _headers.end()) {
 		std::string	teValue = itTransferEncoding->second;
@@ -360,6 +358,7 @@ bool	HttpRequest::validateHeaders() {
     _bufferIndex = 0;
 	RouteManager route_manager;
 	route_manager.processRequest(*this);
+	openBodyStream();
 	if (_routeResult.route->hasMaxBodySize()) {
 		_has_max_body_size = true;
 		_client_max_body_size = _routeResult.route->getMaxBodySize();

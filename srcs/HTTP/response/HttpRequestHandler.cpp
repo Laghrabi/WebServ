@@ -3,6 +3,23 @@
 #include "RouteResult.hpp"
 #include "MimeTypesExt.hpp"
 
+
+HttpRequestHandler::HttpRequestHandler(HttpRequest& req, HttpResponse& res, Session* ses) : request(req), response(res), session(ses) {}
+
+
+HttpRequestHandler::~HttpRequestHandler()
+{}
+
+HttpRequestHandler::HttpRequestHandler(const HttpRequestHandler& other):
+request(other.request), response(other.response), session(other.session)
+{
+	(void) other;
+}
+HttpRequestHandler& HttpRequestHandler::operator=(const HttpRequestHandler& other) {
+	(void) other;
+	return *this;
+}
+
 std::string HttpRequestHandler::checkConnection()
 {
 	std::string connection = request.getHeader("connection");
@@ -20,6 +37,11 @@ std::string HttpRequestHandler::checkConnection()
 
 void HttpRequestHandler::standardHeader(std::vector<char>& buffer , std::string connection)
 {
+	if (session)
+	{
+		std::string session_id = "session_id=" + session->getSessionId(); //+ "; Path=/";
+		response.setHeader("Set-Cookie", session_id, buffer);
+	}
 	response.setHeader("Connection", connection, buffer);
 	response.setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	response.setHeader("server", SERVER_NAME, buffer);
@@ -29,6 +51,7 @@ void HttpRequestHandler::standardHeader(std::vector<char>& buffer , std::string 
 
 void HttpRequestHandler::serveFile()
 {
+	std::cout << "[RESPONSE]: serving file" << std::endl;
 	const RouteResult &result = request._routeResult;
 	const std::string &filePath = result.targetPath;
 	struct stat st;
@@ -48,7 +71,6 @@ void HttpRequestHandler::serveFile()
 		makeError(FORBIDDEN);
 		return;
 	}
-	std::cout << "serving file" << std::endl;
 	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
@@ -94,7 +116,7 @@ void HttpRequestHandler::generateAutoIndex()
 		makeError(FORBIDDEN);
 		return;
 	}
-	std::cout << "generating autoindexing" << std::endl;
+	std::cout << "[RESPONSE]: generating autoindexing" << std::endl;
 	std::string connection = checkConnection();
 	std::string autoIndexHtml = generateAutoIndexHtml(directoryPath);
 	if (autoIndexHtml == "")
@@ -118,6 +140,7 @@ void HttpRequestHandler::makeRedirect()
 	const RouteResult &result = request._routeResult;
 	std::vector<char>& buffer = response.buffer;
 
+	std::cout << "[RESPONSE]: make rediraction" << std::endl;
     std::map<HttpStatus, std::string>::const_iterator it = response.getStatusCodeMap().find(request._routeResult.statusCode);
 	std::string assemble = "HTTP/1.1 " + to_string(it->first) + " " + it->second + "\r\n";
 	response.last_code =  it->first;
@@ -135,7 +158,6 @@ void HttpRequestHandler::makeRedirect()
 	}
 	std::string connection = checkConnection();
 	response.setHeader("Location", result.targetPath, buffer);
-	std::cout << "make rediraction" << std::endl;
 	response.setHeader("Location", result.targetPath, buffer);
 	response.setHeader("Content-Length", "0", buffer);
 	// response.setHeader("Content-Type", );
@@ -162,6 +184,7 @@ std::string HttpRequestHandler::generateErrorPage(HttpStatus code)
 void HttpRequestHandler::makeError(HttpStatus code)
 {
 	response.is_ok_send = true;
+	std::cout << "[RESPONSE]: making error" << std::endl;
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + response.getStatusCodeMap().find(code)->second + "\r\n";
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end()); 
@@ -186,6 +209,7 @@ void HttpRequestHandler::makeError(HttpStatus code)
 		errorHtml = generateErrorPage(code);
 		response.setBodySource(BODY_BUFFER);
 	}
+
 	response.setHeader("Content-Length", to_string(errorHtml.size()), buffer);
 	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);
 	std::string connection = checkConnection();
@@ -212,7 +236,7 @@ void HttpRequestHandler::handleGet()
 {
 	const RouteResult &result = request._routeResult;
 
-	std::cout << "im gonna handle GIT" << std::endl; 
+	std::cout << "[RESPONSE]: handle GIT" << std::endl; 
 	switch (result.action)
 	{
 		case ACTION_SERVE_FILE:
@@ -255,7 +279,7 @@ void HttpRequestHandler::handleDelete()
 			makeError(INTERNAL_SERVER_ERROR);  // 500
 		return;
 	}
-	std::cout << "[DELETE]: delete file " << filePath.c_str();
+	std::cout << "[RESPONSE]: delete file " << filePath.c_str();
 	std::string connection = checkConnection();
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
@@ -269,22 +293,8 @@ void HttpRequestHandler::handleDelete()
 void HttpRequestHandler::handlePost()
 {
     const RouteResult &result = request._routeResult;
-	std::cout << "trying to handle post" << std::endl;
+	std::cout << "[RESPONSE]: post file" << std::endl;
 
-    // {
-	// 	switch (errno)
-	// 	{
-	// 		case ENOSPC:
-	// 			// Disk is full.
-	// 			makeError(INSUFFICIENT_STORAGE);
-	// 			return;
-
-	// 		default:
-	// 			std::cout << "im here" << std::endl;
-	// 			makeError(INTERNAL_SERVER_ERROR);
-	// 			return;
-	// 	}
-    // }
 	if (result.statusCode == CREATED || result.statusCode == OK)
 	{
 		request.clearBodyFilePath();

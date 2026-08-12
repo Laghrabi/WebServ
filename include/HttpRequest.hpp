@@ -72,8 +72,7 @@ class HttpRequest {
         size_t								_bodyBytesWritten;
         RouteResult                         _routeResult;
 
-        void clearBodyFilePath();
-
+        
         HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint);
         HttpRequest(const HttpRequest& other);
         HttpRequest& operator=(const HttpRequest& other);
@@ -109,10 +108,10 @@ class HttpRequest {
         void debugPrintHeaders() const;
 		const Server::IPort& getServerIPort() const;
 		const Server::IPort& getClientIPort() const;
-
-			void removeTmpFile(void);
-};
-
-char	safeToLower(char c);
-
+        void removeTmpFile(void);
+        void clearBodyFilePath();
+    };
+    
+    char	safeToLower(char c);
+    
 #endif

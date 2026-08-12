@@ -4,9 +4,7 @@
 	 * @brief Constructs a new Route Node.
 	 * @param name The URI segment string this node represents.
 	 */
-	RouteNode::RouteNode(const std::string& name) : segmentName(name), config(NULL) {
-		// config = new RouteConfig;
-	}
+	RouteNode::RouteNode(const std::string& name) : segmentName(name), config(NULL) {}
 
 	/**
 	 * @brief Copy constructor for RouteNode, performing a deep copy of the tree.
@@ -28,8 +26,6 @@
 	}
 
 	RouteNode& RouteNode::operator=(const RouteNode& other) {
-
-		// std::cout << "RouteConfig | copy constructor\n" << std::endl;
 		delete config;
 		for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
 			delete it->second;
@@ -53,7 +49,6 @@
 	 * C++98 compliant deletion iterator for safely freeing all allocated child nodes.
 	 */
 	RouteNode::~RouteNode() {
-		// std::cout << "delete\n" << std::endl;
 		delete config;
 		for (std::map<std::string, RouteNode*>::iterator it = children.begin(); it != children.end(); ++it) {
 			delete it->second;

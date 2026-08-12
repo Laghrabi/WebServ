@@ -12,6 +12,7 @@ SRCS := $(wildcard ./srcs/parser/*.cpp) \
 			$(wildcard ./srcs/HTTP/router/*.cpp)\
 			$(wildcard ./srcs/cgi/request/*.cpp)\
 			$(wildcard ./srcs/cgi/execution/*.cpp)\
+			$(wildcard ./srcs/CookiesAndSession/*.cpp)\
 
 
 INCLUDE_DIR = ./include/

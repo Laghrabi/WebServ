@@ -6,7 +6,7 @@
 
 
 ConnectionManager::ConnectionManager(const Config& config)
-	: m_config(config)
+	: m_config(config), m_session()
 {
 }
 
@@ -263,7 +263,8 @@ void ConnectionManager::receiveClient(Client& client)
 {
 	if (receive(client, client.getFd()))
 		return;
-
+	
+	Session *session = NULL;
 	client.getRequest().parse(client.getReadBuffer());
 	int state = client.getRequest().getCurrentState(); 
 	HttpRequest& request = client.getRequest();
@@ -271,6 +272,36 @@ void ConnectionManager::receiveClient(Client& client)
 		std::cout << "[receive]: http request recieved completly" << std::endl; 
 		request.debugPrintHeaders();
 		request.printBodyContent();
+
+		std::string cookieHeader = request.getHeader("cookie");
+		Cookies& cookie = client.getCookies(); 
+
+		if (!cookieHeader.empty())
+		{
+			cookie.parse(cookieHeader);
+			std::cout << "hani dkhalt lehna" << std::endl;
+		}
+
+		if (cookie.has("session_id"))
+		{
+			std::cout << "session_id = " << cookie.get("session_id")<< std::endl;
+		}
+		std::cout << "HELLO"<< std::endl;
+		std::string sessionId;
+
+		if (!cookieHeader.empty() && cookie.has("session_id"))
+		{
+			sessionId = cookie.get("session_id");
+			session = m_session.findSession(sessionId);
+		}
+
+		if (session == NULL)
+		{
+			sessionId = m_session.createSession();
+			session = m_session.findSession(sessionId);
+		}
+		session->visit();
+		std::cout << "number of times this client visit our server: " << session->getVisitCount();
 		RouteResult result = request._routeResult;
 		RouteManager::printRouteAction(result.action);
 		HttpRequest::printHttpStatus(result.statusCode);
@@ -285,9 +316,10 @@ void ConnectionManager::receiveClient(Client& client)
 	} else {
 		return ;
 	}
+
 	HttpResponse& response = client.getResponse();
-	HttpRequestHandler handler(request, response);
-	std::cout << "[DEBUGGING]:" <<request.getStatusCode() << "\n";
+	HttpRequestHandler handler(request, response, session);
+
 	handler.handleRequest();
 	ChangeClientEvent(client.getFd(), EPOLLOUT);
 }

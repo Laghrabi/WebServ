@@ -84,12 +84,6 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 		}
 
 
-void HttpRequest::removeTmpFile(void) {
-	if (!_bodyFilePath.empty()) {
-		remove(_bodyFilePath.c_str());
-	}
-}
-
 
 /**
  * @brief Destructor.

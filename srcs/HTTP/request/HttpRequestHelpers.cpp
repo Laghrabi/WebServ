@@ -249,6 +249,12 @@ bool HttpRequest::openBodyStream() {
     return (true);
 }
 
+void HttpRequest::removeTmpFile(void) {
+	if (!_bodyFilePath.empty()) {
+		remove(_bodyFilePath.c_str());
+	}
+}
+
 void HttpRequest::printBodyContent() const {
     if (_bodyFilePath.empty()) {
         std::cout << "[Debug] No body file generated for this request." << std::endl;

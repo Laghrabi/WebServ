@@ -25,6 +25,7 @@ int main(int argc, char **argv){
 		return (1);
 	}
 	try {
+		std::srand(std::time(NULL));
 		std::vector<token> tokens;
 		if (argc == 2)
 			tokens = lexer::tokenizeFile(argv[1]);

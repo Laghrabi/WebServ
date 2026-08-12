@@ -12,20 +12,14 @@ class HttpRequestHandler
     private:
         HttpRequest& request;
         HttpResponse& response;
+        Session* session;
         
-        HttpRequestHandler(const HttpRequestHandler& other):
-        request(other.request), response(other.response)
-        {
-            (void) other;
-        }
-        HttpRequestHandler& operator=(const HttpRequestHandler& other) {
-            (void) other;
-            return *this;
-        }
+        HttpRequestHandler(const HttpRequestHandler& other);
+        HttpRequestHandler& operator=(const HttpRequestHandler& other);
     public:
         std::string checkConnection();
-        HttpRequestHandler(HttpRequest& req, HttpResponse& res) : request(req), response(res) {}
-        ~HttpRequestHandler() {};
+        HttpRequestHandler(HttpRequest& req, HttpResponse& res, Session* ses);
+        ~HttpRequestHandler();
         void makeError(HttpStatus code);
         void handleRequest();
         void handleGet();

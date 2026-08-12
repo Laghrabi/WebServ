@@ -1,22 +1,7 @@
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
-
-// #include "webserver.hpp"
 #include "HttpRequest.hpp"
-
-// // headers that i need to handle
-// // Content-Length
-// // Content-Type
-// // Date ----> Date: Tue, 25 Jul 2026 18:31:20 GMT
-// // Server
-// // Connection---->keep alive or close
-// // location in case of rediraction
-// //             HTTP/1.1 301 Moved Permanently
-// //             Location: /new-page
-// // Allow
-// //     405 Method Not Allowed
-// //     Allow: GET, POST
 
 #define SENDSIZE 4096
 
@@ -66,10 +51,7 @@ class HttpResponse
 		void setHeadersSent(bool sent);
 		void eraseSendBytes(size_t bytes);
 
-		void setbufferBytesSent(int bytes)
-		{
-			bufferBytesSent += bytes;
-		}
+		void setbufferBytesSent(int bytes);
 
 		bool getHeadersSent() const;
 		int getBufferBytesSent() const;

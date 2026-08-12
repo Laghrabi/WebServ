@@ -2,7 +2,7 @@
 #include "RouteManager.hpp"
 
 HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-	_contentLength(0),  _chunkedSize(0), _server(NULL), _bodyBytesWritten(0){}
+	_contentLength(0),  _chunkedSize(0), _server(NULL), _has_max_body_size(false), _bodyBytesWritten(0){}
 
 	/**
 	 * @brief Default constructor.
@@ -11,7 +11,7 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 	 * to READING_REQUEST_LINE and the buffer index to 0.
 	 */
 	HttpRequest::HttpRequest(const Config::ServerRange& serverRange, const Server::IPort& clientEndPoint) : _statusCode(OK), _currentState(READING_REQUEST_LINE), _bufferIndex(0),
-	_contentLength(0),  _chunkedSize(0), _server(NULL), _serverRange(serverRange), _clientEndPoint(clientEndPoint), _bodyBytesWritten(0) {}
+	_contentLength(0),  _chunkedSize(0), _server(NULL), _serverRange(serverRange), _clientEndPoint(clientEndPoint),_has_max_body_size(false), _bodyBytesWritten(0){}
 
 	/**
 	 * @brief Copy constructor for HttpRequest.
@@ -38,13 +38,13 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 		_contentLength(other._contentLength),
 		_chunkedSize(other._chunkedSize),
 		_body(other._body),
-		// _client_max_body_size(other._client_max_body_size),
 		_server(other._server),
 		_serverRange(other._serverRange),
 		_bodyFilePath(other._bodyFilePath),
 		_clientEndPoint(other._clientEndPoint),
+		_has_max_body_size(other._has_max_body_size),
 		_bodyBytesWritten(other._bodyBytesWritten),
-		_routeResult(other._routeResult){}
+		_routeResult(other._routeResult) {}
 
 		/**
 		 * @brief Copy assignment operator for HttpRequest.
@@ -77,6 +77,7 @@ HttpRequest::HttpRequest() : _statusCode(OK), _currentState(READING_REQUEST_LINE
 				_serverRange = other._serverRange;
 				_clientEndPoint = other._clientEndPoint;
 				_bodyFilePath = other._bodyFilePath;
+				_has_max_body_size = other._has_max_body_size;
 				_bodyBytesWritten = other._bodyBytesWritten;
 				_routeResult = other._routeResult;
 			}
@@ -359,6 +360,10 @@ bool	HttpRequest::validateHeaders() {
     _bufferIndex = 0;
 	RouteManager route_manager;
 	route_manager.processRequest(*this);
+	if (_routeResult.route->hasMaxBodySize()) {
+		_has_max_body_size = true;
+		_client_max_body_size = _routeResult.route->getMaxBodySize();
+	}
 	return (true);
 }
 
@@ -378,6 +383,11 @@ bool	HttpRequest::parseBody()
 		_currentState = FINISHED;
 		return (true);
 	} else {
+		if (_has_max_body_size && _contentLength > _client_max_body_size) {
+			_currentState = ERROR;
+			_statusCode = PAYLOAD_TOO_LARGE;
+			return (false);
+		}
 		if (!openBodyStream())
         	return (false); 
 
@@ -385,11 +395,15 @@ bool	HttpRequest::parseBody()
 		size_t	bytesNeeded = _contentLength - _bodyBytesWritten;
 		size_t bytesToWrite = std::min(avaiBytes, bytesNeeded);
 
-		_bodyStream.write(_savedData.data() + _bufferIndex, bytesToWrite);
+		_bodyStream.write(&_savedData[_bufferIndex] + _bufferIndex, bytesToWrite);
 		if (_bodyStream.fail()) {
+			if (errno == ENOSPC || errno == EDQUOT) 
+        		_statusCode = INSUFFICIENT_STORAGE;
+			else 
+        		_statusCode = INTERNAL_SERVER_ERROR;
+
 			_bodyStream.close();
 			std::remove(_bodyFilePath.c_str());
-            _statusCode = INTERNAL_SERVER_ERROR;
             _currentState = ERROR;
             return (false);
         }
@@ -450,6 +464,24 @@ bool HttpRequest::parseChunkSize() {
 		_currentState = ERROR;
 		return (false);
 	} else if (_chunkedSize != 0) {
+		if (_has_max_body_size && _chunkedSize > _client_max_body_size) {
+        	if (_bodyStream.is_open()) {
+            	_bodyStream.close();
+                std::remove(_bodyFilePath.c_str());
+            }
+            _statusCode = PAYLOAD_TOO_LARGE;
+            _currentState = ERROR;
+            return (false);
+        }
+        if (_has_max_body_size && _bodyBytesWritten + _chunkedSize > _client_max_body_size) {
+            if (_bodyStream.is_open()) {
+                _bodyStream.close();
+                std::remove(_bodyFilePath.c_str());
+            }
+            _statusCode = PAYLOAD_TOO_LARGE;
+            _currentState = ERROR;
+            return (false);
+        }
 		_currentState = READING_CHUNK_DATA;
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);
@@ -486,12 +518,26 @@ bool	HttpRequest::parseChunkData() {
 
 	if (!openBodyStream())
         return false;
-		
-	_bodyStream.write(_savedData.data() + _bufferIndex, _chunkedSize);
+	
+	if (_has_max_body_size && _bodyBytesWritten + _chunkedSize > _client_max_body_size) {
+        if (_bodyStream.is_open()) {
+            _bodyStream.close();
+            std::remove(_bodyFilePath.c_str());
+        }
+        _statusCode = PAYLOAD_TOO_LARGE;
+        _currentState = ERROR;
+        return (false);
+    }
+
+	_bodyStream.write(&_savedData[_bufferIndex], _chunkedSize);
 	if (_bodyStream.fail()) {
-        _bodyStream.close();
-        std::remove(_bodyFilePath.c_str());
-        _statusCode = INTERNAL_SERVER_ERROR;
+		if (errno == ENOSPC || errno == EDQUOT) 
+        	_statusCode = INSUFFICIENT_STORAGE;
+		else 
+        	_statusCode = INTERNAL_SERVER_ERROR;
+
+		_bodyStream.close();
+		std::remove(_bodyFilePath.c_str());
         _currentState = ERROR;
         return (false);
     }

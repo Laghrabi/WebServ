@@ -32,9 +32,11 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 	//location /etc
 
 	if (!base_path.empty()) {
-		if (base_path.length() == 1 || base_path.length() == uri.length()) {
+		if (base_path.length() == 1) {
 			resource = uri;
 		}
+		else if (base_path.length() == uri.length())
+			resource = "";
 		else {
 			resource = uri.substr(base_path.length() + 1);
 		}

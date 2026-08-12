@@ -42,7 +42,18 @@ curl -i -X GET http://localhost:[PORT]/
 >* [HTTP Status Codes](https://umbraco.com/knowledge-base/http-status-codes/)
 >* [Hypertext Transfer Protocol -- HTTP/1.0](https://datatracker.ietf.org/doc/html/rfc1945)
 >* [Hypertext Transfer Protocol -- HTTP/1.1](https://datatracker.ietf.org/doc/html/rfc2616)
-#### Networking
 
+#### Networking
+>* [Linux programing interface](https://man7.org/tlpi/)
 >* [Beej's Guide to Network Programming](https://beej.us/guide/bgnet/)
+
 #### CGI
+>* [rfc cgi](https://datatracker.ietf.org/doc/html/rfc3875)
+>* Apache server
+
+#### CONFIG
+>* [nginx config](https://nginx.org/en/docs/beginners_guide.html)
+>* [nginx](digital ocean)
+
+### AI USAGE
+AI was used as a learning and review tool, not as a code generator. All code in this project was written by hand. except for  generating some html error pages and some tests

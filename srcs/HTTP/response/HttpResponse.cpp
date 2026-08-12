@@ -182,6 +182,7 @@ size_t HttpResponse::assembleResponse() {
 			buf[SENDSIZE] = 0;
 			fileBody.read(buf, SENDSIZE);
 			size_t size = fileBody.gcount();
+			std::cout << size << "\n";
 			if (size > 0)
 				copyArrayToVec(buf, size, buffer);
 		}
@@ -192,13 +193,62 @@ size_t HttpResponse::assembleResponse() {
 	return buffer.size() < SENDSIZE ? buffer.size() : SENDSIZE;
 }
 
+std::string HttpResponse::generateError(HttpStatus code)
+{
+    std::string message = getStatusCodeMap().find(code)->second;
+
+    return "<!DOCTYPE html>\n"
+           "<html>\n"
+           "<head>\n"
+           "    <title>" + to_string(code) + " " + message + "</title>\n"
+           "</head>\n"
+           "<body>\n"
+           "    <h1>" + to_string(code) + " " + message + "</h1>\n"
+           "    <hr>\n"
+           "    <p>1337 Webserver</p>\n"
+           "</body>\n"
+           "</html>\n";
+}
 void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 {
+	std::cout << "===================================================== more than once ================\n";
 	is_ok_send = true;
 	std::cout << "[CGI]: making error for the CGI" << std::endl;
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + getStatusCodeMap().find(code)->second + "\r\n";
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end());
+	std::string errorHtml;
 	setBodySource(BODY_BUFFER);
+	const Server *server = request.getServer();
+	if (server)
+	{
+		errorHtml = request.getServer()->getErrorPage(code);
+		FileStatus file(errorHtml);
+		if (errorHtml == "" || file.isDir() || !file.exist())
+		{
+			errorHtml = generateError(code);
+			bodySource = BODY_BUFFER;
+		}
+		else {
+			bodySource = BODY_FILE;
+			fileBody.open(errorHtml.c_str());
+		}
+	}
+	else {
+			errorHtml = generateError(code);
+			bodySource = BODY_BUFFER;
+	}
+
+	if (getBodySource() == BODY_BUFFER)
+	{
+		setHeader("Content-Length", to_string(errorHtml.size()), buffer);
+	}
+	else 
+	{
+		struct stat st;
+		stat(errorHtml.c_str(), &st);
+		setHeader("Content-Length", to_string(st.st_size), buffer);
+	}
+
 	std::string connection = request.getHeader("connection");
 	keep_connection = 1;
 	if (connection == "close")
@@ -208,13 +258,20 @@ void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 	else {
 		connection = "keep-alive";
 	}
+	setHeader("Content-type", "text/html", buffer);
 	setHeader("Connection", connection, buffer);
 	setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	setHeader("server", SERVER_NAME, buffer);
-	setHeader("Content-Length", "0", buffer);
+	last_code = code;
 	std::string newline("\r\n");
 	buffer.insert(buffer.end(), newline.begin(), newline.end());
-	last_code = code;
+	if (getBodySource() == BODY_BUFFER)
+	{
+		buffer.insert(buffer.end(), errorHtml.begin(), errorHtml.end());
+	}
+	is_finished = true;
+	is_ok_send = true;
+	headersSent = false;
 }
 
 void HttpResponse::setLog(const HttpRequest& request)
@@ -259,7 +316,7 @@ void HttpResponse::init()
 	statusCodeMap.insert(std::make_pair(TEMPORARY_REDIRECT, "Temporary Redirect"));
 	statusCodeMap.insert(std::make_pair(PERMANENT_REDIRECT, "Permanent Redirect"));
 
-	// 4xx Client Errors
+	// 4xx Client rs
 	statusCodeMap.insert(std::make_pair(BAD_REQUEST, "Bad Request"));
 	statusCodeMap.insert(std::make_pair(FORBIDDEN, "Forbidden"));
 	statusCodeMap.insert(std::make_pair(NOT_FOUND, "Not Found"));

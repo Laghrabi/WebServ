@@ -3,10 +3,10 @@
 echo -n > file.c
 echo -e "Content-Type: text/html\n"
 
-export DOCKER_HOST='unix:///run/user/102540/docker.sock'
+export DOCKER_HOST='unix:///run/user/102522/docker.sock'
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-export USER=hsacr
-export HOME=/home/hsacr
+export USER=zfarouk
+export HOME=/home/zfarouk
 
 
 while read -r line

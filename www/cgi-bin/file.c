@@ -1,17 +1,16 @@
 #include <stdio.h>
 
 int main(void) {
-<<<<<<< HEAD
-int a = 2;
-int b = a + 2;
-printf("hello world !!! %d\n", b);
-}
-
-=======
-printf("hello    bik\n");
-system("cat file.c");
-
+printf("sir tpushi alsdfjkladjfn");
+exit(20);
+return (0);
 }
 
 
->>>>>>> origin/main
+
+
+
+
+
+
+

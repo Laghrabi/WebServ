@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
+<<<<<<< HEAD
+=======
 echo -n "Content-Type: text/html"
+>>>>>>> origin/main
 sleep 2
 
 echo -n "data data"

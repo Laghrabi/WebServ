@@ -1,5 +1,6 @@
 #include "ConnectionManager.hpp"
 #include "HttpResponse.hpp"
+#include "webserver.hpp"
 #include <cerrno>
 #include <cstdio>
 #include <sys/epoll.h>
@@ -27,11 +28,15 @@ ConnectionManager::~ConnectionManager()
 	}
 	for (ClientContainer::iterator it = m_clients.begin(); it != m_clients.end(); it++)
 	{
+		if (it->second.m_pipefd != -1) {
+			it->second.m_cgi_handler.killProcess();
+			safeClose(it->second.m_pipefd);
+		}
 		if (epoll_ctl(epfd, EPOLL_CTL_DEL,  it->first, NULL))
 		{
 			perror("epoll_ctl failed to delete");
 		}
-		close(it->first);
+		safeClose (it->first);
 	}
 	for (PipeContainer::iterator it = m_client_pipes.begin(); it != m_client_pipes.end(); it++)
 	{
@@ -39,8 +44,10 @@ ConnectionManager::~ConnectionManager()
 		{
 			perror("epoll_ctl failed to delete");
 		}
-		close(it->first);
+		safeClose(it->first);
 	}
+	if (epfd != -1)
+		safeClose(epfd);
 }
 
 void ConnectionManager::AddSocketToEpfd(int fd, SockType type, uint32_t event)
@@ -151,44 +158,15 @@ void ConnectionManager::disconnect(Client& client)
 
 	handleCgiDeath(client.m_pipefd);
 
-	// if (client.m_pipefd != -1)
-	// {
-	// 	std::cout << "erase cgi fd from m_client_pipes\n";
-	// 	std::map<int, Client*>::const_iterator it = m_client_pipes.find(client.m_pipefd);
-	// 	if (it != m_client_pipes.end())
-	// 	{
-	// 	epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
-	// 	m_client_pipes.erase(client.m_pipefd);
-	// 	// delete (m_events.find(client.m_pipefd)->second);
-	// 	// m_events.erase(client.m_pipefd);
-	// 	safeClose(client.m_pipefd);
-	// 	client.m_pipefd = -1;
-	// 	}
-	// }
 	if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
 	{
-		std::map<int, Client*>::const_iterator it = m_client_pipes.find(client.m_pipefd);
-		if (it != m_client_pipes.end())
-		{
-		epoll_ctl(epfd, EPOLL_CTL_DEL,  client.m_pipefd, NULL);
-		m_client_pipes.erase(client.m_pipefd);
-		// delete (m_events.find(client.m_pipefd)->second);
-		m_events.erase(client.m_pipefd);
-		safeClose(client.m_pipefd);
-		client.m_pipefd = -1;
-		}
+		perror("epoll_ctl failed to delete");
 	}
-if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
-{
-	perror("epoll_ctl failed to delete");
-}
-int clientFd = client.getFd();
-delete (m_events.find(clientFd)->second);
-m_events.erase(clientFd);
-m_clients.erase(clientFd);
-// shutdown(clientFd, SHUT_RDWR);
-safeClose(clientFd);
-// exit (i);
+	int clientFd = client.getFd();
+	delete (m_events.find(clientFd)->second);
+	m_events.erase(clientFd);
+	m_clients.erase(clientFd);
+	safeClose(clientFd);
 }
 
 
@@ -350,8 +328,6 @@ void ConnectionManager::sendClient(Client& client)
 
 		client.getRequest().removeTmpFile();
 		response.clear();
-		// client.m_cgi_handler.
-		std::cout << "connection " << response.keep_connection << "\n";
 		if (response.keep_connection == 0)
 		{
 			std::cout << "[DEBUGGING]:client " << client.getFd() << "closed the connection" << std::endl;
@@ -374,14 +350,11 @@ void ConnectionManager::sendClient(Client& client)
 
 void ConnectionManager::deleteCgi(EventData *data, int fd)
 {
-	// client.checkCgiState();
 	std::cout << "[CGI] deleting cgi resources\n";
-	std::cout << "[DEBUGGING]cgi fd " << fd << "\n";
 
 	epoll_ctl(epfd, EPOLL_CTL_DEL,  fd, NULL);
 	delete (data);
 	m_events.erase(fd);
-	// m_client_pipes.erase(fd);
 	safeClose(fd);
 }
 

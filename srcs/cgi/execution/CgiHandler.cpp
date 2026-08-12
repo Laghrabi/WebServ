@@ -275,11 +275,10 @@ void CgiHandler::checkHeader(const std::string& header) {
 	}
 
 	bool is_cgi_field = isCgiField(field_name, field_value);
-	if (!is_cgi_field || (is_cgi_field && field_name != "Status")) {
+	if (!is_cgi_field || (is_cgi_field && !compare_header(field_name, "status"))) {
 		std::cout << "[CGI] insert a new header: [" << field_name << "]\n";
 		VecIter end = m_send_buffer.end();
 		m_send_buffer.insert(end, header.begin(), header.end());
-		// std::cout << "[CGI] appending \\r\\n to the header to put in in buffer send\n";
 		appendStringToVec(m_send_buffer, m_send_buffer.end(), "\r\n");
 	}
 }
@@ -389,10 +388,6 @@ void CgiHandler::parse(const std::vector<char>& data) {
 	m_last_read = std::time(NULL);
 	if (!m_ok)
 		return ;
-	std::cout << "=================================my data\n";
-	std::cout << waitForProcess() << "|n\n";
-	write (1, &data[0], data.size());
-	std::cout << "=================================my data\n";
 	m_data.insert(m_data.end(), data.begin(), data.end());
 	if (!m_reading_body) {
 		while (true){

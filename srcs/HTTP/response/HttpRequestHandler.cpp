@@ -94,14 +94,10 @@ std::string HttpRequestHandler::generateAutoIndexHtml(const std::string &directo
 
 	struct dirent* l;
 	std::string html;
+	std::string parent = request.getRouteUri();
 
 	while ((l = readdir(p))) {
-		if (std::string(l->d_name) == "." || std::string(l->d_name) == "..") {
-		html += "<a href=\"./" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
-	
-    		continue;
-				}
-		html += "<a href=\"" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
+		html += "<a href=\"" + parent + "/" + std::string(l->d_name) + "\">" + std::string(l->d_name) + "</a><br>\n";
 	}
 	closedir(p);
 	return html;
@@ -223,7 +219,7 @@ void HttpRequestHandler::makeError(HttpStatus code)
 		++it)
 		{
 			if (!methods.empty())
-			methods += ", ";
+				methods += ", ";
 			methods += *it;
 		}
 		response.setHeader("Allow", methods, buffer);

@@ -347,7 +347,6 @@ void ConnectionManager::sendClient(Client& client)
 	}
 	if (response.is_finished && response.buffer.empty())
 	{
-		std::cout << "[DEBUGGING]: cgi request finished\n";
 		if (client.getRequest().getCurrentState() == FINISHED) {
 			std::cout << "[SEND] write access log\n";
 			response.setLog(client.getRequest());

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>403</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+
+<style>
+body{
+margin:0;
+background:#120000;
+overflow:hidden;
+font-family:Orbitron,sans-serif;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.laser{
+position:absolute;
+width:140%;
+height:3px;
+background:#ff3333;
+left:-20%;
+animation:scan 4s linear infinite;
+box-shadow:0 0 15px red;
+}
+
+.laser:nth-child(1){top:20%;}
+.laser:nth-child(2){top:45%;animation-delay:1s;}
+.laser:nth-child(3){top:70%;animation-delay:2s;}
+
+.box{
+position:relative;
+text-align:center;
+color:white;
+}
+
+.lock{
+font-size:5rem;
+}
+
+h1{
+margin:0;
+font-size:10rem;
+color:#ff5555;
+}
+
+.leet{
+position:fixed;
+bottom:25px;
+left:50%;
+transform:translateX(-50%);
+font-size:3rem;
+color:#00d000;
+letter-spacing:.3em;
+}
+
+@keyframes scan{
+from{transform:translateX(-100%);}
+to{transform:translateX(100%);}
+}
+</style>
+</head>
+
+<body>
+
+<div class="laser"></div>
+<div class="laser"></div>
+<div class="laser"></div>
+
+<div class="box">
+<div class="lock">🔒</div>
+<h1>403</h1>
+<p>ACCESS FORBIDDEN</p>
+</div>
+
+<div class="leet">1337</div>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<title>505</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+margin:0;
+background:#120018;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+font-family:Orbitron,sans-serif;
+overflow:hidden;
+}
+
+.split{
+position:absolute;
+left:50%;
+top:0;
+width:3px;
+height:100%;
+background:#a855f7;
+}
+
+.left,.right{
+position:absolute;
+top:50%;
+transform:translateY(-50%);
+font-size:2rem;
+color:white;
+}
+
+.left{left:20%;}
+.right{right:20%;}
+
+.center{
+text-align:center;
+color:#d8b4fe;
+}
+
+h1{
+font-size:9rem;
+margin:0;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="split"></div>
+
+<div class="left">HTTP/1.1</div>
+
+<div class="right">HTTP/3</div>
+
+<div class="center">
+
+<h1>505</h1>
+
+<p>HTTP Version Not Supported</p>
+
+</div>
+
+</body>
+</html>

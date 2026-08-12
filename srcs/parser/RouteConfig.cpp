@@ -75,7 +75,6 @@ void RouteConfig::parseRedirection(ContIter& begin) {
 	ss << begin->value;
 	int tmp; ss>>tmp;
 	m_redirect.second.first = (HttpStatus)tmp;
-	std::cout << "redirection " << m_redirect.first << "\n";
 	if (!RedirectCode(m_redirect.second.first)) {
 		throw (ParseConfig::ConfigExcept("invalid redirect code", begin->line));
 	}

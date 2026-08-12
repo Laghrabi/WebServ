@@ -91,7 +91,6 @@ int CgiHandler::waitForProcess() {
 		std::cout << "[CGI] process terminate " << m_cgi_script << "\n";
 	}
 	else if (pid < 0) {
-		exit (20);
 	}
 	return (pid);
 }

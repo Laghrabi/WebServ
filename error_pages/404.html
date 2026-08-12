@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>404</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+
+<style>
+body{
+margin:0;
+background:black;
+overflow:hidden;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+font-family:Orbitron,sans-serif;
+}
+
+canvas{
+position:fixed;
+inset:0;
+}
+
+.scan{
+position:fixed;
+inset:0;
+background:repeating-linear-gradient(
+to bottom,
+rgba(255,255,255,.04) 0 2px,
+transparent 2px 4px
+);
+pointer-events:none;
+}
+
+.box{
+position:relative;
+text-align:center;
+z-index:2;
+}
+
+h1{
+font-size:11rem;
+margin:0;
+color:white;
+text-shadow:-2px 0 red,2px 0 cyan;
+}
+
+p{
+color:white;
+font-size:2rem;
+}
+
+.leet{
+position:fixed;
+bottom:25px;
+left:50%;
+transform:translateX(-50%);
+font-size:3rem;
+color:#00d000;
+letter-spacing:.3em;
+z-index:2;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="tv"></canvas>
+<div class="scan"></div>
+
+<div class="box">
+<h1>404</h1>
+<p>NOT FOUND</p>
+</div>
+
+<div class="leet">1337</div>
+
+<script>
+const c=document.getElementById("tv");
+const x=c.getContext("2d");
+
+function r(){
+c.width=innerWidth;
+c.height=innerHeight;
+}
+onresize=r;
+r();
+
+(function d(){
+let i=x.createImageData(c.width,c.height);
+for(let p=0;p<i.data.length;p+=4){
+let v=Math.random()*255;
+i.data[p]=v;
+i.data[p+1]=v;
+i.data[p+2]=v;
+i.data[p+3]=255;
+}
+x.putImageData(i,0,0);
+x.fillStyle="rgba(0,0,0,.45)";
+x.fillRect(0,0,c.width,c.height);
+requestAnimationFrame(d);
+})();
+</script>
+
+</body>
+</html>

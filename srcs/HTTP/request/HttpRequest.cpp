@@ -331,7 +331,11 @@ bool	HttpRequest::validateHeaders() {
 			_currentState = ERROR;
 			return (false);
 		}
-		_currentState = READING_BODY;
+		if (_contentLength > 0)
+			_currentState = READING_BODY;
+		else
+			_currentState = FINISHED;
+
 	} 
 	else if (itTransferEncoding != _headers.end()) {
 		std::string	teValue = itTransferEncoding->second;
@@ -354,6 +358,7 @@ bool	HttpRequest::validateHeaders() {
     _bufferIndex = 0;
 	RouteManager route_manager;
 	route_manager.processRequest(*this);
+	openBodyStream();
 	if (_routeResult.route->hasMaxBodySize()) {
 		_has_max_body_size = true;
 		_client_max_body_size = _routeResult.route->getMaxBodySize();
@@ -423,6 +428,7 @@ bool	HttpRequest::parseBody()
  * @return true if the size was successfully parsed, false otherwise (or if data is incomplete).
  */
 bool HttpRequest::parseChunkSize() {
+	std::cout << "HEEEREEEEE<<<<<<<<<<<<<<<<<<\n";
 	const std::string	crlf = "\r\n";
 
 	std::vector<char>::iterator it = std::search(
@@ -483,6 +489,7 @@ bool HttpRequest::parseChunkSize() {
 		if (_bodyStream.is_open()) {
             _bodyStream.close();
         }
+		std::cout << "##################################\n";
 		_currentState = READING_TRAILERS;
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);

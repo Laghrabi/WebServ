@@ -221,7 +221,7 @@ std::string HttpRequest::generateSecureFileName(const std::string& directory, co
  * @return true if the stream is open or successfully opened, false otherwise.
  */
 bool HttpRequest::openBodyStream() {
-    // std::cout << "openBodyStream()\n";
+    std::cout << "openBodyStream()\n";
     if (!_bodyStream.is_open()) {
         if (_routeResult.action != ACTION_ERROR && _routeResult.action != ACTION_EXECUTE_CGI && _method == "POST") {
              

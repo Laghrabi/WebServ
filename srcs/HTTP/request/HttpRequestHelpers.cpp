@@ -221,12 +221,34 @@ std::string HttpRequest::generateSecureFileName(const std::string& directory, co
  * @return true if the stream is open or successfully opened, false otherwise.
  */
 bool HttpRequest::openBodyStream() {
+    // std::cout << "openBodyStream()\n";
     if (!_bodyStream.is_open()) {
         if (_routeResult.action != ACTION_ERROR && _routeResult.action != ACTION_EXECUTE_CGI && _method == "POST") {
-            std::cout << "helllooo" << std::endl; 
+             
             _bodyStream.open(_routeResult.targetPath.c_str(), std::ios_base::out | std::ios_base::binary);
+            if (!_bodyStream.is_open()) 
+            {
+                 if (errno == ENOENT) 
+                {
+                    _routeResult.action = ACTION_ERROR;
+                    _routeResult.statusCode = CONFLICT;
+                    _routeResult.targetPath = "";
+                }
+                else if (errno == EACCES || errno == EISDIR) 
+                {
+                    _routeResult.action = ACTION_ERROR;
+                    _routeResult.statusCode = FORBIDDEN;
+                    _routeResult.targetPath = "";
+                }
+                else 
+                {
+                    _routeResult.action = ACTION_ERROR;
+                    _routeResult.statusCode = INTERNAL_SERVER_ERROR;
+                    _routeResult.targetPath = "";
+                }
+                _bodyStream.clear();
+            } 
             _bodyFilePath = _routeResult.targetPath;
-            std::cout << "open file: " << _routeResult.targetPath.c_str() << "\n";
         }
         if (!_bodyStream.is_open()) {
             _bodyFilePath = generateSecureFileName("/tmp/", ".bin");

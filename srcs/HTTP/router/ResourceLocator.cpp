@@ -20,38 +20,30 @@ ResourceLocator::~ResourceLocator() {}
  * * Ensures proper concatenation of the root and URI segments.
  */
 
-// void buildRoot(std::string& path, const std::string& root) {
-// 	;
-// }
-//
-// void buildAlias(std::string& path, const std::string& location, const std::string& alias) {
-// 	;
-// }
-
 std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::string& base_path, std::string& resource) const {
 	std::string rootPath = "";
 
 	const RouteConfig* route = request._routeResult.route;
 	std::string uri = request.getRouteUri();
 
-	bool base_path_slash = false;
-
 	const Location* test = dynamic_cast<const Location*>(route);
 
+	//uri "/etc"
+	//location /etc
+
 	if (!base_path.empty()) {
-		if (base_path.at(0) == '/')
-			resource = uri.substr(base_path.length());
-		else
+		if (base_path.length() == 1 || base_path.length() == uri.length()) {
+			resource = uri;
+		}
+		else {
 			resource = uri.substr(base_path.length() + 1);
+		}
 	}
 	std::cout << "RESOURCE=" << resource << std::endl;
 	if (test) {
 		if (!test->getAlias().empty()) {
 			base_path = test->getAlias();
-			base_path_slash = base_path.at(base_path.length() - 1) == '/';
-			if (base_path_slash)
-				return (base_path + resource);
-			return (base_path + "/" + resource);
+			return (joinPaths(base_path, resource));
 		}
 		else {
 			// base_path.insert(0, rootPath);
@@ -66,20 +58,7 @@ std::string ResourceLocator::buildPhysicalPath(const HttpRequest& request, std::
 		base_path.insert(0, rootPath);
 	}
 
-
-	bool rootEndsWithSlash = (rootPath[rootPath.length() - 1] == '/');
-	bool uriStartsWithSlash = (!uri.empty() && uri[0] == '/');
-
-	if (rootEndsWithSlash && uriStartsWithSlash)
-	{
-		return (rootPath + uri.substr(1));
-	}
-	else if (!rootEndsWithSlash && !uriStartsWithSlash) {
-		base_path = rootPath;
-		return (rootPath + "/" + uri);
-	}
-
-	return (rootPath + uri);
+	return (joinPaths(rootPath, uri));
 }
 
 /**

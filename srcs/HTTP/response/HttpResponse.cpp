@@ -211,6 +211,7 @@ void HttpResponse::makeErrorCgi(HttpStatus code, const HttpRequest& request)
 	setHeader("Connection", connection, buffer);
 	setHeader("Date", HttpResponse::getCurrentDate(), buffer);
 	setHeader("server", SERVER_NAME, buffer);
+	setHeader("Content-Length", "0", buffer);
 	std::string newline("\r\n");
 	buffer.insert(buffer.end(), newline.begin(), newline.end());
 	last_code = code;

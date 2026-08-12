@@ -79,12 +79,13 @@ int safeClose(int fd);
 #include "Cookies.hpp"
 #include "SessionManager.hpp"
 
-std::string to_string(int num);
+
+std::string to_string(std::size_t num);
 void copyArrayToVec(char* first, std::size_t n, std::vector<char>& vec);
 bool compare_header(const std::string& h1, const std::string& h2);
 
 #define DEFAULT_ADDR 0
-#define DEFAULT_PORT 80
+#define DEFAULT_PORT 8000
 
 #define SERVER_NAME "1337-webserver"
 

@@ -48,6 +48,8 @@ class HttpRequest {
         std::ofstream                       _bodyStream;
         std::string                         _bodyFilePath;
         Server::IPort                       _clientEndPoint;
+        bool                                _has_max_body_size;
+        size_t                              _client_max_body_size;
 
         HttpRequest();
         bool	parseRequestLine();

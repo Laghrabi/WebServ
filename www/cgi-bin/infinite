@@ -1,0 +1,9 @@
+#!/bin/bash
+
+echo $'Content-Type: text/html\r\n\r\n'
+
+for (( i=0; $i<100; i++ ))
+do
+	echo hey
+done
+exit 2

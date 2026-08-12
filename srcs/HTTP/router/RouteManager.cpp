@@ -36,6 +36,7 @@ bool RouteManager::isCgi(const std::vector<std::string>& script_path, RouteResul
 
 	UriContConstIter it = script_path.begin();
 	for (; it != script_path.end(); ++it) {
+		std::cout << "hey akljsdflkajsdlkf " << *it << "\n";
 		test_path += "/" + *it;
 		result.cgiInfo.scriptName += "/" + *it;
 		status.set(test_path);
@@ -69,6 +70,10 @@ void RouteManager::checkPostPath(const std::string& Path, HttpRequest& request)
 	HttpStatus status = CREATED;
 	if (stat(Path.c_str(), &st) == 0)
 	{
+		if (S_ISDIR(st.st_mode)) {
+			setResult(FORBIDDEN, ACTION_ERROR, "", _routeResult);
+			return;
+		}
 		if (!S_ISREG(st.st_mode))
 		{
 			setResult(CONFLICT, ACTION_ERROR, "", _routeResult);
@@ -81,6 +86,8 @@ void RouteManager::checkPostPath(const std::string& Path, HttpRequest& request)
 		}
 		status = OK;
 	}
+
+	std::cout << "PATH=" << Path << std::endl;
 	setResult(status, ACTION_UPLOAD_FILE, Path, _routeResult);
 }
 
@@ -98,19 +105,12 @@ void RouteManager::processRequest(HttpRequest& request) {
 	result.route = matchRoute(request.getUriSegments(), request.getServer(), _basePath);
 	std::string	LocationMatch = _basePath;
 	std::cout << "LOCATION MATCH ==> " << LocationMatch << std::endl;
-
-	if (result.route->hasMaxBodySize()) {
-		if (request._bodyBytesWritten > result.route->getMaxBodySize()) {
-			setResult(PAYLOAD_TOO_LARGE, ACTION_ERROR, "", result);
-			return ;
-		}
-	}
-
+	
 	if (result.route && !result.route->isAllowed(request.getMethod())) {
 		setResult(METHOD_NOT_ALLOWED, ACTION_ERROR, "", result);
 		return ;
 	}
-
+	
 	if (result.route->doesRedirect()) {
 		setResult(result.route->getRedirection().first, ACTION_REDIRECT, result.targetPath = result.route->getRedirection().second, result);
 		return ;
@@ -124,15 +124,20 @@ void RouteManager::processRequest(HttpRequest& request) {
 	}
 
 	if (result.route->isCgiEnable()) {
-		std::cout << "rousource: " <<  _resource << "\n";
 		std::vector<std::string> vec;
 		HttpRequest::normalizeUriHelper(_resource, vec);
 		if (isCgi(vec, result, _basePath)) {
+			std::string encoded_uri = request.getEncodedUri();
+			result.cgiInfo.pathInfo += (encoded_uri.at(encoded_uri.size() - 1) == '/') ? "/" : "";
 			return ;
 		}
 	}
 
 	if (request.getMethod() == "POST") {
+		if (result.route->getUploadDir().empty()) {
+			setResult(FORBIDDEN, ACTION_ERROR, "", result);
+			return ;
+		}
 		std::string uploadPath = resolveUploadPath(request.getRouteUri(), LocationMatch, result.route->getUploadDir());
 		std::cout << "UPLOAD PATH ==> " << uploadPath << std::endl;
 		checkPostPath(uploadPath, request);

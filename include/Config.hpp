@@ -6,7 +6,6 @@
 struct Config {
 	typedef std::list<Server> ServerCont;
 
-	// NOTE: typedef for iport server map to ease the code
 	typedef UnorderedMultiMap<Server::IPort, Server> ServerMultiMap;
 	typedef ServerMultiMap::const_iterator ServerMultiMapConstIter;
 	typedef std::pair<ServerMultiMapConstIter, ServerMultiMapConstIter> ServerRange;

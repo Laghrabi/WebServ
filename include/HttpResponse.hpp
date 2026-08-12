@@ -63,6 +63,7 @@ class HttpResponse
 		void makeErrorCgi(HttpStatus code, const HttpRequest& reques);
 		const std::map<HttpStatus, std::string>&  getStatusCodeMap();
 		void setLog(const HttpRequest& request);
+		std::string generateError(HttpStatus code);
 
 	};
 

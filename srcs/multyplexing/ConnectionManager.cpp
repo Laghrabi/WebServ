@@ -153,7 +153,8 @@ void ConnectionManager::disconnect(Client& client)
 {
 	std::cout << "[DISCONNECT]: "<< "client " << client.getFd() << " disconnect"<< std::endl;
 
-	client.m_cgi_handler.killProcess();
+	if (client.m_cgi_handler.isAlive())
+		client.m_cgi_handler.killProcess();
 
 	handleCgiDeath(client.m_pipefd);
 
@@ -344,8 +345,9 @@ void ConnectionManager::sendClient(Client& client)
 			return;
 		response.eraseSendBytes(n);
 		std::cout << "[SEND] sending data " << n << "\n";
+		return ;
 	}
-	if (response.is_finished && response.buffer.empty())
+	if (response.getHeadersSent() && response.is_finished && response.buffer.empty())
 	{
 		if (client.getRequest().getCurrentState() == FINISHED) {
 			std::cout << "[SEND] write access log\n";

@@ -114,6 +114,6 @@ Cookies& Client::getCookies()
 void Client::checkCgiState() {
     if (m_pipefd != -1) {
 			if (m_cgi_handler.isAlive())
-        m_cgi_handler.checkProcessState();
+                m_cgi_handler.checkProcessState();
     }
 }

@@ -55,7 +55,6 @@ void CgiHandler::checkProcessState() {
 	if (m_is_alive)
 		if (checkTimeOut()) {
 			killProcess();
-
 			setCgiResponse();
 	}
 }
@@ -64,7 +63,7 @@ void CgiHandler::setCgiResponse() {
 	if (m_is_alive)
 		killProcess();
 	if (!m_reading_body) {
-		std::cout << "[CGI] internel server errror\n";
+		std::cout << "[CGI] internel server errror ppp\n";
 		m_response.makeErrorCgi(INTERNAL_SERVER_ERROR, m_request);
 	}
 	else if (m_reading_body && m_ok) {
@@ -84,13 +83,17 @@ void CgiHandler::setCgiResponse() {
 int CgiHandler::waitForProcess() {
 	int status = 0;
 	int pid;
-	if ((pid = waitpid(m_pid, &status, WNOHANG)) == 0) {
-	}
-	else if (pid > 0) {
+	pid = waitpid(m_pid, &status, WNOHANG);
+	
+	if (pid > 0) {
 		m_is_alive = false;
 		std::cout << "[CGI] process terminate " << m_cgi_script << "\n";
+		std::cout << m_is_alive << "\n";
+		std::cout << "pid === " << pid << "\n";
 	}
 	else if (pid < 0) {
+		m_is_alive = false;
+		exit(20);
 	}
 	return (pid);
 }
@@ -98,7 +101,10 @@ int CgiHandler::waitForProcess() {
 void CgiHandler::killProcess() {
 	if (m_pid != -1 && m_is_alive) {
 		kill (m_pid, SIGKILL);
-		waitForProcess();
+		int status;
+		int pid = waitpid(m_pid, &status, 0);
+		(void)pid;
+		m_is_alive = false;
 		std::cout << "[CGI] the process terminate\n";
 	}
 }

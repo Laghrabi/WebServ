@@ -124,7 +124,7 @@ void HttpRequestHandler::generateAutoIndex()
 	std::string assemble = "HTTP/1.1 " + to_string(result.statusCode) + " " + response.getStatusCodeMap().find(result.statusCode)->second + "\r\n";
 	response.last_code = result.statusCode;
 	response.buffer.insert(buffer.end(), assemble.begin(), assemble.end());
-	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);//hamza chof had l3iba
+	response.setHeader("Content-Type", "text/html", buffer);//hamza chof had l3iba
 	response.setHeader("Content-Length", to_string(autoIndexHtml.size()), response.buffer);
 	standardHeader(buffer, connection);
 	response.buffer.insert(buffer.end(), autoIndexHtml.begin(), autoIndexHtml.end());
@@ -152,12 +152,22 @@ void HttpRequestHandler::makeRedirect()
 		response.setBodySource(BODY_FILE);
 		response.fileBody.open(errorHtml.c_str());
 	}
+	if (response.getBodySource() == BODY_BUFFER)
+	{
+		response.setHeader("Content-Length", to_string(errorHtml.size()), buffer);
+	}
+	else 
+	{
+		struct stat st;
+		stat(errorHtml.c_str(), &st);
+		response.setHeader("Content-Length", to_string(st.st_size), buffer);
+	}
 	std::string connection = checkConnection();
 	response.setHeader("Location", result.targetPath, buffer);
-	response.setHeader("Location", result.targetPath, buffer);
-	response.setHeader("Content-Length", "0", buffer);
-	// response.setHeader("Content-Type", );
+	response.setHeader("Content-Type", "text/html", buffer);
 	standardHeader(buffer, connection);
+	if (response.getBodySource() == BODY_BUFFER)
+		response.buffer.insert(buffer.end(), errorHtml.begin(), errorHtml.end());
 }
 
 std::string HttpRequestHandler::generateErrorPage(HttpStatus code)
@@ -206,8 +216,17 @@ void HttpRequestHandler::makeError(HttpStatus code)
 		response.setBodySource(BODY_BUFFER);
 	}
 
-	response.setHeader("Content-Length", to_string(errorHtml.size()), buffer);
-	response.setHeader("Content-Type", response.config.m_types.getMimeType("dflk.html"), buffer);
+	if (response.getBodySource() == BODY_BUFFER)
+	{
+		response.setHeader("Content-Length", to_string(errorHtml.size()), buffer);
+	}
+	else 
+	{
+		struct stat st;
+		stat(errorHtml.c_str(), &st);
+		response.setHeader("Content-Length", to_string(st.st_size), buffer);
+	}
+	response.setHeader("Content-Type", "text/html", buffer);
 	std::string connection = checkConnection();
 	if (code == METHOD_NOT_ALLOWED)
 	{
@@ -225,7 +244,8 @@ void HttpRequestHandler::makeError(HttpStatus code)
 		response.setHeader("Allow", methods, buffer);
 	}
 	standardHeader(buffer, connection);
-	response.buffer.insert(buffer.end(), errorHtml.begin(), errorHtml.end());
+	if (response.getBodySource() == BODY_BUFFER)
+		response.buffer.insert(buffer.end(), errorHtml.begin(), errorHtml.end());
 }
 
 void HttpRequestHandler::handleGet()

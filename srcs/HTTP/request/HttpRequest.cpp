@@ -428,7 +428,6 @@ bool	HttpRequest::parseBody()
  * @return true if the size was successfully parsed, false otherwise (or if data is incomplete).
  */
 bool HttpRequest::parseChunkSize() {
-	std::cout << "HEEEREEEEE<<<<<<<<<<<<<<<<<<\n";
 	const std::string	crlf = "\r\n";
 
 	std::vector<char>::iterator it = std::search(
@@ -489,7 +488,6 @@ bool HttpRequest::parseChunkSize() {
 		if (_bodyStream.is_open()) {
             _bodyStream.close();
         }
-		std::cout << "##################################\n";
 		_currentState = READING_TRAILERS;
 		_bufferIndex += chunkedLine.size() + 2;
 		return (true);

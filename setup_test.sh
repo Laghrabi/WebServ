@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_DIR="/home/claghrab/Desktop/mini-web/gemini-test"
+BASE_DIR="/home/claghrab/Desktop/mini-web/server-tests"
 
 echo "Creating evaluation environment in $BASE_DIR..."
 

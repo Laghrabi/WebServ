@@ -132,7 +132,6 @@ void RouteManager::processRequest(HttpRequest& request) {
 			return ;
 		}
 	}
-
 	if (request.getMethod() == "POST") {
 		if (result.route->getUploadDir().empty()) {
 			setResult(FORBIDDEN, ACTION_ERROR, "", result);
@@ -143,7 +142,7 @@ void RouteManager::processRequest(HttpRequest& request) {
 		checkPostPath(uploadPath, request);
 		return ;
 	}
-
+	
 	if (request.getMethod() == "DELETE") {
 		if (_locator.getResourceType(physicalPath) == RESOURCE_DIRECTORY) {
 			setResult(FORBIDDEN, ACTION_ERROR, "", result);
@@ -225,7 +224,6 @@ void RouteManager::determineResourceAction(RouteResult& result, ResourceType typ
 				break;
 			}
 		}
-
 	return (bestMatch);
 }
 

@@ -13,21 +13,38 @@ ConnectionManager::ConnectionManager(const Config& config)
 
 ConnectionManager::~ConnectionManager()
 {
-	for (ListenerContainer::iterator it = m_listeners.begin(); it != m_listeners.end(); it ++)
+	std::cout << "server recieve SIGINT" << std::endl << "freeing ...." << std::endl;
+	for (EventContainer::iterator it = m_events.begin(); it != m_events.end(); it++)
 	{
-		safeClose (it->first);
+		delete(it->second);
 	}
-	for (ClientContainer::iterator it = m_clients.begin(); it != m_clients.end(); it ++)
+	for (ListenerContainer::iterator it = m_listeners.begin(); it != m_listeners.end(); it++)
+	{
+		if (epoll_ctl(epfd, EPOLL_CTL_DEL,  it->first, NULL))
+		{
+			perror("epoll_ctl failed to delete");
+		}
+		close(it->first);
+	}
+	for (ClientContainer::iterator it = m_clients.begin(); it != m_clients.end(); it++)
 	{
 		if (it->second.m_pipefd != -1) {
 			it->second.m_cgi_handler.killProcess();
 			safeClose(it->second.m_pipefd);
 		}
+		if (epoll_ctl(epfd, EPOLL_CTL_DEL,  it->first, NULL))
+		{
+			perror("epoll_ctl failed to delete");
+		}
 		safeClose (it->first);
 	}
-	for (EventContainer::iterator it = m_events.begin(); it != m_events.end(); ++it)
+	for (PipeContainer::iterator it = m_client_pipes.begin(); it != m_client_pipes.end(); it++)
 	{
-		delete it->second;
+		if (epoll_ctl(epfd, EPOLL_CTL_DEL,  it->first, NULL))
+		{
+			perror("epoll_ctl failed to delete");
+		}
+		safeClose(it->first);
 	}
 	if (epfd != -1)
 		safeClose(epfd);
@@ -140,7 +157,6 @@ void ConnectionManager::disconnect(Client& client)
 	client.m_cgi_handler.killProcess();
 
 	handleCgiDeath(client.m_pipefd);
-
 
 	if (epoll_ctl(epfd, EPOLL_CTL_DEL,  client.getFd(), NULL))
 	{
@@ -350,39 +366,6 @@ void handleSignal(int signal)
 	g_running = 0;
 }
 
-void ConnectionManager::free_resources()
-{
-	std::cout << "server recieve SIGINT" << std::endl << "freeing ...." << std::endl;
-	for (EventContainer::iterator it = m_events.begin(); it != m_events.begin(); it++)
-	{
-		delete(it->second);
-	}
-	for (ListenerContainer::iterator it = m_listeners.begin(); it != m_listeners.end(); it++)
-	{
-		if (epoll_ctl(epfd, EPOLL_CTL_DEL,  it->first, NULL))
-		{
-			perror("epoll_ctl failed to delete");
-		}
-		close(it->first);
-	}
-	for (ClientContainer::iterator it = m_clients.begin(); it != m_clients.end(); it++)
-	{
-		if (epoll_ctl(epfd, EPOLL_CTL_DEL,  it->first, NULL))
-		{
-			perror("epoll_ctl failed to delete");
-		}
-		close(it->first);
-	}
-	for (PipeContainer::iterator it = m_client_pipes.begin(); it != m_client_pipes.end(); it++)
-	{
-		if (epoll_ctl(epfd, EPOLL_CTL_DEL,  it->first, NULL))
-		{
-			perror("epoll_ctl failed to delete");
-		}
-		close(it->first);
-	}
-}
-
 void ConnectionManager::run()
 {
 	struct epoll_event evlist[MAX_EVENTS];
@@ -394,7 +377,6 @@ void ConnectionManager::run()
 		int ready;
 		if (!g_running)
 		{
-			free_resources();
 			return;
 		}
 

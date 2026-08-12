@@ -246,7 +246,6 @@ std::vector<std::string> tokenizeRoutePath(const std::string& path) {
 		}
 	}
 	if (!current.empty()) {
-		std::cout <<  "current "<<current << "\n";
 		tokens.push_back(current);
 	}
 	return (tokens);

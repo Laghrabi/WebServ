@@ -2,7 +2,7 @@
 #include<unistd.h>
 
 int main(void){
-	std::cout << "Location: google.com\n";
+	std::cout << "Location: http://google.com\n";
 	std::cout << "\nsome data\n";
 	return (0);
 }

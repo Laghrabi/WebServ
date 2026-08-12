@@ -162,7 +162,6 @@ std::string HttpRequestHandler::generateErrorPage(HttpStatus code)
 void HttpRequestHandler::makeError(HttpStatus code)
 {
 	response.is_ok_send = true;
-	std::cout << "making error" << std::endl;
 	std::vector<char>& buffer = response.buffer;
 	std::string assemble = "HTTP/1.1 " + to_string(code) +  " " + response.getStatusCodeMap().find(code)->second + "\r\n";
 	buffer.insert(buffer.end(), assemble.begin(), assemble.end()); 
